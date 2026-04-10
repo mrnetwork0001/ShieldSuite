@@ -45,19 +45,24 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
         const latestBlock = await wallet.provider!.getBlockNumber();
         const txs: TxHistoryItem[] = [];
 
-        // Scan last 200 blocks for transactions from this wallet
-        for (let i = 0; i < 200 && txs.length < 5; i++) {
-          try {
-            const block = await wallet.provider!.getBlock(latestBlock - i, true);
-            if (block && block.prefetchedTransactions) {
-              for (const tx of block.prefetchedTransactions) {
-                if (tx.from?.toLowerCase() === wallet.address!.toLowerCase()) {
-                  txs.push({ hash: tx.hash, blockNumber: block.number });
-                  if (txs.length >= 5) break;
-                }
+        // Scan last 20 blocks in parallel for extreme speed
+        const blockPromises = [];
+        for (let i = 0; i < 20; i++) {
+          blockPromises.push(wallet.provider!.getBlock(latestBlock - i, true).catch(() => null));
+        }
+        
+        const blocks = await Promise.all(blockPromises);
+        
+        for (const block of blocks) {
+          if (block && block.prefetchedTransactions) {
+            for (const tx of block.prefetchedTransactions) {
+              if (tx.from?.toLowerCase() === wallet.address!.toLowerCase()) {
+                txs.push({ hash: tx.hash, blockNumber: block.number });
+                if (txs.length >= 5) break;
               }
             }
-          } catch { continue; }
+          }
+          if (txs.length >= 5) break;
         }
         setTxHistory(txs);
       } catch {
