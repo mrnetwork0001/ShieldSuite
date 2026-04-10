@@ -4,7 +4,8 @@
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import TokenSelector from "./TokenSelector";
+import { ethers } from "ethers";
+import TokenSelector, { TokenLogo } from "./TokenSelector";
 import { useScanGuard, ScanResult } from "../hooks/useScanGuard";
 import { useSwap, SwapQuote } from "../hooks/useSwap";
 import { WalletState } from "../lib/wallet";
@@ -43,6 +44,9 @@ const SwapCard: React.FC<SwapCardProps> = ({
   const [slippage, setSlippage] = useState(0.5);
   const [showSlippage, setShowSlippage] = useState(false);
   const [selectorOpen, setSelectorOpen] = useState<"from" | "to" | null>(null);
+  const [fromBalance, setFromBalance] = useState<string | null>(null);
+  const [toBalance, setToBalance] = useState<string | null>(null);
+  const [balanceRefreshKey, setBalanceRefreshKey] = useState(0);
 
   const { scan, result: scanResult, isScanning, error: scanError } = useScanGuard();
   const { getQuote, executeSwap, quote, swapResult, isQuoting, isSwapping, error: swapError, reset: resetSwap } = useSwap();
@@ -85,6 +89,57 @@ const SwapCard: React.FC<SwapCardProps> = ({
     });
   }, [fromToken.address]);
 
+  // ─── Fetch wallet balance for sell token ──────────────────────────────
+  useEffect(() => {
+    if (!wallet.connected || !wallet.provider || !wallet.address) {
+      setFromBalance(null);
+      return;
+    }
+
+    const fetchBalance = async () => {
+      try {
+        if (fromToken.isNative) {
+          const bal = await wallet.provider!.getBalance(wallet.address!);
+          setFromBalance(parseFloat(ethers.formatEther(bal)).toFixed(4));
+        } else {
+          const erc20 = new ethers.Contract(
+            fromToken.address,
+            ["function balanceOf(address) view returns (uint256)"],
+            wallet.provider!
+          );
+          const bal = await erc20.balanceOf(wallet.address!);
+          setFromBalance(parseFloat(ethers.formatUnits(bal, fromToken.decimals)).toFixed(4));
+        }
+      } catch {
+        setFromBalance(null);
+      }
+
+      // Also fetch toToken balance
+      try {
+        if (toToken.isNative) {
+          const bal = await wallet.provider!.getBalance(wallet.address!);
+          setToBalance(parseFloat(ethers.formatEther(bal)).toFixed(4));
+        } else {
+          const erc20 = new ethers.Contract(
+            toToken.address,
+            ["function balanceOf(address) view returns (uint256)"],
+            wallet.provider!
+          );
+          const bal = await erc20.balanceOf(wallet.address!);
+          setToBalance(parseFloat(ethers.formatUnits(bal, toToken.decimals)).toFixed(4));
+        }
+      } catch {
+        setToBalance(null);
+      }
+    };
+
+    fetchBalance();
+
+    // Auto-refresh every 15 seconds
+    const interval = setInterval(fetchBalance, 15000);
+    return () => clearInterval(interval);
+  }, [wallet.connected, wallet.address, fromToken.address, toToken.address, wallet.provider, balanceRefreshKey]);
+
   // ─── Auto-quote when amount or tokens change ─────────────────────────
   useEffect(() => {
     if (quoteTimer.current) clearTimeout(quoteTimer.current);
@@ -98,12 +153,128 @@ const SwapCard: React.FC<SwapCardProps> = ({
         toToken: toToken.address,
         amount,
         fromDecimals: fromToken.decimals,
+        toDecimals: toToken.decimals,
         slippage,
       });
     }, 500); // 500ms debounce
 
     return () => { if (quoteTimer.current) clearTimeout(quoteTimer.current); };
   }, [amount, fromToken.address, toToken.address, scanResult, slippage]);
+
+  // ─── Approval state ───────────────────────────────────────────────────
+  const [needsApproval, setNeedsApproval] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [approveTarget, setApproveTarget] = useState<string | null>(null);
+  const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "";
+
+  // Check if approval is needed when quote arrives or token changes
+  useEffect(() => {
+    // Native tokens never need approval
+    if (fromToken.isNative) {
+      setNeedsApproval(false);
+      return;
+    }
+
+    // Need wallet + quote + valid amount to check
+    if (!wallet.connected || !wallet.address || !wallet.provider || !quote) {
+      return; // Don't change state — keep previous value
+    }
+
+    if (!amount || parseFloat(amount) <= 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const checkApproval = async () => {
+      try {
+        // Get the correct approve target
+        let target = approveTarget;
+        if (!target) {
+          const res = await fetch(`${API_BASE}/api/dex/approve-address`);
+          const data = await res.json();
+          if (data.success && data.data?.approveAddress) {
+            target = data.data.approveAddress;
+            if (!cancelled) setApproveTarget(target);
+          }
+        }
+        if (!target) {
+          // Can't determine approve target — assume needed for safety
+          if (!cancelled) setNeedsApproval(true);
+          return;
+        }
+
+        const amountWei = ethers.parseUnits(amount, fromToken.decimals);
+        const erc20 = new ethers.Contract(
+          fromToken.address,
+          ["function allowance(address owner, address spender) view returns (uint256)"],
+          wallet.provider!
+        );
+        const allowance = await erc20.allowance(wallet.address!, target);
+        // Use a high threshold — if not approved with MaxUint256, always require approval
+        // This prevents edge cases where partial allowance passes the check but the swap router needs more
+        const MAX_THRESHOLD = ethers.MaxUint256 / 2n;
+        const needsIt = allowance < MAX_THRESHOLD;
+        console.log(`[Approval] ${fromToken.symbol} allowance: ${allowance.toString()}, threshold: MaxUint256/2, needsApproval: ${needsIt}`);
+        if (!cancelled) setNeedsApproval(needsIt);
+      } catch (err) {
+        console.warn("[Approval] Check failed, assuming approval needed:", err);
+        // If check fails, assume approval IS needed (safe default)
+        if (!cancelled) setNeedsApproval(true);
+      }
+    };
+
+    checkApproval();
+    return () => { cancelled = true; };
+  }, [quote, fromToken.address, fromToken.isNative, fromToken.decimals, wallet.connected, wallet.address, amount, approveTarget]);
+
+  // ─── Handle Approve ───────────────────────────────────────────────────
+  const handleApprove = useCallback(async () => {
+    if (!wallet.signer || !approveTarget) return;
+    setIsApproving(true);
+    addLog("swap", `Approving ${fromToken.symbol} for trading...`);
+
+    try {
+      const erc20 = new ethers.Contract(
+        fromToken.address,
+        [
+          "function allowance(address owner, address spender) view returns (uint256)",
+          "function approve(address spender, uint256 amount) returns (bool)"
+        ],
+        wallet.signer
+      );
+
+      // Check current allowance
+      const currentAllowance = await erc20.allowance(wallet.address!, approveTarget);
+      const MAX_THRESHOLD = ethers.MaxUint256 / 2n;
+
+      // If already has MaxUint256-level approval, skip
+      if (currentAllowance >= MAX_THRESHOLD) {
+        setNeedsApproval(false);
+        addLog("info", `✅ ${fromToken.symbol} already approved!`);
+        return;
+      }
+
+      // USDT-style tokens require reset to 0 before changing a non-zero allowance
+      // Only reset if there IS a non-zero partial allowance
+      if (currentAllowance > 0n) {
+        addLog("info", "Resetting old allowance to 0...");
+        const resetTx = await erc20.approve(approveTarget, 0);
+        await resetTx.wait();
+      }
+
+      // Now approve MaxUint256
+      const approveTx = await erc20.approve(approveTarget, ethers.MaxUint256);
+      await approveTx.wait();
+
+      setNeedsApproval(false);
+      addLog("info", `✅ ${fromToken.symbol} approved!`);
+    } catch (err: any) {
+      addLog("warning", `Approval failed: ${err.message || "Unknown error"}`);
+    } finally {
+      setIsApproving(false);
+    }
+  }, [wallet, fromToken, approveTarget, addLog]);
 
   // ─── Flip tokens ──────────────────────────────────────────────────────
   const handleFlip = useCallback(() => {
@@ -112,6 +283,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
     setAmount("");
     resetSwap();
     setStage("input");
+    setNeedsApproval(false);
     onScanResult(null);
   }, [fromToken, toToken, resetSwap, onScanResult]);
 
@@ -119,13 +291,13 @@ const SwapCard: React.FC<SwapCardProps> = ({
   const handleTokenSelect = useCallback((token: TokenInfo) => {
     if (selectorOpen === "from") {
       if (token.address === toToken.address) {
-        // Swap them
         setToToken(fromToken);
       }
       setFromToken(token);
       setAmount("");
       resetSwap();
       setStage("input");
+      setNeedsApproval(false);
     } else {
       if (token.address === fromToken.address) {
         setFromToken(toToken);
@@ -148,8 +320,10 @@ const SwapCard: React.FC<SwapCardProps> = ({
         toToken: toToken.address,
         amount,
         fromDecimals: fromToken.decimals,
+        toDecimals: toToken.decimals,
         slippage,
         recipient: wallet.address!,
+        isNative: fromToken.isNative,
       },
       wallet.signer
     );
@@ -157,6 +331,8 @@ const SwapCard: React.FC<SwapCardProps> = ({
     if (result) {
       setStage("complete");
       addLog("swap", `✅ Swap confirmed! TX: ${result.txHash.slice(0, 14)}...`);
+      // Refresh balances immediately after swap
+      setBalanceRefreshKey((k) => k + 1);
     } else {
       setStage("ready");
       addLog("warning", `Swap failed: ${swapError || "Unknown error"}`);
@@ -230,24 +406,44 @@ const SwapCard: React.FC<SwapCardProps> = ({
               onClick={() => setSelectorOpen("from")}
               style={{ "--pill-color": fromToken.logoColor } as React.CSSProperties}
             >
-              <span className="token-pill-icon" style={{ background: fromToken.logoColor }}>
-                {fromToken.symbol.charAt(0)}
-              </span>
+              <TokenLogo token={fromToken} size={24} />
               {fromToken.symbol}
               <span className="token-pill-arrow">▾</span>
             </button>
           </div>
-          {scanResult && (
-            <div className="swap-token-scan-badge">
-              <span className={`scan-dot ${isSafe ? "safe" : isDangerous ? "danger" : "warn"}`} />
-              {scanResult.riskLevel} ({scanResult.riskScore}/100)
-            </div>
-          )}
-          {isScanning && (
-            <div className="swap-token-scan-badge">
-              <span className="scan-spinner-sm" /> Scanning...
-            </div>
-          )}
+          <div className="swap-token-meta">
+            {fromBalance !== null && wallet.connected && (
+              <div className="swap-balance">
+                <span>Balance: {fromBalance} {fromToken.symbol}</span>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <button
+                    className="refresh-btn"
+                    onClick={() => setBalanceRefreshKey(k => k + 1)}
+                    title="Refresh balance"
+                  >
+                    🔄
+                  </button>
+                  <button
+                    className="max-btn"
+                    onClick={() => setAmount(fromBalance)}
+                  >
+                    MAX
+                  </button>
+                </div>
+              </div>
+            )}
+            {scanResult && (
+              <div className="swap-token-scan-badge">
+                <span className={`scan-dot ${isSafe ? "safe" : isDangerous ? "danger" : "warn"}`} />
+                {scanResult.riskLevel} ({scanResult.riskScore}/100)
+              </div>
+            )}
+            {isScanning && (
+              <div className="swap-token-scan-badge">
+                <span className="scan-spinner-sm" /> Scanning...
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ─── Flip Arrow ─────────────────────────────────────────── */}
@@ -277,13 +473,25 @@ const SwapCard: React.FC<SwapCardProps> = ({
               onClick={() => setSelectorOpen("to")}
               style={{ "--pill-color": toToken.logoColor } as React.CSSProperties}
             >
-              <span className="token-pill-icon" style={{ background: toToken.logoColor }}>
-                {toToken.symbol.charAt(0)}
-              </span>
+              <TokenLogo token={toToken} size={24} />
               {toToken.symbol}
               <span className="token-pill-arrow">▾</span>
             </button>
           </div>
+          {toBalance !== null && wallet.connected && (
+            <div className="swap-token-meta">
+              <div className="swap-balance">
+                <span>Balance: {toBalance} {toToken.symbol}</span>
+                <button
+                  className="refresh-btn"
+                  onClick={() => setBalanceRefreshKey(k => k + 1)}
+                  title="Refresh balance"
+                >
+                  🔄
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ─── Quote Details ──────────────────────────────────────── */}
@@ -359,7 +567,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
           )}
         </AnimatePresence>
 
-        {/* ─── Action Button ──────────────────────────────────────── */}
+        {/* ─── Action Buttons ─────────────────────────────────────── */}
         <div className="swap-action">
           {!wallet.connected ? (
             <button className="btn btn-primary swap-btn" onClick={onConnect}>
@@ -373,10 +581,6 @@ const SwapCard: React.FC<SwapCardProps> = ({
             <button className="btn btn-danger swap-btn" disabled>
               🚫 Swap Blocked — High Risk
             </button>
-          ) : isSwapping ? (
-            <button className="btn btn-primary swap-btn" disabled>
-              <span className="scan-spinner" /> Swapping...
-            </button>
           ) : stage === "complete" ? (
             <button
               className="btn btn-primary swap-btn"
@@ -384,10 +588,33 @@ const SwapCard: React.FC<SwapCardProps> = ({
                 setAmount("");
                 resetSwap();
                 setStage("input");
+                setNeedsApproval(false);
                 onScanResult(null);
               }}
             >
               New Swap
+            </button>
+          ) : needsApproval && canSwap ? (
+            /* ── Two-step: Approve then Swap ── */
+            <div className="swap-btn-pair">
+              <button
+                className={`btn swap-btn ${isApproving ? "btn-primary" : "btn-approve"}`}
+                onClick={handleApprove}
+                disabled={isApproving}
+              >
+                {isApproving ? (
+                  <><span className="scan-spinner" /> Approving {fromToken.symbol}...</>
+                ) : (
+                  <>🔓 Approve {fromToken.symbol}</>
+                )}
+              </button>
+              <button className="btn btn-primary swap-btn" disabled>
+                🔄 Swap {fromToken.symbol} → {toToken.symbol}
+              </button>
+            </div>
+          ) : isSwapping ? (
+            <button className="btn btn-primary swap-btn" disabled>
+              <span className="scan-spinner" /> Swapping...
             </button>
           ) : canSwap ? (
             <button className="btn btn-safe swap-btn" onClick={handleSwap}>
@@ -584,6 +811,49 @@ const SwapCard: React.FC<SwapCardProps> = ({
         .scan-dot.warn { background: var(--accent-warning); box-shadow: 0 0 4px var(--accent-warning); }
         .scan-spinner-sm { display: inline-block; width: 10px; height: 10px; border: 1.5px solid rgba(255,255,255,0.2); border-top-color: var(--accent-blue); border-radius: 50%; animation: rotate-slow 0.8s linear infinite; }
 
+        .swap-token-meta {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .swap-balance {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          font-size: 0.75rem;
+          color: var(--text-tertiary);
+          font-family: var(--font-mono);
+        }
+        .max-btn {
+          padding: 2px 8px;
+          border-radius: 4px;
+          border: 1px solid var(--accent-blue);
+          background: var(--accent-blue-dim);
+          color: var(--accent-blue);
+          font-size: 0.65rem;
+          font-weight: 700;
+          font-family: var(--font-mono);
+          cursor: pointer;
+          letter-spacing: 0.05em;
+        }
+        .max-btn:hover { background: rgba(75, 123, 245, 0.2); }
+
+        .refresh-btn {
+          padding: 2px 4px;
+          border-radius: 4px;
+          border: none;
+          background: transparent;
+          color: var(--text-tertiary);
+          font-size: 0.7rem;
+          cursor: pointer;
+          transition: all 0.2s;
+          line-height: 1;
+        }
+        .refresh-btn:hover {
+          color: var(--accent-blue);
+          transform: rotate(180deg);
+        }
+
         .swap-arrow-wrapper {
           display: flex;
           justify-content: center;
@@ -668,6 +938,34 @@ const SwapCard: React.FC<SwapCardProps> = ({
           padding: 16px;
           font-size: 1rem;
           border-radius: var(--radius-lg);
+        }
+
+        .swap-btn-pair {
+          display: flex;
+          flex-direction: row;
+          gap: 10px;
+          width: 100%;
+        }
+        .swap-btn-pair .swap-btn {
+          flex: 1;
+          padding: 14px 8px;
+          font-size: 0.9rem;
+        }
+        .swap-btn-pair .swap-btn:disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+        }
+
+        .btn-approve {
+          background: linear-gradient(135deg, #8B5CF6, #6366F1) !important;
+          color: white !important;
+          border: none !important;
+          font-weight: 700;
+          letter-spacing: 0.02em;
+        }
+        .btn-approve:hover {
+          filter: brightness(1.15);
+          box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
         }
 
         .swap-powered-by {

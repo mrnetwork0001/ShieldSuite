@@ -10,8 +10,10 @@ export interface SwapParams {
   toToken: string;
   amount: string;        // human-readable amount
   fromDecimals: number;
+  toDecimals: number;
   slippage: number;
   recipient?: string;
+  isNative?: boolean;
 }
 
 export interface SwapQuote {
@@ -92,22 +94,28 @@ export function useSwap(): UseSwapReturn {
           throw new Error(data.error?.message || "Quote failed");
         }
 
-        // Parse the response
+        // Parse the response — toTokenAmount is in minimal units (wei)
         const rawAmountOut = data.data.toTokenAmount || data.data.amountOut || "0";
-        // Try to convert from wei, fallback to raw value
+        const outDecimals = params.toDecimals || 6;
+        
         let amountOut: string;
         try {
-          amountOut = parseFloat(ethers.formatUnits(rawAmountOut, 6)).toFixed(6); // Assume 6 decimals for output
+          // Convert from minimal units to human-readable
+          amountOut = ethers.formatUnits(rawAmountOut, outDecimals);
+          // Clean up trailing zeros but keep reasonable precision
+          amountOut = parseFloat(amountOut).toFixed(Math.min(outDecimals, 6));
         } catch {
           amountOut = parseFloat(rawAmountOut).toFixed(6);
         }
 
+        const source = data.meta?.source === "okx-dex" ? "okx-dex" : (data.meta?.source || "estimated");
+
         const result: SwapQuote = {
           amountOut,
-          priceImpact: data.data.priceImpact || "0.05",
-          gasEstimate: data.data.estimatedGas || "0.0001",
+          priceImpact: data.data.priceImpact || "0.01",
+          gasEstimate: data.data.estimatedGas || "50000",
           exchangeRate: amountIn > 0 ? (parseFloat(amountOut) / amountIn).toFixed(6) : "0",
-          source: data.meta?.source === "estimated" ? "estimated" : "okx-dex",
+          source,
         };
 
         setQuote(result);
@@ -148,49 +156,55 @@ export function useSwap(): UseSwapReturn {
           slippage: params.slippage.toString(),
         }).toString();
 
-        const res = await fetch(`${API_BASE}/api/dex/swap?${queryStr}`);
-        const data = await res.json();
+        // Extract tx fields from OKX response
+        // V6 response: { routerResult: {...quote info...}, tx: { to, data, value, gas, ... } }
+        const extractTx = (responseData: any) => {
+          if (responseData?.tx?.to && responseData?.tx?.data) return responseData.tx;
+          const rr = responseData?.routerResult;
+          if (rr?.to && rr?.data) return rr;
+          return null;
+        };
 
-        if (data.success && data.data?.tx) {
-          // Real OKX DEX swap — sign and broadcast the tx
-          const tx = await signer.sendTransaction({
-            to: data.data.tx.to,
-            data: data.data.tx.data,
-            value: data.data.tx.value ? BigInt(data.data.tx.value) : 0n,
-            gasLimit: data.data.tx.gas ? BigInt(data.data.tx.gas) : undefined,
-          });
+        const fetchSwapData = async () => {
+          const r = await fetch(`${API_BASE}/api/dex/swap?${queryStr}`);
+          const d = await r.json();
+          return d.success ? extractTx(d.data) : null;
+        };
 
-          const receipt = await tx.wait();
+        // Approval is handled by the UI Approve button.
+        // The UI checks for MaxUint256-level allowance and prompts the user if needed.
 
-          const result: SwapResult = {
-            txHash: tx.hash,
-            status: receipt?.status === 1 ? "confirmed" : "failed",
-            amountIn: params.amount,
-            amountOut: quote?.amountOut || "0",
-            explorerUrl: `${XLAYER_CHAIN.blockExplorerUrls[0]}/tx/${tx.hash}`,
-          };
+        // ── Fetch fresh swap calldata ──
+        const txInfo = await fetchSwapData();
 
-          setSwapResult(result);
-          return result;
-        } else {
-          // Demo mode fallback — simulate
-          await new Promise((r) => setTimeout(r, 2000));
-
-          const mockTxHash = `0x${Array.from({ length: 64 }, () =>
-            Math.floor(Math.random() * 16).toString(16)
-          ).join("")}`;
-
-          const result: SwapResult = {
-            txHash: mockTxHash,
-            status: "confirmed",
-            amountIn: params.amount,
-            amountOut: quote?.amountOut || "0",
-            explorerUrl: `${XLAYER_CHAIN.blockExplorerUrls[0]}/tx/${mockTxHash}`,
-          };
-
-          setSwapResult(result);
-          return result;
+        if (!txInfo) {
+          throw new Error(
+            "Swap transaction not available. The OKX DEX API couldn't build the transaction. " +
+            "Ensure your VPN is active and try again."
+          );
         }
+
+        // ── Step 3: Execute the swap ──
+        const tx = await signer.sendTransaction({
+          to: txInfo.to,
+          data: txInfo.data,
+          value: txInfo.value ? BigInt(txInfo.value) : 0n,
+          gasLimit: txInfo.gas ? BigInt(txInfo.gas) : undefined,
+          gasPrice: txInfo.gasPrice ? BigInt(txInfo.gasPrice) : undefined,
+        });
+
+        const receipt = await tx.wait();
+
+        const result: SwapResult = {
+          txHash: tx.hash,
+          status: receipt?.status === 1 ? "confirmed" : "failed",
+          amountIn: params.amount,
+          amountOut: quote?.amountOut || "0",
+          explorerUrl: `${XLAYER_CHAIN.blockExplorerUrls[0]}/tx/${tx.hash}`,
+        };
+
+        setSwapResult(result);
+        return result;
       } catch (err: any) {
         setError(err.message || "Swap failed");
         return null;

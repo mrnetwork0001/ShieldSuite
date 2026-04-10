@@ -20,18 +20,21 @@ export interface TokenInfo {
   symbol: string;
   name: string;
   decimals: number;
-  logoColor: string;   // For UI accent
+  logoColor: string;   // For UI accent fallback
+  logoUrl?: string;    // Real token logo
   isStable?: boolean;
   isNative?: boolean;
+  isCustom?: boolean;  // Added via contract address paste
 }
 
 /** Native OKB (use zero address convention for native gas token) */
 const NATIVE_OKB: TokenInfo = {
-  address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+  address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
   symbol: "OKB",
   name: "OKB",
   decimals: 18,
   logoColor: "#4B7BF5",
+  logoUrl: "https://s2.coinmarketcap.com/static/img/coins/64x64/3897.png",
   isNative: true,
 };
 
@@ -39,41 +42,46 @@ const NATIVE_OKB: TokenInfo = {
 export const TOKEN_LIST: TokenInfo[] = [
   NATIVE_OKB,
   {
-    address: "0xe538905cf8410324e03A5A23C1c177a474D59b2b",
+    address: "0xe538905cf8410324e03a5a23c1c177a474d59b2b",
     symbol: "WOKB",
     name: "Wrapped OKB",
     decimals: 18,
     logoColor: "#4B7BF5",
+    logoUrl: "https://s2.coinmarketcap.com/static/img/coins/64x64/3897.png",
   },
   {
-    address: "0x1E4a5963aBFD975d8c9021ce480b42188849D41d",
+    address: "0x1e4a5963abfd975d8c9021ce480b42188849d41d",
     symbol: "USDT",
     name: "Tether USD",
     decimals: 6,
     logoColor: "#26A17B",
+    logoUrl: "https://assets.coingecko.com/coins/images/325/small/Tether.png",
     isStable: true,
   },
   {
-    address: "0x74b7F16337b8972027F6196A17a631aC6dE26d22",
+    address: "0x74b7f16337b8972027f6196a17a631ac6de26d22",
     symbol: "USDC",
     name: "USD Coin",
     decimals: 6,
     logoColor: "#2775CA",
+    logoUrl: "https://assets.coingecko.com/coins/images/6319/small/usdc.png",
     isStable: true,
   },
   {
-    address: "0x5A77f1443D16ee5761d310e38b4BEB27E6E2f5Ab",
+    address: "0x5a77f1443d16ee5761d310e38b4beb27e6e2f5ab",
     symbol: "WETH",
     name: "Wrapped Ether",
     decimals: 18,
     logoColor: "#627EEA",
+    logoUrl: "https://assets.coingecko.com/coins/images/2518/small/weth.png",
   },
   {
-    address: "0x2c03058e5f4e533F2263e748d1f43A3fE66B3e79",
+    address: "0x2c03058e5f4e533f2263e748d1f43a3fe66b3e79",
     symbol: "DAI",
     name: "Dai Stablecoin",
     decimals: 18,
     logoColor: "#F5AC37",
+    logoUrl: "https://assets.coingecko.com/coins/images/9956/small/Badge_Dai.png",
     isStable: true,
   },
 ];
@@ -81,11 +89,11 @@ export const TOKEN_LIST: TokenInfo[] = [
 /** Legacy flat address map */
 export const XLAYER_TOKENS = {
   OKB: NATIVE_OKB.address,
-  WOKB: "0xe538905cf8410324e03A5A23C1c177a474D59b2b",
-  USDT: "0x1E4a5963aBFD975d8c9021ce480b42188849D41d",
-  USDC: "0x74b7F16337b8972027F6196A17a631aC6dE26d22",
-  ETH: "0x5A77f1443D16ee5761d310e38b4BEB27E6E2f5Ab",
-  DAI: "0x2c03058e5f4e533F2263e748d1f43A3fE66B3e79",
+  WOKB: "0xe538905cf8410324e03a5a23c1c177a474d59b2b",
+  USDT: "0x1e4a5963abfd975d8c9021ce480b42188849d41d",
+  USDC: "0x74b7f16337b8972027f6196a17a631ac6de26d22",
+  ETH: "0x5a77f1443d16ee5761d310e38b4beb27e6e2f5ab",
+  DAI: "0x2c03058e5f4e533f2263e748d1f43a3fe66b3e79",
 } as const;
 
 /** Find token by address */
@@ -98,6 +106,47 @@ export function findToken(address: string): TokenInfo | undefined {
 /** Get token symbol by address */
 export function tokenSymbol(address: string): string {
   return findToken(address)?.symbol || address.slice(0, 6) + "...";
+}
+
+/** Resolve a custom contract address to TokenInfo by querying on-chain metadata */
+export async function resolveCustomToken(address: string, provider: any): Promise<TokenInfo | null> {
+  // Check if already in list
+  const existing = findToken(address);
+  if (existing) return existing;
+
+  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return null;
+
+  try {
+    const { ethers } = await import("ethers");
+    const contract = new ethers.Contract(
+      address,
+      [
+        "function symbol() view returns (string)",
+        "function name() view returns (string)",
+        "function decimals() view returns (uint8)",
+      ],
+      provider
+    );
+
+    const [symbol, name, decimals] = await Promise.all([
+      contract.symbol().catch(() => "???"),
+      contract.name().catch(() => "Unknown Token"),
+      contract.decimals().catch(() => 18),
+    ]);
+
+    const normalizedAddress = address.toLowerCase();
+
+    return {
+      address: normalizedAddress,
+      symbol,
+      name,
+      decimals: Number(decimals),
+      logoColor: "#" + normalizedAddress.slice(2, 8),
+      isCustom: true,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /** Default RPC URL */

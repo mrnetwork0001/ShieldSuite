@@ -65,6 +65,7 @@ const KNOWN_SAFE_TOKENS: Record<string, { symbol: string; name: string }> = {
   "0xe538905cf8410324e03a5a23c1c177a474d59b2b": { symbol: "WOKB", name: "Wrapped OKB" },
   "0x5a77f1443d16ee5761d310e38b7308aaef1eafc6": { symbol: "WETH", name: "Wrapped Ether" },
   "0x5a77f1443d16ee5761d310e38b4beb27e6e2f5ab": { symbol: "WETH", name: "Wrapped Ether" },
+  "0x2c03058e5f4e533f2263e748d1f43a3fe66b3e79": { symbol: "DAI", name: "Dai Stablecoin" },
 };
 
 function isKnownSafe(address: string): boolean {

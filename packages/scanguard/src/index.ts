@@ -92,6 +92,18 @@ app.get("/api/stats", (_req, res) => {
   });
 });
 
+/** Live Scan Feed */
+app.get("/api/feed", (_req, res) => {
+  const scans = Array.from(scanCache.values())
+    .sort((a, b) => b.scanTimestamp - a.scanTimestamp)
+    .slice(0, 50);
+
+  res.json({
+    success: true,
+    data: scans,
+  });
+});
+
 /**
  * POST /api/scan — Scan a token for security risks
  * Protected by x402 payment middleware in production
@@ -195,9 +207,25 @@ app.get("/api/scan/:scanId", (req, res) => {
 
 // ─── DEX Proxy Routes (signed backend → OKX DEX API) ────────────────────────
 
+/** GET /api/dex/approve-address — Get the correct ERC20 approval target for X Layer */
+app.get("/api/dex/approve-address", async (_req, res) => {
+  try {
+    const { getApproveAddress } = await import("./onchainos.js");
+    const address = await getApproveAddress("196");
+    if (address) {
+      res.json({ success: true, data: { approveAddress: address } });
+    } else {
+      res.status(404).json({ success: false, error: { message: "Approve address not found for chain 196" } });
+    }
+  } catch (err: any) {
+    logger.error(`DEX approve-address error: ${err.message}`);
+    res.status(500).json({ success: false, error: { code: "APPROVE_FAILED", message: err.message } });
+  }
+});
+
 /** GET /api/dex/quote — Proxy to OKX DEX Aggregator quote */
 app.get("/api/dex/quote", async (req, res) => {
-  const { fromToken, toToken, amount, slippage } = req.query;
+  const { fromToken, toToken, amount, slippage, fromDecimals, toDecimals } = req.query;
 
   if (!fromToken || !toToken || !amount) {
     res.status(400).json({
@@ -217,35 +245,22 @@ app.get("/api/dex/quote", async (req, res) => {
       slippage: (slippage as string) || "0.5",
     });
 
-    if (quote) {
-      res.json({ success: true, data: quote });
+    logger.info(`[DEX] Quote response: ${JSON.stringify(quote)}`);
+
+    if (quote && quote.toTokenAmount) {
+      res.json({ success: true, data: quote, meta: { source: "okx-dex" } });
     } else {
-      // Fallback: estimated quote for demo when OKX API is unreachable
-      const amountNum = parseFloat(amount as string) || 0;
+      logger.warn(`[DEX] OKX quote returned no data for ${fromToken} → ${toToken}`);
       res.json({
-        success: true,
-        data: {
-          fromTokenAmount: amount,
-          toTokenAmount: (amountNum * 0.998).toFixed(6),
-          estimatedGas: "0.0001",
-          priceImpact: "0.05",
-        },
-        meta: { source: "estimated" },
+        success: false,
+        error: { code: "NO_LIQUIDITY", message: "No liquidity available for this pair on X Layer" },
       });
     }
   } catch (err: any) {
     logger.error(`DEX quote error: ${err.message}`);
-    // Always return something for UX - use estimated rate
-    const amountNum = parseFloat(amount as string) || 0;
     res.json({
-      success: true,
-      data: {
-        fromTokenAmount: amount,
-        toTokenAmount: (amountNum * 0.998).toFixed(6),
-        estimatedGas: "0.0001",
-        priceImpact: "0.1",
-      },
-      meta: { source: "estimated" },
+      success: false,
+      error: { code: "QUOTE_FAILED", message: "Failed to get quote — check VPN or try a different pair" },
     });
   }
 });
@@ -273,7 +288,16 @@ app.get("/api/dex/swap", async (req, res) => {
       userWalletAddress: wallet as string,
     });
 
-    res.json({ success: true, data: swapData });
+    logger.info(`[DEX] Swap data response: ${JSON.stringify(swapData)}`);
+
+    if (swapData) {
+      res.json({ success: true, data: swapData });
+    } else {
+      res.status(503).json({
+        success: false,
+        error: { code: "SWAP_UNAVAILABLE", message: "OKX DEX API did not return swap transaction data. Please try again." },
+      });
+    }
   } catch (err: any) {
     logger.error(`DEX swap error: ${err.message}`);
     res.status(500).json({

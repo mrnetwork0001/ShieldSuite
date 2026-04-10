@@ -1,16 +1,45 @@
 // ─── TokenSelector Component ─────────────────────────────────────────────────
-// Modal dropdown for selecting tokens with search, icons, and quick filters.
+// Modal dropdown for selecting tokens with search, icons, custom address import.
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TOKEN_LIST, TokenInfo } from "../lib/xlayer";
+import { TOKEN_LIST, TokenInfo, resolveCustomToken } from "../lib/xlayer";
+import { ethers } from "ethers";
 
 interface TokenSelectorProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (token: TokenInfo) => void;
-  excludeAddress?: string; // Don't show the other side's token
+  excludeAddress?: string;
 }
+
+const TokenLogo: React.FC<{ token: TokenInfo; size?: number }> = ({ token, size = 36 }) => {
+  const [imgError, setImgError] = useState(false);
+
+  if (token.logoUrl && !imgError) {
+    return (
+      <img
+        src={token.logoUrl}
+        alt={token.symbol}
+        className="token-selector-icon-img"
+        style={{ width: size, height: size, borderRadius: "50%" }}
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
+  return (
+    <div
+      className="token-selector-icon"
+      style={{ background: token.logoColor, width: size, height: size }}
+    >
+      {token.symbol.charAt(0)}
+    </div>
+  );
+};
+
+// Export for reuse in SwapCard and other components
+export { TokenLogo };
 
 const TokenSelector: React.FC<TokenSelectorProps> = ({
   isOpen,
@@ -19,17 +48,47 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
   excludeAddress,
 }) => {
   const [search, setSearch] = useState("");
+  const [customTokens, setCustomTokens] = useState<TokenInfo[]>([]);
+  const [isResolving, setIsResolving] = useState(false);
+
+  const allTokens = useMemo(() => [...TOKEN_LIST, ...customTokens], [customTokens]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return TOKEN_LIST.filter(
+    return allTokens.filter(
       (t) =>
         t.address.toLowerCase() !== (excludeAddress || "").toLowerCase() &&
         (t.symbol.toLowerCase().includes(q) ||
           t.name.toLowerCase().includes(q) ||
           t.address.toLowerCase().includes(q))
     );
-  }, [search, excludeAddress]);
+  }, [search, excludeAddress, allTokens]);
+
+  // Check if user pasted a contract address not in the list
+  const isContractSearch = /^0x[a-fA-F0-9]{40}$/.test(search.trim());
+  const addressNotInList = isContractSearch && filtered.length === 0;
+
+  const handleImportToken = useCallback(async () => {
+    if (!isContractSearch) return;
+    setIsResolving(true);
+    try {
+      const provider = new ethers.JsonRpcProvider("https://rpc.xlayer.tech");
+      const token = await resolveCustomToken(search.trim(), provider);
+      if (token) {
+        setCustomTokens((prev) => {
+          if (prev.find((t) => t.address.toLowerCase() === token.address.toLowerCase())) return prev;
+          return [...prev, token];
+        });
+        onSelect(token);
+        setSearch("");
+        onClose();
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setIsResolving(false);
+    }
+  }, [search, isContractSearch, onSelect, onClose]);
 
   const handleSelect = (token: TokenInfo) => {
     onSelect(token);
@@ -64,7 +123,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 
             <input
               className="token-selector-search input input-mono"
-              placeholder="Search by name, symbol, or address..."
+              placeholder="Search or paste contract address..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
@@ -77,12 +136,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
                   className="token-selector-item"
                   onClick={() => handleSelect(token)}
                 >
-                  <div
-                    className="token-selector-icon"
-                    style={{ background: token.logoColor }}
-                  >
-                    {token.symbol.charAt(0)}
-                  </div>
+                  <TokenLogo token={token} />
                   <div className="token-selector-info">
                     <span className="token-selector-symbol">{token.symbol}</span>
                     <span className="token-selector-name">{token.name}</span>
@@ -93,11 +147,29 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
                   {token.isNative && (
                     <span className="token-selector-badge native">Native</span>
                   )}
+                  {token.isCustom && (
+                    <span className="token-selector-badge custom">Imported</span>
+                  )}
                 </button>
               ))}
-              {filtered.length === 0 && (
+
+              {/* Import custom token by address */}
+              {addressNotInList && (
+                <div className="token-import-prompt">
+                  <p>Token not in default list.</p>
+                  <button
+                    className="btn btn-primary btn-import"
+                    onClick={handleImportToken}
+                    disabled={isResolving}
+                  >
+                    {isResolving ? "Resolving..." : `Import ${search.slice(0, 8)}...`}
+                  </button>
+                </div>
+              )}
+
+              {filtered.length === 0 && !addressNotInList && (
                 <div className="token-selector-empty">
-                  No tokens found. Paste a custom address in the input field.
+                  No tokens found. Paste a contract address to import.
                 </div>
               )}
             </div>
@@ -200,6 +272,11 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
               flex-shrink: 0;
             }
 
+            .token-selector-icon-img {
+              flex-shrink: 0;
+              object-fit: cover;
+            }
+
             .token-selector-info {
               display: flex;
               flex-direction: column;
@@ -234,12 +311,33 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
               background: rgba(75, 123, 245, 0.15);
               color: #4B7BF5;
             }
+            .token-selector-badge.custom {
+              background: rgba(168, 85, 247, 0.15);
+              color: #A855F7;
+            }
 
             .token-selector-empty {
               text-align: center;
               padding: 24px;
               color: var(--text-tertiary);
               font-size: 0.85rem;
+            }
+
+            .token-import-prompt {
+              text-align: center;
+              padding: 16px;
+              color: var(--text-secondary);
+              font-size: 0.85rem;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 10px;
+            }
+
+            .btn-import {
+              padding: 8px 20px;
+              font-size: 0.85rem;
+              border-radius: var(--radius-md);
             }
           `}</style>
         </>

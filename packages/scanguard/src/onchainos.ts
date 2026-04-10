@@ -52,7 +52,7 @@ export interface OkxApiResponse<T> {
 
 // ─── API Configuration ──────────────────────────────────────────────────────
 
-const OKX_BASE_URL = "https://www.okx.com";
+const OKX_BASE_URL = "https://web3.okx.com";
 
 interface OkxCredentials {
   apiKey: string;
@@ -237,8 +237,44 @@ export async function batchScanTokens(
 // ─── DEX Swap Module ────────────────────────────────────────────────────────
 
 /**
+ * Get the dexTokenApproveAddress for a given chain.
+ * This is the contract that ERC20 tokens must be approved for (NOT the router tx.to).
+ */
+export async function getApproveAddress(chainIndex: string): Promise<string | null> {
+  try {
+    const result = await okxRequest<any[]>(
+      "GET",
+      "/api/v6/dex/aggregator/supported/chain"
+    );
+
+    // okxRequest returns { code, msg, data } — the chains array is in result.data
+    const chains = (result as any)?.data || result;
+    logger.info(`[DEX] Supported chains response: found ${Array.isArray(chains) ? chains.length : 0} chains`);
+
+    if (Array.isArray(chains)) {
+      const chain = chains.find((c: any) => 
+        String(c.chainIndex) === chainIndex || String(c.chainId) === chainIndex
+      );
+      if (chain?.dexTokenApproveAddress) {
+        logger.info(`[DEX] Approve address for chain ${chainIndex}: ${chain.dexTokenApproveAddress}`);
+        return chain.dexTokenApproveAddress;
+      }
+      // Log available chain indexes for debugging
+      const availableChains = chains.slice(0, 10).map((c: any) => `${c.chainIndex || c.chainId}`);
+      logger.warn(`[DEX] Chain ${chainIndex} not found. Available: ${availableChains.join(', ')}...`);
+    }
+
+    logger.warn(`[DEX] Could not find approve address for chain ${chainIndex}`);
+    return null;
+  } catch (error) {
+    logger.error(`[DEX] Get approve address failed: ${error}`);
+    return null;
+  }
+}
+
+/**
  * Get a swap quote from OKX DEX Aggregator
- * Endpoint: GET /api/v5/dex/aggregator/quote
+ * Endpoint: GET /api/v6/dex/aggregator/quote
  */
 export async function getSwapQuote(params: {
   chainId: string;
@@ -248,16 +284,25 @@ export async function getSwapQuote(params: {
   slippage?: string;
 }): Promise<OkxSwapQuote | null> {
   try {
+    // OKX DEX API works best with checksummed addresses
+    const { getAddress } = await import("ethers");
+    const fromAddr = params.fromTokenAddress.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      ? '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
+      : getAddress(params.fromTokenAddress);
+    const toAddr = params.toTokenAddress.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      ? '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
+      : getAddress(params.toTokenAddress);
+
     const result = await okxRequest<OkxSwapQuote>(
       "GET",
-      "/api/v5/dex/aggregator/quote",
+      "/api/v6/dex/aggregator/quote",
       undefined,
       {
-        chainId: params.chainId,
-        fromTokenAddress: params.fromTokenAddress.toLowerCase(),
-        toTokenAddress: params.toTokenAddress.toLowerCase(),
+        chainIndex: params.chainId,
+        fromTokenAddress: fromAddr,
+        toTokenAddress: toAddr,
         amount: params.amount,
-        ...(params.slippage ? { slippage: params.slippage } : {}),
+        ...(params.slippage ? { slippagePercent: params.slippage } : {}),
       }
     );
 
@@ -274,7 +319,7 @@ export async function getSwapQuote(params: {
 
 /**
  * Get swap transaction data (unsigned)
- * Endpoint: GET /api/v5/dex/aggregator/swap
+ * Endpoint: GET /api/v6/dex/aggregator/swap
  */
 export async function getSwapData(params: {
   chainId: string;
@@ -285,17 +330,26 @@ export async function getSwapData(params: {
   userWalletAddress: string;
 }): Promise<unknown> {
   try {
+    // OKX DEX API works best with checksummed addresses
+    const { getAddress } = await import("ethers");
+    const fromAddr = params.fromTokenAddress.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      ? '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
+      : getAddress(params.fromTokenAddress);
+    const toAddr = params.toTokenAddress.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+      ? '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
+      : getAddress(params.toTokenAddress);
+
     const result = await okxRequest<unknown>(
       "GET",
-      "/api/v5/dex/aggregator/swap",
+      "/api/v6/dex/aggregator/swap",
       undefined,
       {
-        chainId: params.chainId,
-        fromTokenAddress: params.fromTokenAddress.toLowerCase(),
-        toTokenAddress: params.toTokenAddress.toLowerCase(),
+        chainIndex: params.chainId,
+        fromTokenAddress: fromAddr,
+        toTokenAddress: toAddr,
         amount: params.amount,
-        slippage: params.slippage,
-        userWalletAddress: params.userWalletAddress.toLowerCase(),
+        slippagePercent: params.slippage,
+        userWalletAddress: params.userWalletAddress, // Keep as-is (wallet provides checksummed)
       }
     );
 

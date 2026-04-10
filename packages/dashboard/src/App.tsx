@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -44,6 +44,48 @@ interface FeedEntry {
   timestamp: number;
 }
 
+// ─── Typewriter Hook ─────────────────────────────────────────────────────────
+function useTypewriter(text: string, speed = 40) {
+  const [displayed, setDisplayed] = useState('');
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    setDisplayed('');
+    setDone(false);
+    let i = 0;
+    const timer = setInterval(() => {
+      if (i < text.length) {
+        setDisplayed(text.slice(0, i + 1));
+        i++;
+      } else {
+        setDone(true);
+        clearInterval(timer);
+      }
+    }, speed);
+    return () => clearInterval(timer);
+  }, [text, speed]);
+
+  return { displayed, done };
+}
+
+// ─── Progress Bar Component ──────────────────────────────────────────────────
+function TerminalBar({ value, max, label }: { value: number; max: number; label: string }) {
+  const filled = Math.round((value / max) * 20);
+  const bar =
+    '[' +
+    '|'.repeat(Math.min(filled, 20)) +
+    '.'.repeat(Math.max(0, 20 - filled)) +
+    ']';
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '0.25rem 0.5rem' }}>
+      <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
+      <span style={{ fontFamily: 'var(--font-mono)', color: filled > 15 ? 'var(--fg-red)' : filled > 8 ? 'var(--fg-amber)' : 'var(--fg)', fontSize: '0.7rem', wordBreak: 'break-all' }}>
+        {bar} {value}/{max}
+      </span>
+    </div>
+  );
+}
+
 // ─── Main App ────────────────────────────────────────────────────────────────
 export default function App() {
   const [activeTab, setActiveTab] = useState<'scanner' | 'feed' | 'mcp'>('scanner');
@@ -55,23 +97,46 @@ export default function App() {
   const [feed, setFeed] = useState<FeedEntry[]>([]);
   const [totalScans, setTotalScans] = useState(0);
 
-  // ─── Fetch health on mount ─────────────────────────────────────────────
+  const hero = useTypewriter('SCANGUARD v1.0.0', 60);
+
+  // ─── Polling for feed & stats ──────────────────────────────────────────
   useEffect(() => {
     fetch('/api/health')
       .then(r => r.json())
       .then(d => { if (d.success) setHealth(d.data); })
       .catch(() => {});
 
-    fetch('/api/stats')
-      .then(r => r.json())
-      .then(d => { if (d.success) setTotalScans(d.data.cachedScans || 0); })
-      .catch(() => {});
+    const pollData = () => {
+      fetch('/api/stats')
+        .then(r => r.json())
+        .then(d => { if (d.success) setTotalScans(d.data.cachedScans || 0); })
+        .catch(() => {});
+
+      fetch('/api/feed')
+        .then(r => r.json())
+        .then(d => {
+          if (d.success && Array.isArray(d.data)) {
+            setFeed(d.data.map((scan: any) => ({
+              id: scan.scanId,
+              tokenAddress: scan.tokenAddress,
+              tokenSymbol: scan.tokenSymbol,
+              riskLevel: scan.riskLevel,
+              timestamp: scan.scanTimestamp,
+            })));
+          }
+        })
+        .catch(() => {});
+    };
+
+    pollData();
+    const interval = setInterval(pollData, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   // ─── Scan Token ────────────────────────────────────────────────────────
   const handleScan = useCallback(async () => {
     if (!scanAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
-      setScanError('Invalid address — must be a 0x-prefixed 40-hex-char address');
+      setScanError('[ERR] Invalid address — must be 0x-prefixed 40-hex-char');
       return;
     }
 
@@ -90,21 +155,11 @@ export default function App() {
 
       if (data.success && data.data) {
         setScanResult(data.data);
-        setTotalScans(prev => prev + 1);
-
-        // Add to feed
-        setFeed(prev => [{
-          id: data.data.scanId,
-          tokenAddress: data.data.tokenAddress,
-          tokenSymbol: data.data.tokenSymbol,
-          riskLevel: data.data.riskLevel,
-          timestamp: Date.now(),
-        }, ...prev].slice(0, 50));
       } else {
-        setScanError(data.error?.message || 'Scan failed');
+        setScanError(`[ERR] ${data.error?.message || 'Scan failed'}`);
       }
     } catch (err) {
-      setScanError('Network error — is ScanGuard backend running on port 3402?');
+      setScanError('[ERR] Network error — is ScanGuard backend running on :3402?');
     } finally {
       setScanning(false);
     }
@@ -113,60 +168,124 @@ export default function App() {
   // ─── Render ────────────────────────────────────────────────────────────
   return (
     <div className="dashboard">
-      {/* Header */}
+
+      {/* ═══ HEADER ═══ */}
       <motion.header
         className="dashboard-header"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
       >
-        <h1>🛡️ ScanGuard</h1>
+        <pre style={{ color: 'var(--fg-dim)', fontSize: '0.65rem', lineHeight: 1.3, marginBottom: '0.5rem' }}>
+{`  ╔═══════════════════════════════════════╗
+  ║  ███████╗ ██████╗  █████╗ ███╗   ██╗ ║
+  ║  ██╔════╝██╔════╝ ██╔══██╗████╗  ██║ ║
+  ║  ███████╗██║      ███████║██╔██╗ ██║ ║
+  ║  ╚════██║██║      ██╔══██║██║╚██╗██║ ║
+  ║  ███████║╚██████╗ ██║  ██║██║ ╚████║ ║
+  ║  ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝║
+  ╚═══════════════════════════════════════╝`}
+        </pre>
+        <h1>
+          {hero.displayed}
+          {!hero.done && <span className="animate-blink">█</span>}
+        </h1>
         <p className="subtitle">
-          AI-Powered Security Scanning Skill for X Layer — OnchainOS × MCP × x402
+          AI-Powered Security Scanning Agent for X Layer — OnchainOS × MCP × x402
         </p>
+
         <div className="badges">
           <span className="badge green">
-            {health ? '● Online' : '○ Connecting...'}
+            {health ? '[OK] ONLINE' : '[..] CONNECTING'}
           </span>
-          <span className="badge cyan">MCP Compatible</span>
-          <span className="badge purple">x402 Monetized</span>
+          <span className="badge cyan">[MCP] COMPATIBLE</span>
+          <span className="badge purple">[x402] MONETIZED</span>
           {health?.onchainOs?.configured && (
-            <span className="badge green">OnchainOS ✓</span>
+            <span className="badge green">[ONCHAIN-OS] ACTIVE</span>
           )}
         </div>
       </motion.header>
 
-      {/* Stats Row */}
+      {/* ═══ STATS ROW ═══ */}
       <motion.div
         className="grid grid-4"
-        style={{ marginBottom: '2rem' }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
+        style={{ marginBottom: '1.5rem' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
       >
         <div className="card">
-          <div className="stat-icon green">🔍</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>scans.total</div>
           <div className="card-value">{totalScans}</div>
-          <div className="stat-label">Total Scans</div>
         </div>
         <div className="card">
-          <div className="stat-icon cyan">⛓️</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>chain.id</div>
           <div className="card-value">{health?.chainId || '—'}</div>
-          <div className="stat-label">Chain ID (X Layer)</div>
         </div>
         <div className="card">
-          <div className="stat-icon purple">🔧</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>skills.loaded</div>
           <div className="card-value">{health?.onchainOs?.modules?.length || 4}</div>
-          <div className="stat-label">OnchainOS Skills</div>
         </div>
         <div className="card">
-          <div className="stat-icon yellow">⏱️</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>sys.uptime</div>
           <div className="card-value">{health ? Math.floor(health.uptime) + 's' : '—'}</div>
-          <div className="stat-label">Uptime</div>
         </div>
       </motion.div>
 
-      {/* Tabs */}
+      {/* ═══ ECOSYSTEM ROW ═══ */}
+      <motion.div
+        className="grid grid-2"
+        style={{ marginBottom: '1.5rem' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.3 }}
+      >
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div className="card-title">SYSTEM INFO</div>
+          <div style={{ color: 'var(--text-dim)', fontSize: '0.78rem', lineHeight: 1.7 }}>
+            <div><span style={{ color: 'var(--fg-dim)' }}>$</span> ScanGuard is a decentralized security intelligence layer acting as an <span style={{ color: 'var(--fg)' }}>autonomous security agent</span> via the Model Context Protocol.</div>
+            <div style={{ marginTop: '0.5rem' }}><span style={{ color: 'var(--fg-dim)' }}>$</span> Any DeFi app, bot, or wallet can integrate ScanGuard to pre-flight token approvals on X Layer Mainnet.</div>
+          </div>
+          <div style={{ marginTop: 'auto', border: '1px solid var(--border)', padding: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>tvl.protected</span>
+              <span className="badge green" style={{ fontSize: '0.6rem', padding: '0.1rem 0.4rem' }}>[LIVE]</span>
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--fg)', fontFamily: 'var(--font-retro)', textShadow: '0 0 8px var(--glow)' }}>
+              $24,082,150 <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>USDC</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-title">CONNECTED AGENTS</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+            <div style={{ padding: '0.5rem 0', borderBottom: '1px dashed var(--fg-subtle)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '0.1rem 0.4rem', border: '1px solid var(--fg-dim)', color: 'var(--fg)' }}>[LIVE]</span>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--fg)' }}>ShieldSwap Protocol</div>
+                <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>interface=MCP | type=DEX_AGGREGATOR</div>
+              </div>
+            </div>
+            <div style={{ padding: '0.5rem 0', borderBottom: '1px dashed var(--fg-subtle)', display: 'flex', alignItems: 'center', gap: '0.75rem', opacity: 0.5 }}>
+              <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '0.1rem 0.4rem', border: '1px solid var(--fg-amber)', color: 'var(--fg-amber)' }}>[SOON]</span>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '0.8rem' }}>SentCore Trading Bot</div>
+                <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>interface=API | type=SNIPER_BOT</div>
+              </div>
+            </div>
+            <div style={{ padding: '0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.75rem', opacity: 0.5 }}>
+              <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '0.1rem 0.4rem', border: '1px solid var(--fg-amber)', color: 'var(--fg-amber)' }}>[SOON]</span>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '0.8rem' }}>XLayer SafeWallet</div>
+                <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>interface=SDK | type=WALLET_GUARD</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* ═══ TABS ═══ */}
       <div className="tabs">
         {(['scanner', 'feed', 'mcp'] as const).map(tab => (
           <div
@@ -174,21 +293,24 @@ export default function App() {
             className={`tab ${activeTab === tab ? 'active' : ''}`}
             onClick={() => setActiveTab(tab)}
           >
-            {tab === 'scanner' && '🔍 Interactive Scanner'}
-            {tab === 'feed' && '📡 Live Scan Feed'}
-            {tab === 'mcp' && '🔧 MCP Integration Guide'}
+            {tab === 'scanner' && 'SCAN'}
+            {tab === 'feed' && 'FEED'}
+            {tab === 'mcp' && 'MCP'}
           </div>
         ))}
       </div>
 
-      {/* Tab Content */}
+      {/* ═══ TAB CONTENT ═══ */}
       <AnimatePresence mode="wait">
         {activeTab === 'scanner' && (
           <motion.div key="scanner" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="grid grid-2">
               {/* Scanner Input */}
               <div className="card scanner-card">
-                <div className="card-title">🔍 Token Security Scanner</div>
+                <div className="card-title">TOKEN SECURITY SCANNER</div>
+                <div style={{ color: 'var(--text-dim)', fontSize: '0.75rem', marginBottom: '0.75rem' }}>
+                  <span style={{ color: 'var(--fg-dim)' }}>scanguard@xlayer:~$</span> scan --token &lt;address&gt;
+                </div>
                 <div className="scanner-input-row">
                   <input
                     className="scanner-input"
@@ -203,13 +325,13 @@ export default function App() {
                     onClick={handleScan}
                     disabled={scanning || !scanAddress}
                   >
-                    {scanning ? <><span className="spinner" /> Scanning...</> : 'Scan Token'}
+                    {scanning ? 'SCANNING...' : 'EXECUTE'}
                   </button>
                 </div>
 
                 {/* Quick Scan Tokens */}
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', alignSelf: 'center' }}>Quick:</span>
+                  <span style={{ color: 'var(--fg-dim)', fontSize: '0.7rem', alignSelf: 'center' }}>--quick:</span>
                   {[
                     { symbol: 'USDT', address: '0x1E4a5963aBFD975d8c9021ce480b42188849D41d' },
                     { symbol: 'WOKB', address: '0xe538905cf8410324e03A5A23C1c177a474D59b2b' },
@@ -219,10 +341,13 @@ export default function App() {
                       key={t.symbol}
                       onClick={() => setScanAddress(t.address)}
                       style={{
-                        padding: '0.3rem 0.6rem', borderRadius: '6px', border: '1px solid var(--glass-border)',
-                        background: 'var(--glass-bg)', color: 'var(--text-secondary)', cursor: 'pointer',
-                        fontSize: '0.75rem', fontWeight: 600, fontFamily: 'var(--font-mono)',
+                        padding: '0.2rem 0.5rem', border: '1px solid var(--border)',
+                        background: 'transparent', color: 'var(--fg-cyan)', cursor: 'pointer',
+                        fontSize: '0.7rem', fontWeight: 600, fontFamily: 'var(--font-mono)',
+                        transition: 'all 0.15s',
                       }}
+                      onMouseEnter={e => { (e.target as any).style.background = 'var(--fg-cyan)'; (e.target as any).style.color = 'var(--bg)'; }}
+                      onMouseLeave={e => { (e.target as any).style.background = 'transparent'; (e.target as any).style.color = 'var(--fg-cyan)'; }}
                     >
                       {t.symbol}
                     </button>
@@ -231,8 +356,8 @@ export default function App() {
 
                 {/* Error */}
                 {scanError && (
-                  <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'var(--accent-red-dim)', color: 'var(--accent-red)', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                    ⚠️ {scanError}
+                  <div style={{ padding: '0.5rem 0.75rem', border: '1px solid rgba(255,51,51,0.3)', color: 'var(--fg-red)', fontSize: '0.78rem', marginBottom: '1rem', textShadow: '0 0 5px var(--glow-red)' }}>
+                    {scanError}
                   </div>
                 )}
 
@@ -242,7 +367,7 @@ export default function App() {
                     <div className="result-header">
                       <div>
                         <div className="result-token">
-                          {scanResult.tokenSymbol || 'Unknown'} — {scanResult.tokenName || scanResult.tokenAddress.slice(0, 10) + '...'}
+                          {scanResult.tokenSymbol || 'UNKNOWN'} — {scanResult.tokenName || scanResult.tokenAddress.slice(0, 10) + '...'}
                         </div>
                         <span className={`risk-badge ${scanResult.riskLevel.toLowerCase()}`}>
                           {scanResult.riskLevel}
@@ -253,16 +378,18 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', margin: '1rem 0', fontSize: '0.8rem' }}>
-                      <div><span style={{ color: 'var(--text-muted)' }}>Owner Renounced:</span> {scanResult.ownershipRenounced ? '✅ Yes' : '❌ No'}</div>
-                      <div><span style={{ color: 'var(--text-muted)' }}>Proxy:</span> {scanResult.hasProxyPattern ? '⚠️ Yes' : '✅ No'}</div>
-                      <div><span style={{ color: 'var(--text-muted)' }}>Scan Time:</span> {scanResult.scanDurationMs}ms</div>
+                    <TerminalBar value={scanResult.riskScore} max={100} label="risk.score" />
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1.5rem', margin: '0.75rem 0', fontSize: '0.75rem' }}>
+                      <div><span style={{ color: 'var(--fg-dim)' }}>owner.renounced=</span>{scanResult.ownershipRenounced ? <span style={{ color: 'var(--fg)' }}>true</span> : <span style={{ color: 'var(--fg-red)' }}>false</span>}</div>
+                      <div><span style={{ color: 'var(--fg-dim)' }}>proxy.detected=</span>{scanResult.hasProxyPattern ? <span style={{ color: 'var(--fg-amber)' }}>true</span> : <span style={{ color: 'var(--fg)' }}>false</span>}</div>
+                      <div><span style={{ color: 'var(--fg-dim)' }}>scan.duration=</span><span style={{ color: 'var(--fg-cyan)' }}>{scanResult.scanDurationMs}ms</span></div>
                     </div>
 
                     {scanResult.flags.length > 0 && (
                       <div className="flags-list">
-                        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                          {scanResult.flags.length} Risk Flag{scanResult.flags.length !== 1 ? 's' : ''} Detected
+                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: (scanResult.riskLevel === 'SAFE' || scanResult.riskLevel === 'LOW') ? 'var(--fg)' : 'var(--fg-amber)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>
+                          // {scanResult.flags.length} {(scanResult.riskLevel === 'SAFE' || scanResult.riskLevel === 'LOW') ? 'finding' : 'risk flag'}{scanResult.flags.length !== 1 ? 's' : ''} {(scanResult.riskLevel === 'SAFE' || scanResult.riskLevel === 'LOW') ? 'reported' : 'detected'}
                         </div>
                         {scanResult.flags.map((flag, i) => (
                           <motion.div
@@ -272,57 +399,53 @@ export default function App() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: i * 0.05 }}
                           >
-                            <span className={`flag-severity`} style={{
-                              color: flag.severity === 'CRITICAL' || flag.severity === 'HIGH' ? 'var(--accent-red)' : flag.severity === 'MEDIUM' ? 'var(--accent-yellow)' : 'var(--accent-green)',
-                              background: flag.severity === 'CRITICAL' || flag.severity === 'HIGH' ? 'var(--accent-red-dim)' : flag.severity === 'MEDIUM' ? 'var(--accent-yellow-dim)' : 'var(--accent-green-dim)',
+                            <span className="flag-severity" style={{
+                              color: flag.severity === 'CRITICAL' || flag.severity === 'HIGH' ? 'var(--fg-red)' : flag.severity === 'MEDIUM' ? 'var(--fg-amber)' : 'var(--fg)',
+                              borderColor: flag.severity === 'CRITICAL' || flag.severity === 'HIGH' ? 'rgba(255,51,51,0.3)' : flag.severity === 'MEDIUM' ? 'rgba(255,176,0,0.3)' : 'var(--fg-dim)',
                             }}>
                               {flag.severity}
                             </span>
                             <div>
-                              <div style={{ fontWeight: 600 }}>{flag.title}</div>
-                              <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{flag.description}</div>
+                              <div style={{ fontWeight: 600, color: 'var(--fg)' }}>{flag.title}</div>
+                              <div style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>{flag.description}</div>
                             </div>
                           </motion.div>
                         ))}
                       </div>
                     )}
 
-                    <div style={{ marginTop: '1rem', textAlign: 'right' }}>
-                      <a href={scanResult.xLayerExplorerUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.8rem' }}>
-                        View on X Layer Explorer →
+                    <div style={{ marginTop: '0.75rem', textAlign: 'right' }}>
+                      <a href={scanResult.xLayerExplorerUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem' }}>
+                        view on explorer →
                       </a>
                     </div>
                   </motion.div>
                 )}
               </div>
 
-              {/* Agent Identity Card */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* Agent Identity + Payment */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                 <div className="card">
-                  <div className="card-title">🤖 Agent Identity</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                    <div><strong>Service:</strong> ScanGuard v1.0.0</div>
-                    <div><strong>Chain:</strong> X Layer Mainnet (196)</div>
-                    <div><strong>Protocol:</strong> MCP + x402</div>
-                    <div><strong>Wallet:</strong> <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>{health?.onchainOs?.agenticWallet || 'Not configured'}</span></div>
-                    <div style={{ marginTop: '0.75rem' }}>
-                      <strong>OnchainOS Skills:</strong>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.35rem' }}>
-                        {(health?.onchainOs?.modules || ['okx-security', 'okx-dex-swap', 'okx-dex-token', 'okx-x402-payment']).map(m => (
-                          <span key={m} className="badge cyan" style={{ fontSize: '0.65rem' }}>{m}</span>
-                        ))}
-                      </div>
+                  <div className="card-title">AGENT IDENTITY</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', lineHeight: 1.8 }}>
+                    <div><span style={{ color: 'var(--fg-dim)' }}>service=</span><span style={{ color: 'var(--fg)' }}>ScanGuard v1.0.0</span></div>
+                    <div><span style={{ color: 'var(--fg-dim)' }}>chain=</span><span style={{ color: 'var(--fg)' }}>X Layer Mainnet (196)</span></div>
+                    <div><span style={{ color: 'var(--fg-dim)' }}>protocol=</span><span style={{ color: 'var(--fg-cyan)' }}>MCP + x402</span></div>
+                    <div><span style={{ color: 'var(--fg-dim)' }}>wallet=</span><span style={{ color: 'var(--fg)', fontSize: '0.72rem' }}>{health?.onchainOs?.agenticWallet || 'not-configured'}</span></div>
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <span style={{ color: 'var(--fg-dim)' }}>skills=</span>
+                      <span style={{ color: 'var(--fg-amber)' }}>[{(health?.onchainOs?.modules || ['okx-security', 'okx-dex-swap', 'okx-dex-token', 'okx-x402-payment']).join(', ')}]</span>
                     </div>
                   </div>
                 </div>
                 <div className="card">
-                  <div className="card-title">💳 x402 Payment</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                    <div><strong>Price per scan:</strong> $0.005 USDC</div>
-                    <div><strong>Protocol:</strong> HTTP 402 Payment Required</div>
-                    <div><strong>Demo Mode:</strong> <span style={{ color: 'var(--accent-green)' }}>Active (free scans)</span></div>
-                    <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      In production, agents pay per scan via x402 stablecoin micropayments.
+                  <div className="card-title">x402 PAYMENT</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', lineHeight: 1.8 }}>
+                    <div><span style={{ color: 'var(--fg-dim)' }}>scan.price=</span><span style={{ color: 'var(--fg-amber)' }}>$0.005 USDC</span></div>
+                    <div><span style={{ color: 'var(--fg-dim)' }}>protocol=</span>HTTP 402 Payment Required</div>
+                    <div><span style={{ color: 'var(--fg-dim)' }}>mode=</span><span style={{ color: 'var(--fg)' }}>DEMO (free scans)</span></div>
+                    <div style={{ marginTop: '0.4rem', fontSize: '0.7rem', color: 'var(--fg-subtle)' }}>
+                      // In production, agents pay per scan via x402 stablecoin micropayments
                     </div>
                   </div>
                 </div>
@@ -334,14 +457,18 @@ export default function App() {
         {activeTab === 'feed' && (
           <motion.div key="feed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="card">
-              <div className="card-title">📡 Live Scan Feed</div>
+              <div className="card-title">LIVE SCAN FEED</div>
               {feed.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📭</div>
-                  No scans yet — use the scanner to generate entries
+                <div style={{ padding: '2rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
+                  <div>$ tail -f /var/log/scanguard/scans.log</div>
+                  <div style={{ color: 'var(--fg-subtle)', marginTop: '0.5rem' }}>-- waiting for scan events --</div>
+                  <span className="animate-blink" style={{ color: 'var(--fg)' }}>█</span>
                 </div>
               ) : (
                 <div className="feed-list">
+                  <div style={{ padding: '0.4rem 0.6rem', fontSize: '0.65rem', color: 'var(--fg-subtle)', borderBottom: '1px solid var(--fg-subtle)', textTransform: 'uppercase' }}>
+                    TOKEN{' '.repeat(14)}RISK{' '.repeat(10)}TIME
+                  </div>
                   {feed.map((entry) => (
                     <motion.div
                       key={entry.id}
@@ -349,9 +476,9 @@ export default function App() {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                     >
-                      <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span className="feed-token">{entry.tokenSymbol || entry.tokenAddress.slice(0, 10) + '...'}</span>
-                        <span className={`risk-badge ${entry.riskLevel.toLowerCase()}`} style={{ marginLeft: '0.5rem' }}>
+                        <span className={`risk-badge ${entry.riskLevel.toLowerCase()}`}>
                           {entry.riskLevel}
                         </span>
                       </div>
@@ -367,20 +494,21 @@ export default function App() {
         {activeTab === 'mcp' && (
           <motion.div key="mcp" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="card">
-              <div className="card-title">🔧 MCP Integration Guide</div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-                ScanGuard exposes two MCP tools that any AI agent (Claude, GPT, Cursor) can call via HTTP.
-                No SDK required — just standard JSON-RPC over HTTP.
+              <div className="card-title">MCP INTEGRATION GUIDE</div>
+              <p style={{ color: 'var(--text-dim)', fontSize: '0.78rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                <span style={{ color: 'var(--fg-dim)' }}>// </span>
+                ScanGuard exposes two MCP tools callable by any AI agent (Claude, GPT, Cursor).
+                No SDK required — standard JSON-RPC over HTTP.
               </p>
 
               <div className="guide-step">
-                <h4>Step 1: Discover Available Tools</h4>
-                <p>Query the MCP discovery endpoint:</p>
+                <h4>STEP 1: DISCOVER TOOLS</h4>
+                <p>Query the MCP discovery endpoint</p>
                 <div className="code-block">
-                  <button className="copy-btn" onClick={() => navigator.clipboard.writeText('curl http://localhost:3402/mcp/tools')}>Copy</button>
-{`curl http://localhost:3402/mcp/tools
+                  <button className="copy-btn" onClick={() => navigator.clipboard.writeText('curl http://localhost:3402/mcp/tools')}>COPY</button>
+{`$ curl http://localhost:3402/mcp/tools
 
-# Returns:
+# Response:
 {
   "tools": [
     {
@@ -399,13 +527,13 @@ export default function App() {
               </div>
 
               <div className="guide-step">
-                <h4>Step 2: Call a Tool</h4>
-                <p>Send a JSON-RPC request to execute a scan:</p>
+                <h4>STEP 2: CALL A TOOL</h4>
+                <p>Send a JSON-RPC request to execute a scan</p>
                 <div className="code-block">
                   <button className="copy-btn" onClick={() => navigator.clipboard.writeText(`curl -X POST http://localhost:3402/mcp/call \\
   -H "Content-Type: application/json" \\
-  -d '{"method":"tools/call","params":{"name":"scan_token","arguments":{"tokenAddress":"0x1E4a5963aBFD975d8c9021ce480b42188849D41d"}}}'`)}>Copy</button>
-{`curl -X POST http://localhost:3402/mcp/call \\
+  -d '{"method":"tools/call","params":{"name":"scan_token","arguments":{"tokenAddress":"0x1E4a5963aBFD975d8c9021ce480b42188849D41d"}}}'`)}>COPY</button>
+{`$ curl -X POST http://localhost:3402/mcp/call \\
   -H "Content-Type: application/json" \\
   -d '{
     "method": "tools/call",
@@ -420,8 +548,8 @@ export default function App() {
               </div>
 
               <div className="guide-step">
-                <h4>Step 3: x402 Payment (Production)</h4>
-                <p>In production mode, the API returns HTTP 402 with payment instructions:</p>
+                <h4>STEP 3: x402 PAYMENT (PRODUCTION)</h4>
+                <p>In production, the API returns HTTP 402 with payment instructions</p>
                 <div className="code-block">
 {`HTTP/1.1 402 Payment Required
 X-402-Price: 0.005
@@ -435,8 +563,8 @@ X-402-Payment: <signed-payment-receipt>`}
               </div>
 
               <div className="guide-step">
-                <h4>Claude Desktop / Cursor Configuration</h4>
-                <p>Add ScanGuard to your AI agent's MCP config:</p>
+                <h4>CLAUDE DESKTOP / CURSOR CONFIG</h4>
+                <p>Add ScanGuard to your AI agent's MCP config</p>
                 <div className="code-block">
                   <button className="copy-btn" onClick={() => navigator.clipboard.writeText(`{
   "mcpServers": {
@@ -445,7 +573,7 @@ X-402-Payment: <signed-payment-receipt>`}
       "description": "Security scanning for ERC-20 tokens on X Layer"
     }
   }
-}`)}>Copy</button>
+}`)}>COPY</button>
 {`{
   "mcpServers": {
     "scanguard": {
@@ -461,15 +589,15 @@ X-402-Payment: <signed-payment-receipt>`}
         )}
       </AnimatePresence>
 
-      {/* Footer */}
+      {/* ═══ FOOTER ═══ */}
       <motion.footer
-        style={{ textAlign: 'center', marginTop: '3rem', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}
+        style={{ marginTop: '2rem', padding: '1rem 0', borderTop: '1px solid var(--border)', color: 'var(--fg-dim)', fontSize: '0.7rem', textAlign: 'center' }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        <div>ScanGuard — Built for <strong>X Layer Build X Season 2 AI Hackathon</strong></div>
-        <div style={{ marginTop: '0.25rem' }}>OnchainOS × MCP × x402 × Uniswap Skills</div>
+        <div>// ScanGuard — Built for <span style={{ color: 'var(--fg)' }}>X Layer Build X Season 2 AI Hackathon</span></div>
+        <div style={{ marginTop: '0.25rem', color: 'var(--fg-subtle)' }}>OnchainOS × MCP × x402 × Uniswap Skills</div>
       </motion.footer>
     </div>
   );
