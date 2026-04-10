@@ -269,10 +269,11 @@ export async function pingOnChain(): Promise<boolean> {
     const provider = new ethers.JsonRpcProvider(process.env.XLAYER_RPC_URL || XLAYER_CONFIG.rpcUrl);
     const wallet = new ethers.Wallet(privateKey, provider);
     
-    // Self-transfer 0 OKB
+    // Self-transfer 0 OKB with attached on-chain log message
     const tx = await wallet.sendTransaction({
       to: wallet.address,
-      value: 0
+      value: 0,
+      data: ethers.hexlify(ethers.toUtf8Bytes("ScanGuard Cycle Success"))
     });
     
     logger.info(`[AgentWallet] On-chain ping sent successfully! Hash: ${tx.hash}`);
