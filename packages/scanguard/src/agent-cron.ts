@@ -29,7 +29,7 @@ const BATCH_DELAY_MS = 5000; // 5 seconds between scans to avoid rate limits
 const TOKEN_LIST = [
   { address: "0x1E4a5963aBFD975d8c9021ce480b42188849D41d", symbol: "USDT" },
   { address: "0x74b7F16337b8972027F6196A17a631aC6dE26d22", symbol: "USDC" },
-  { address: "0x5A77f1443D16ee5761d310e38b4BEB27E6e2F5Ab", symbol: "WETH" },
+  { address: "0x5a77f1443d16ee5761d310e38b4beb27e6e2f5ab", symbol: "WETH" },
   { address: "0xe538905cf8410324e03A5A23C1c177a474D59b2b", symbol: "WOKB" },
   { address: "0xC5015b9d9161Dca7e18e32f6f25C4aD850731Fd4", symbol: "DAI" },
 ];
