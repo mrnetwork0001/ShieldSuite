@@ -10,6 +10,7 @@
 
 import crypto from "crypto";
 import { logger } from "./logger.js";
+import { getAgentAddress } from "./agent-wallet.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -427,6 +428,6 @@ export function getOnchainOsStatus(): {
       "okx-dex-token",
       "okx-x402-payment",
     ],
-    agenticWallet: process.env.AGENTIC_WALLET_ADDRESS || null,
+    agenticWallet: getAgentAddress() || null,
   };
 }

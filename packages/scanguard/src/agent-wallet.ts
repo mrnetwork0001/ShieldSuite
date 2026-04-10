@@ -31,7 +31,7 @@ function getCredentials(): OkxCredentials {
   };
 }
 
-function getAgentAddress(): string {
+export function getAgentAddress(): string {
   if (process.env.AGENT_PRIVATE_KEY) {
     try {
       const wallet = new ethers.Wallet(process.env.AGENT_PRIVATE_KEY);
