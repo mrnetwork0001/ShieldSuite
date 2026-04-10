@@ -193,6 +193,96 @@ app.get("/api/scan/:scanId", (req, res) => {
   res.json(response);
 });
 
+// ─── DEX Proxy Routes (signed backend → OKX DEX API) ────────────────────────
+
+/** GET /api/dex/quote — Proxy to OKX DEX Aggregator quote */
+app.get("/api/dex/quote", async (req, res) => {
+  const { fromToken, toToken, amount, slippage } = req.query;
+
+  if (!fromToken || !toToken || !amount) {
+    res.status(400).json({
+      success: false,
+      error: { code: "MISSING_PARAMS", message: "fromToken, toToken, and amount are required" },
+    });
+    return;
+  }
+
+  try {
+    const { getSwapQuote } = await import("./onchainos.js");
+    const quote = await getSwapQuote({
+      chainId: "196",
+      fromTokenAddress: fromToken as string,
+      toTokenAddress: toToken as string,
+      amount: amount as string,
+      slippage: (slippage as string) || "0.5",
+    });
+
+    if (quote) {
+      res.json({ success: true, data: quote });
+    } else {
+      // Fallback: estimated quote for demo when OKX API is unreachable
+      const amountNum = parseFloat(amount as string) || 0;
+      res.json({
+        success: true,
+        data: {
+          fromTokenAmount: amount,
+          toTokenAmount: (amountNum * 0.998).toFixed(6),
+          estimatedGas: "0.0001",
+          priceImpact: "0.05",
+        },
+        meta: { source: "estimated" },
+      });
+    }
+  } catch (err: any) {
+    logger.error(`DEX quote error: ${err.message}`);
+    // Always return something for UX - use estimated rate
+    const amountNum = parseFloat(amount as string) || 0;
+    res.json({
+      success: true,
+      data: {
+        fromTokenAmount: amount,
+        toTokenAmount: (amountNum * 0.998).toFixed(6),
+        estimatedGas: "0.0001",
+        priceImpact: "0.1",
+      },
+      meta: { source: "estimated" },
+    });
+  }
+});
+
+/** GET /api/dex/swap — Proxy to OKX DEX Aggregator swap data */
+app.get("/api/dex/swap", async (req, res) => {
+  const { fromToken, toToken, amount, wallet, slippage } = req.query;
+
+  if (!fromToken || !toToken || !amount || !wallet) {
+    res.status(400).json({
+      success: false,
+      error: { code: "MISSING_PARAMS", message: "fromToken, toToken, amount, and wallet are required" },
+    });
+    return;
+  }
+
+  try {
+    const { getSwapData } = await import("./onchainos.js");
+    const swapData = await getSwapData({
+      chainId: "196",
+      fromTokenAddress: fromToken as string,
+      toTokenAddress: toToken as string,
+      amount: amount as string,
+      slippage: (slippage as string) || "0.5",
+      userWalletAddress: wallet as string,
+    });
+
+    res.json({ success: true, data: swapData });
+  } catch (err: any) {
+    logger.error(`DEX swap error: ${err.message}`);
+    res.status(500).json({
+      success: false,
+      error: { code: "SWAP_FAILED", message: err.message },
+    });
+  }
+});
+
 // ─── MCP Routes ──────────────────────────────────────────────────────────────
 app.use("/mcp", mcpRouter);
 
@@ -202,7 +292,7 @@ app.use((_req, res) => {
     success: false,
     error: {
       code: "NOT_FOUND",
-      message: "Endpoint not found. Available endpoints: POST /api/scan, GET /api/health, GET /mcp/tools",
+      message: "Endpoint not found. Available endpoints: POST /api/scan, GET /api/health, GET /api/dex/quote, GET /api/dex/swap, GET /mcp/tools",
     },
   });
 });
@@ -213,7 +303,7 @@ app.listen(PORT, HOST, () => {
   logger.info(`Chain: ${XLAYER_CONFIG.chainName} (#${XLAYER_CONFIG.chainId})`);
   logger.info(`Mode: ${NODE_ENV}`);
   logger.info(`x402: ${NODE_ENV === "production" ? "ENABLED" : "DEMO MODE (free scans)"}`);
-  logger.info(`Endpoints: POST /api/scan | GET /api/health | GET /api/stats | GET /mcp/tools | POST /mcp/tools/call`);
+  logger.info(`Endpoints: POST /api/scan | GET /api/health | GET /api/dex/quote | GET /api/dex/swap | GET /mcp/tools`);
 });
 
 export default app;

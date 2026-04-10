@@ -139,14 +139,24 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
           {/* Flags */}
           {result.flags.length > 0 ? (
             <div className="risk-flags">
-              <h3 className="risk-flags-title">
-                ⚠ {result.flags.length} Threat{result.flags.length !== 1 ? "s" : ""} Detected
+              <h3 className="risk-flags-title" style={{
+                color: result.riskLevel === "SAFE" || result.riskLevel === "LOW"
+                  ? "var(--accent-safe)"
+                  : "var(--accent-danger)"
+              }}>
+                {result.riskLevel === "SAFE" || result.riskLevel === "LOW"
+                  ? `✅ ${result.flags.length} Finding${result.flags.length !== 1 ? "s" : ""}`
+                  : `⚠ ${result.flags.length} Threat${result.flags.length !== 1 ? "s" : ""} Detected`}
               </h3>
               <div className="risk-flags-list">
                 {result.flags.map((flag, index) => (
                   <motion.div
                     key={index}
                     className="risk-flag-item"
+                    style={flag.severity === "SAFE" ? {
+                      background: "rgba(0, 255, 136, 0.04)",
+                      borderColor: "rgba(0, 255, 136, 0.1)",
+                    } : undefined}
                     initial={{ x: 20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: 0.6 + index * 0.1, duration: 0.3 }}

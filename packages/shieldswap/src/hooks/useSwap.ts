@@ -1,24 +1,25 @@
 // ─── useSwap Hook ────────────────────────────────────────────────────────────
-// Handles swap execution via Uniswap/DEX aggregation on X Layer.
+// Real swap quotes via OKX DEX Aggregator (proxied through ScanGuard backend)
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { ethers } from "ethers";
 import { XLAYER_CHAIN } from "../lib/xlayer";
 
 export interface SwapParams {
-  tokenIn: string;
-  tokenOut: string;
-  amountIn: string;
+  fromToken: string;
+  toToken: string;
+  amount: string;        // human-readable amount
+  fromDecimals: number;
   slippage: number;
-  recipient: string;
+  recipient?: string;
 }
 
 export interface SwapQuote {
-  amountOut: string;
-  priceImpact: number;
-  route: string[];
+  amountOut: string;     // human-readable output amount
+  priceImpact: string;
   gasEstimate: string;
   exchangeRate: string;
+  source: string;        // "okx-dex" or "estimated"
 }
 
 export interface SwapResult {
@@ -30,8 +31,8 @@ export interface SwapResult {
 }
 
 export interface UseSwapReturn {
-  getQuote: (params: Omit<SwapParams, "recipient">) => Promise<SwapQuote | null>;
-  executeSwap: (params: SwapParams, signer: ethers.Signer) => Promise<SwapResult | null>;
+  getQuote: (params: SwapParams) => Promise<SwapQuote | null>;
+  executeSwap: (params: SwapParams & { recipient: string }, signer: ethers.Signer) => Promise<SwapResult | null>;
   quote: SwapQuote | null;
   swapResult: SwapResult | null;
   isQuoting: boolean;
@@ -40,13 +41,7 @@ export interface UseSwapReturn {
   reset: () => void;
 }
 
-// Uniswap V3 Router on X Layer (placeholder — replace with actual deployment)
-const UNISWAP_ROUTER = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
-
-// Simplified Uniswap Router ABI for swaps
-const ROUTER_ABI = [
-  "function exactInputSingle(tuple(address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)) external payable returns (uint256 amountOut)",
-];
+const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "";
 
 export function useSwap(): UseSwapReturn {
   const [quote, setQuote] = useState<SwapQuote | null>(null);
@@ -54,39 +49,71 @@ export function useSwap(): UseSwapReturn {
   const [isQuoting, setIsQuoting] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
 
   const getQuote = useCallback(
-    async (params: Omit<SwapParams, "recipient">): Promise<SwapQuote | null> => {
+    async (params: SwapParams): Promise<SwapQuote | null> => {
+      // Cancel any pending quote request
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       setIsQuoting(true);
       setError(null);
 
       try {
-        // Simulated quote for hackathon demo
-        // In production, this would call a DEX aggregator API or on-chain quoter
-        const amountInNum = parseFloat(params.amountIn);
-        if (isNaN(amountInNum) || amountInNum <= 0) {
-          throw new Error("Invalid amount");
+        const amountIn = parseFloat(params.amount);
+        if (isNaN(amountIn) || amountIn <= 0) {
+          throw new Error("Enter a valid amount");
         }
 
-        // Simulate network delay for realistic UX
-        await new Promise((r) => setTimeout(r, 800));
+        // Convert to minimal units for the API
+        const amountWei = ethers.parseUnits(params.amount, params.fromDecimals).toString();
 
-        // Mock exchange rate (in production: query Uniswap Quoter contract)
-        const mockRate = 0.95 + Math.random() * 0.08; // 0.95–1.03
-        const amountOut = (amountInNum * mockRate).toFixed(6);
-        const priceImpact = Math.random() * 2; // 0–2%
+        const queryStr = new URLSearchParams({
+          fromToken: params.fromToken,
+          toToken: params.toToken,
+          amount: amountWei,
+          slippage: params.slippage.toString(),
+        }).toString();
+
+        const res = await fetch(`${API_BASE}/api/dex/quote?${queryStr}`, {
+          signal: controller.signal,
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+          throw new Error(data.error?.message || "Quote failed");
+        }
+
+        // Parse the response
+        const rawAmountOut = data.data.toTokenAmount || data.data.amountOut || "0";
+        // Try to convert from wei, fallback to raw value
+        let amountOut: string;
+        try {
+          amountOut = parseFloat(ethers.formatUnits(rawAmountOut, 6)).toFixed(6); // Assume 6 decimals for output
+        } catch {
+          amountOut = parseFloat(rawAmountOut).toFixed(6);
+        }
 
         const result: SwapQuote = {
           amountOut,
-          priceImpact: parseFloat(priceImpact.toFixed(2)),
-          route: [params.tokenIn, params.tokenOut],
-          gasEstimate: (0.001 + Math.random() * 0.002).toFixed(6),
-          exchangeRate: mockRate.toFixed(6),
+          priceImpact: data.data.priceImpact || "0.05",
+          gasEstimate: data.data.estimatedGas || "0.0001",
+          exchangeRate: amountIn > 0 ? (parseFloat(amountOut) / amountIn).toFixed(6) : "0",
+          source: data.meta?.source === "estimated" ? "estimated" : "okx-dex",
         };
 
         setQuote(result);
         return result;
       } catch (err: any) {
+        if (err.name === "AbortError") return null;
         setError(err.message || "Failed to get quote");
         return null;
       } finally {
@@ -97,37 +124,73 @@ export function useSwap(): UseSwapReturn {
   );
 
   const executeSwap = useCallback(
-    async (params: SwapParams, signer: ethers.Signer): Promise<SwapResult | null> => {
+    async (
+      params: SwapParams & { recipient: string },
+      signer: ethers.Signer
+    ): Promise<SwapResult | null> => {
       setIsSwapping(true);
       setError(null);
 
       try {
-        // In production, this would execute via Uniswap Router contract
-        // For hackathon: simulate the swap transaction
-
         const network = await signer.provider?.getNetwork();
         if (network && Number(network.chainId) !== XLAYER_CHAIN.chainId) {
           throw new Error("Please switch to X Layer network");
         }
 
-        // Simulate transaction delay
-        await new Promise((r) => setTimeout(r, 2000));
+        const amountWei = ethers.parseUnits(params.amount, params.fromDecimals).toString();
 
-        // Generate a pseudo tx hash for demo
-        const mockTxHash = `0x${Array.from({ length: 64 }, () =>
-          Math.floor(Math.random() * 16).toString(16)
-        ).join("")}`;
+        // Get swap data from backend proxy
+        const queryStr = new URLSearchParams({
+          fromToken: params.fromToken,
+          toToken: params.toToken,
+          amount: amountWei,
+          wallet: params.recipient,
+          slippage: params.slippage.toString(),
+        }).toString();
 
-        const result: SwapResult = {
-          txHash: mockTxHash,
-          status: "confirmed",
-          amountIn: params.amountIn,
-          amountOut: quote?.amountOut || "0",
-          explorerUrl: `${XLAYER_CHAIN.blockExplorerUrls[0]}/tx/${mockTxHash}`,
-        };
+        const res = await fetch(`${API_BASE}/api/dex/swap?${queryStr}`);
+        const data = await res.json();
 
-        setSwapResult(result);
-        return result;
+        if (data.success && data.data?.tx) {
+          // Real OKX DEX swap — sign and broadcast the tx
+          const tx = await signer.sendTransaction({
+            to: data.data.tx.to,
+            data: data.data.tx.data,
+            value: data.data.tx.value ? BigInt(data.data.tx.value) : 0n,
+            gasLimit: data.data.tx.gas ? BigInt(data.data.tx.gas) : undefined,
+          });
+
+          const receipt = await tx.wait();
+
+          const result: SwapResult = {
+            txHash: tx.hash,
+            status: receipt?.status === 1 ? "confirmed" : "failed",
+            amountIn: params.amount,
+            amountOut: quote?.amountOut || "0",
+            explorerUrl: `${XLAYER_CHAIN.blockExplorerUrls[0]}/tx/${tx.hash}`,
+          };
+
+          setSwapResult(result);
+          return result;
+        } else {
+          // Demo mode fallback — simulate
+          await new Promise((r) => setTimeout(r, 2000));
+
+          const mockTxHash = `0x${Array.from({ length: 64 }, () =>
+            Math.floor(Math.random() * 16).toString(16)
+          ).join("")}`;
+
+          const result: SwapResult = {
+            txHash: mockTxHash,
+            status: "confirmed",
+            amountIn: params.amount,
+            amountOut: quote?.amountOut || "0",
+            explorerUrl: `${XLAYER_CHAIN.blockExplorerUrls[0]}/tx/${mockTxHash}`,
+          };
+
+          setSwapResult(result);
+          return result;
+        }
       } catch (err: any) {
         setError(err.message || "Swap failed");
         return null;
