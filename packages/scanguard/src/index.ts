@@ -15,6 +15,7 @@ import { ApiResponse, ScanResult, XLAYER_CONFIG } from "./types.js";
 import { logger } from "./logger.js";
 import { getOnchainOsStatus, isOnchainOsConfigured } from "./onchainos.js";
 import { getBestUniswapQuote } from "./uniswap.js";
+import { checkAgentReady, getAgentBalance, pingOnChain } from "./agent-wallet.js";
 
 export { logger };
 
@@ -254,7 +255,7 @@ app.get("/api/dex/quote", async (req, res) => {
       logger.warn(`[DEX] OKX quote returned no data for ${fromToken} → ${toToken}`);
       res.json({
         success: false,
-        error: { code: "NO_LIQUIDITY", message: "No liquidity available for this pair on X Layer" },
+        error: { code: "NO_LIQUIDITY", message: "OKX DEX returned no quote for this pair. If you're not using a VPN, enable one — OKX blocks certain regions. Try USDC ↔ USDT as a test pair." },
       });
     }
   } catch (err: any) {
@@ -347,13 +348,45 @@ app.get("/api/dex/swap", async (req, res) => {
 // ─── MCP Routes ──────────────────────────────────────────────────────────────
 app.use("/mcp", mcpRouter);
 
+// ─── Agentic Wallet Routes ───────────────────────────────────────────────────
+
+/** GET /api/agent/status — Check agentic wallet readiness */
+app.get("/api/agent/status", async (_req, res) => {
+  try {
+    const status = await checkAgentReady();
+    res.json({ success: true, data: status });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: { message: err.message } });
+  }
+});
+
+/** GET /api/agent/balance — Get agentic wallet token balances */
+app.get("/api/agent/balance", async (_req, res) => {
+  try {
+    const balances = await getAgentBalance();
+    res.json({ success: true, data: balances || [] });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: { message: err.message } });
+  }
+});
+
+/** POST /api/agent/ping — Send a 0-value on-chain ping from agent wallet */
+app.post("/api/agent/ping", async (_req, res) => {
+  try {
+    const ok = await pingOnChain();
+    res.json({ success: ok, data: { message: ok ? "On-chain ping sent" : "Ping failed — check gas balance" } });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: { message: err.message } });
+  }
+});
+
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((_req, res) => {
   res.status(404).json({
     success: false,
     error: {
       code: "NOT_FOUND",
-      message: "Endpoint not found. Available endpoints: POST /api/scan, GET /api/health, GET /api/dex/quote, GET /api/dex/swap, GET /mcp/tools",
+      message: "Endpoint not found. Available: POST /api/scan | GET /api/health | GET /api/dex/quote | GET /api/dex/swap | GET /api/agent/status | GET /api/agent/balance | POST /api/agent/ping | GET /mcp/tools",
     },
   });
 });

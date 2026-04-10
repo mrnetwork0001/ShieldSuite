@@ -99,6 +99,20 @@ async function runScanCycle(): Promise<void> {
 
   const elapsed = ((Date.now() - cycleStart) / 1000).toFixed(1);
 
+  // ── On-chain heartbeat: ping the agentic wallet ──
+  console.log(`   Sending on-chain heartbeat...`);
+  try {
+    const pingRes = await fetch(`${SCANGUARD_URL}/api/agent/ping`, { method: "POST" });
+    const pingData = await pingRes.json() as any;
+    if (pingData.success) {
+      console.log(`   ✓ On-chain ping sent successfully`);
+    } else {
+      console.log(`   ⚠ On-chain ping skipped: ${pingData.data?.message || 'no gas?'}`);
+    }
+  } catch {
+    console.log(`   ⚠ On-chain ping failed (wallet may not be funded)`);
+  }
+
   console.log(`${"─".repeat(60)}`);
   console.log(`   Cycle complete: ${successCount}/${TOKEN_LIST.length} successful | ${elapsed}s`);
   console.log(`   Total scans lifetime: ${totalScansPerformed}`);
