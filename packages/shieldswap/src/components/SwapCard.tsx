@@ -11,6 +11,15 @@ import { useSwap, SwapQuote } from "../hooks/useSwap";
 import { WalletState } from "../lib/wallet";
 import { TOKEN_LIST, TokenInfo, findToken, XLAYER_TOKENS } from "../lib/xlayer";
 
+const MOCK_PRICES: Record<string, number> = {
+  OKB: 48.50,
+  WOKB: 48.50,
+  USDC: 1.00,
+  USDT: 1.00,
+  DAI: 1.00,
+  WETH: 3120.50,
+};
+
 interface SwapCardProps {
   wallet: WalletState;
   onConnect: () => void;
@@ -389,18 +398,26 @@ const SwapCard: React.FC<SwapCardProps> = ({
         {/* ─── From (Sell) ─────────────────────────────────────────── */}
         <div className="swap-token-box glass-card">
           <div className="swap-token-label">You sell</div>
-          <div className="swap-token-row">
-            <input
-              className="swap-amount-input"
-              type="text"
-              placeholder="0.0"
-              value={amount}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (/^\d*\.?\d*$/.test(val)) setAmount(val);
-              }}
-              disabled={isScanning || isSwapping}
-            />
+          <div className="swap-token-row" style={{ flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <input
+                className="swap-amount-input"
+                type="text"
+                placeholder="0.0"
+                value={amount}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (/^\d*\.?\d*$/.test(val)) setAmount(val);
+                }}
+                disabled={isScanning || isSwapping}
+                style={{ width: '100%' }}
+              />
+              {amount && parseFloat(amount) > 0 && (
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginTop: '2px', fontFamily: 'var(--font-mono)' }}>
+                  ~${(parseFloat(amount) * (MOCK_PRICES[fromToken.symbol] || 0)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                </div>
+              )}
+            </div>
             <button
               className="token-pill"
               onClick={() => setSelectorOpen("from")}
@@ -456,18 +473,25 @@ const SwapCard: React.FC<SwapCardProps> = ({
         {/* ─── To (Buy) ───────────────────────────────────────────── */}
         <div className="swap-token-box glass-card">
           <div className="swap-token-label">You receive</div>
-          <div className="swap-token-row">
-            <span className="swap-amount-output">
-              {isQuoting ? (
-                <span className="quote-loading">Quoting...</span>
-              ) : quote ? (
-                quote.amountOut
-              ) : amount && parseFloat(amount) > 0 && isSafe ? (
-                "..."
-              ) : (
-                "0.0"
+          <div className="swap-token-row" style={{ flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <span className="swap-amount-output">
+                {isQuoting ? (
+                  <span className="quote-loading">Quoting...</span>
+                ) : quote ? (
+                  quote.amountOut
+                ) : amount && parseFloat(amount) > 0 && isSafe ? (
+                  "..."
+                ) : (
+                  "0.0"
+                )}
+              </span>
+              {quote && quote.amountOut && (
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginTop: '2px', fontFamily: 'var(--font-mono)' }}>
+                  ~${(parseFloat(quote.amountOut) * (MOCK_PRICES[toToken.symbol] || 0)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                </div>
               )}
-            </span>
+            </div>
             <button
               className="token-pill"
               onClick={() => setSelectorOpen("to")}
