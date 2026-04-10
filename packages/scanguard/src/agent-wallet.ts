@@ -9,6 +9,8 @@
 import crypto from "crypto";
 import { execSync } from "child_process";
 import { logger } from "./logger.js";
+import { ethers } from "ethers";
+import { XLAYER_CONFIG } from "./types.js";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
