@@ -1,0 +1,31 @@
+{
+  "name": "@shield-suite/scanguard",
+  "version": "1.0.0",
+  "description": "MCP-compatible security scanning skill for ERC-20 tokens — rug-pull, phishing, honeypot, and approval risk detection with x402 pay-per-scan monetization",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "cors": "^2.8.5",
+    "helmet": "^8.0.0",
+    "ethers": "^6.13.5",
+    "zod": "^3.24.2",
+    "dotenv": "^16.4.7",
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/cors": "^2.8.17",
+    "@types/uuid": "^10.0.0",
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  },
+  "license": "MIT"
+}

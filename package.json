@@ -1,0 +1,29 @@
+{
+  "name": "shield-suite",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for ScanGuard (MCP security scanner), ShieldSwap (security-first DEX aggregator), and ScanGuard Dashboard — X Layer Build X Season 2 AI Hackathon",
+  "workspaces": [
+    "packages/scanguard",
+    "packages/shieldswap",
+    "packages/dashboard"
+  ],
+  "scripts": {
+    "dev:scanguard": "npm run dev -w packages/scanguard",
+    "dev:shieldswap": "npm run dev -w packages/shieldswap",
+    "dev:dashboard": "npm run dev -w packages/dashboard",
+    "build:scanguard": "npm run build -w packages/scanguard",
+    "build:shieldswap": "npm run build -w packages/shieldswap",
+    "build:dashboard": "npm run build -w packages/dashboard",
+    "dev": "concurrently \"npm run dev:scanguard\" \"npm run dev:shieldswap\" \"npm run dev:dashboard\"",
+    "build": "npm run build:scanguard && npm run build:shieldswap && npm run build:dashboard"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}
