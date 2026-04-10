@@ -56,14 +56,17 @@ export function x402Middleware(config: Partial<X402Config> = {}) {
     // ── Demo mode: allow free scans ──────────────────────────────────────
     if (cfg.demoMode && (!paymentHeader || paymentHeader === "demo")) {
       logger.info(`[x402] Demo mode — allowing free scan (request: ${requestId})`);
-      (req as any).paymentReceipt = {
+      const receipt: PaymentReceipt = {
         paymentId: `demo-${requestId}`,
         payer: "demo-user",
-        amount: "0",
+        amount: String(cfg.priceUsd), // Simulate $1.00 paid
         currency: "DEMO",
         timestamp: Date.now(),
         verified: true,
-      } satisfies PaymentReceipt;
+      };
+      
+      verifiedPayments.set(`demo-${requestId}`, receipt);
+      (req as any).paymentReceipt = receipt;
       next();
       return;
     }
