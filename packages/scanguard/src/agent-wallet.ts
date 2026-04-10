@@ -248,53 +248,27 @@ export async function sendViaCli(params: {
   }
 }
 
-/**
- * Execute a simple self-transfer (0 value) to generate on-chain activity
- * Tries: 1) onchainos CLI  2) OKX REST API
- * X Layer has ZERO gas fees, so this costs nothing!
- */
 export async function pingOnChain(): Promise<boolean> {
-  const address = getAgentAddress();
-  if (!address) return false;
+  const privateKey = process.env.AGENT_PRIVATE_KEY;
+  if (!privateKey) {
+    logger.warn("[AgentWallet] AGENT_PRIVATE_KEY not found in .env. Skipping ping.");
+    return false;
+  }
 
   try {
-    // Attempt 1: Use onchainos CLI (handles TEE signing)
-    const cliResult = await sendViaCli({ to: address, amount: "0" });
-    if (cliResult?.txHash) {
-      logger.info(`[AgentWallet] On-chain ping via CLI: ${cliResult.txHash}`);
-      return true;
-    }
-
-    // Attempt 2: Try OKX REST API endpoints
-    const endpoints = [
-      "/api/v6/waas/wallet/send",
-      "/api/v6/wallet/pre-transaction/sign-transaction",
-      "/api/v6/defi/transaction/sign-and-broadcast",
-    ];
-
-    for (const ep of endpoints) {
-      try {
-        const result = await okxRequest<any>("POST", ep, {
-          chainIndex: "196",
-          fromAddr: address,
-          toAddr: address,
-          txAmount: "0",
-        });
-
-        if (result.code === "0" && result.data?.[0]) {
-          const tx = result.data[0];
-          logger.info(`[AgentWallet] Ping via ${ep}: ${tx.txHash || tx.orderId || 'OK'}`);
-          return true;
-        }
-        logger.info(`[AgentWallet] ${ep}: code=${result.code} msg=${result.msg}`);
-      } catch {
-        continue;
-      }
-    }
-
-    logger.warn("[AgentWallet] All tx methods failed. Install onchainos CLI: npx skills add okx/onchainos-skills");
-    return false;
-  } catch {
+    const provider = new ethers.JsonRpcProvider(process.env.XLAYER_RPC_URL || XLAYER_CONFIG.rpcUrl);
+    const wallet = new ethers.Wallet(privateKey, provider);
+    
+    // Self-transfer 0 OKB
+    const tx = await wallet.sendTransaction({
+      to: wallet.address,
+      value: 0
+    });
+    
+    logger.info(`[AgentWallet] On-chain ping sent successfully! Hash: ${tx.hash}`);
+    return true;
+  } catch (error: any) {
+    logger.error(`[AgentWallet] Ping failed: ${error.message}`);
     return false;
   }
 }
