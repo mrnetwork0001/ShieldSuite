@@ -14,7 +14,8 @@ export type RiskCategory =
   | "liquidity_lock"
   | "tax_anomaly"
   | "blacklist_function"
-  | "mint_function";
+  | "mint_function"
+  | "info";
 
 /** A single risk flag detected during scanning */
 export interface RiskFlag {
@@ -47,6 +48,11 @@ export interface ScanResult {
   scanTimestamp: number;
   scanDurationMs: number;
   xLayerExplorerUrl: string;
+  // Uniswap V3 liquidity data
+  uniswapHasPool: boolean;
+  uniswapPoolCount: number;
+  uniswapLiquidity: string | null;
+  uniswapPoolAddress: string | null;
 }
 
 /** Token holder information */

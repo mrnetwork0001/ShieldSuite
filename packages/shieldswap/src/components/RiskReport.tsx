@@ -134,6 +134,17 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
                 {result.hasProxyPattern ? "⚠ Upgradeable" : "✓ Not Upgradeable"}
               </span>
             </div>
+            <div className="risk-info-row">
+              <span className="risk-info-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ color: '#FF007A', fontWeight: 700, fontSize: '0.7rem' }}>◆</span> Uniswap V3
+              </span>
+              <span className={`risk-info-value ${result.uniswapHasPool ? "text-safe" : "text-tertiary"}`}>
+                {result.uniswapHasPool
+                  ? `✓ ${result.uniswapPoolCount} Pool${(result.uniswapPoolCount || 0) !== 1 ? 's' : ''}`
+                  : "No pools found"
+                }
+              </span>
+            </div>
           </div>
 
           {/* Flags */}
@@ -154,15 +165,15 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
                     key={index}
                     className="risk-flag-item"
                     style={flag.severity === "SAFE" ? {
-                      background: "rgba(0, 255, 136, 0.04)",
-                      borderColor: "rgba(0, 255, 136, 0.1)",
+                      background: "rgba(51, 255, 0, 0.04)",
+                      borderColor: "rgba(51, 255, 0, 0.1)",
                     } : undefined}
                     initial={{ x: 20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: 0.6 + index * 0.1, duration: 0.3 }}
                   >
                     <div className="risk-flag-header">
-                      <span className={`badge badge-${getSeverityBadge(flag.severity)}`}>
+                      <span className={`badge badge-${getSeverityBadge(flag.severity)} font-mono`}>
                         {flag.severity}
                       </span>
                       <span className="risk-flag-title">{flag.title}</span>
@@ -186,6 +197,31 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
               <p>No threats detected. Token appears safe for trading.</p>
             </motion.div>
           )}
+
+          {/* Agent Recommendation */}
+          <motion.div
+            className="agent-recommendation"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.4 }}
+          >
+            <div className="agent-rec-header">
+              <span style={{ fontSize: '1rem' }}>🤖</span>
+              <span className="font-mono" style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--accent-safe)' }}>AGENT RECOMMENDATION</span>
+            </div>
+            <p className="agent-rec-text">
+              {result.riskLevel === "SAFE" || result.riskLevel === "LOW" ? (
+                <>Token appears <strong style={{ color: 'var(--accent-safe)' }}>safe for trading</strong>. {result.uniswapHasPool ? `Verified Uniswap V3 liquidity detected (${result.uniswapPoolCount} pool${(result.uniswapPoolCount || 0) !== 1 ? 's' : ''}). ` : ''}Recommended route: <strong>OKX DEX Aggregator</strong> for best execution.</>
+              ) : result.riskLevel === "MEDIUM" ? (
+                <>Proceed with <strong style={{ color: 'var(--accent-warning)' }}>caution</strong>. Some risk indicators detected. Use small amounts to test before larger trades.</>
+              ) : (
+                <><strong style={{ color: 'var(--accent-danger)' }}>Trading not recommended.</strong> High-severity threats detected. This token may be a scam or honeypot.</>
+              )}
+            </p>
+            <div className="agent-rec-skills font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '6px' }}>
+              Powered by: OKX Security · Bytecode Analysis · Uniswap V3 · x402
+            </div>
+          </motion.div>
 
           <style>{`
             .risk-report {
@@ -369,6 +405,26 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
               font-weight: 500;
             }
 
+            .agent-recommendation {
+              padding: 14px 16px;
+              background: linear-gradient(135deg, rgba(51,255,0,0.04) 0%, rgba(75,123,245,0.04) 100%);
+              border: 1px solid rgba(51,255,0,0.12);
+              border-radius: var(--radius-md);
+            }
+
+            .agent-rec-header {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              margin-bottom: 8px;
+            }
+
+            .agent-rec-text {
+              font-size: 0.8rem;
+              color: var(--text-secondary);
+              line-height: 1.6;
+            }
+
             @media (max-width: 900px) {
               .risk-report {
                 width: 100%;
@@ -387,9 +443,9 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
 
 function getRiskColor(level: string): string {
   switch (level) {
-    case "SAFE": return "#00FF88";
-    case "LOW": return "#00FF88";
-    case "MEDIUM": return "#FFB020";
+    case "SAFE": return "#33ff00";
+    case "LOW": return "#33ff00";
+    case "MEDIUM": return "#ffb000";
     case "HIGH": return "#FF3B5C";
     case "CRITICAL": return "#FF1744";
     default: return "#4B7BF5";
@@ -398,9 +454,9 @@ function getRiskColor(level: string): string {
 
 function getRiskGlow(level: string): string {
   switch (level) {
-    case "SAFE": return "0 0 15px rgba(0, 255, 136, 0.3)";
-    case "LOW": return "0 0 15px rgba(0, 255, 136, 0.2)";
-    case "MEDIUM": return "0 0 15px rgba(255, 176, 32, 0.3)";
+    case "SAFE": return "0 0 15px rgba(51, 255, 0, 0.3)";
+    case "LOW": return "0 0 15px rgba(51, 255, 0, 0.2)";
+    case "MEDIUM": return "0 0 15px rgba(255, 176, 0, 0.3)";
     case "HIGH": return "0 0 15px rgba(255, 59, 92, 0.3)";
     case "CRITICAL": return "0 0 20px rgba(255, 23, 68, 0.4)";
     default: return "none";

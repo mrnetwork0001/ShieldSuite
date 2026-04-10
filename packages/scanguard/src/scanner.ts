@@ -20,6 +20,7 @@ import {
 } from "./types.js";
 import { logger } from "./logger.js";
 import { scanTokenSecurity, isOnchainOsConfigured } from "./onchainos.js";
+import { checkUniswapLiquidity, UniswapLiquidityResult } from "./uniswap.js";
 
 // ─── ABI fragments for on-chain reads ────────────────────────────────────────
 
@@ -118,6 +119,12 @@ export async function scanToken(request: ScanRequest): Promise<ScanResult> {
       if (rawSupply) totalSupply = rawSupply.toString();
     } catch { /* use defaults */ }
 
+    // Check Uniswap liquidity even for whitelisted tokens
+    let uniswapData: UniswapLiquidityResult = { hasPool: false, bestPool: null, totalPools: 0, pools: [] };
+    try {
+      uniswapData = await checkUniswapLiquidity(tokenAddress);
+    } catch { /* non-blocking */ }
+
     return {
       scanId,
       tokenAddress,
@@ -145,6 +152,10 @@ export async function scanToken(request: ScanRequest): Promise<ScanResult> {
       scanTimestamp: Date.now(),
       scanDurationMs: Date.now() - startTime,
       xLayerExplorerUrl: `${XLAYER_CONFIG.explorerUrl}/address/${tokenAddress}`,
+      uniswapHasPool: uniswapData.hasPool,
+      uniswapPoolCount: uniswapData.totalPools,
+      uniswapLiquidity: uniswapData.bestPool?.liquidity || null,
+      uniswapPoolAddress: uniswapData.bestPool?.poolAddress || null,
     };
   }
 
@@ -161,6 +172,7 @@ export async function scanToken(request: ScanRequest): Promise<ScanResult> {
   let liquidityLocked = false;
   let liquidityAmount: string | null = null;
   const topHolders: HolderInfo[] = [];
+  let uniswapResult: UniswapLiquidityResult = { hasPool: false, bestPool: null, totalPools: 0, pools: [] };
 
   const rpcProvider = getProvider();
 
@@ -384,6 +396,30 @@ export async function scanToken(request: ScanRequest): Promise<ScanResult> {
       // Missing increaseAllowance suggests older or simpler token
     }
 
+    // ── Step 10: Uniswap V3 Liquidity Check (Uniswap Skills) ──────────────
+    logger.info(`[Scanner] Checking Uniswap V3 liquidity for ${tokenAddress}...`);
+    try {
+      uniswapResult = await checkUniswapLiquidity(tokenAddress);
+      if (uniswapResult.hasPool) {
+        flags.push({
+          category: "info" as RiskCategory,
+          severity: "SAFE",
+          title: "Uniswap V3 Pool Found",
+          description: `Token has ${uniswapResult.totalPools} active Uniswap V3 pool(s) on X Layer with verified on-chain liquidity.`,
+          evidence: `Best pool: ${uniswapResult.bestPool?.poolAddress?.slice(0, 10)}... | Liquidity: ${uniswapResult.bestPool?.liquidity}`,
+        });
+      } else {
+        flags.push({
+          category: "info" as RiskCategory,
+          severity: "LOW",
+          title: "No Uniswap V3 Pool",
+          description: "No active Uniswap V3 liquidity pool found on X Layer. Token may only trade on other DEXs.",
+        });
+      }
+    } catch (uniErr) {
+      logger.warn(`[Scanner] Uniswap check failed (non-blocking): ${uniErr}`);
+    }
+
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     logger.error(`[Scanner] Error scanning ${tokenAddress}: ${errorMessage}`);
@@ -399,7 +435,7 @@ export async function scanToken(request: ScanRequest): Promise<ScanResult> {
     tokenName, tokenSymbol, tokenDecimals, totalSupply,
     ownerAddress, ownershipRenounced, hasProxyPattern,
     contractVerified, liquidityLocked, liquidityAmount,
-    topHolders, startTime,
+    topHolders, startTime, uniswapResult,
   });
 }
 
@@ -439,6 +475,7 @@ interface BuildResultMeta {
   liquidityAmount: string | null;
   topHolders: HolderInfo[];
   startTime: number;
+  uniswapResult?: UniswapLiquidityResult;
 }
 
 function buildResult(
@@ -450,6 +487,7 @@ function buildResult(
 ): ScanResult {
   const riskScore = calculateRiskScore(flags);
   const riskLevel = scoreToRiskLevel(riskScore);
+  const uni = meta.uniswapResult;
 
   return {
     scanId,
@@ -472,5 +510,9 @@ function buildResult(
     scanTimestamp: Date.now(),
     scanDurationMs: Date.now() - meta.startTime,
     xLayerExplorerUrl: `${XLAYER_CONFIG.explorerUrl}/address/${tokenAddress}`,
+    uniswapHasPool: uni?.hasPool || false,
+    uniswapPoolCount: uni?.totalPools || 0,
+    uniswapLiquidity: uni?.bestPool?.liquidity || null,
+    uniswapPoolAddress: uni?.bestPool?.poolAddress || null,
   };
 }

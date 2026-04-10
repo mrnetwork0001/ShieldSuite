@@ -5,6 +5,41 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { ethers } from "ethers";
 import { XLAYER_CHAIN } from "../lib/xlayer";
 
+// ─── Friendly Error Messages ─────────────────────────────────────────────────
+function getFriendlyError(raw: string): string {
+  const lower = raw.toLowerCase();
+
+  if (lower.includes("user rejected") || lower.includes("user denied"))
+    return "Transaction cancelled — you rejected the request in your wallet.";
+
+  if (lower.includes("insufficient funds") || lower.includes("insufficient balance"))
+    return "Insufficient balance — you don't have enough tokens or OKB for gas. Check your wallet balance.";
+
+  if (lower.includes("nonce"))
+    return "Transaction nonce error — try resetting your wallet's pending transactions.";
+
+  if (lower.includes("network") || lower.includes("fetch") || lower.includes("failed to fetch"))
+    return "Network error — please check your internet connection and VPN, then try again.";
+
+  if (lower.includes("execution reverted") || lower.includes("third-party"))
+    return "Swap reverted on-chain — this usually means high slippage or low liquidity. Try increasing slippage or reducing the amount.";
+
+  if (lower.includes("timeout") || lower.includes("timed out"))
+    return "Request timed out — the network may be congested. Please try again in a moment.";
+
+  if (lower.includes("chain") || lower.includes("network mismatch"))
+    return "Wrong network — please switch to X Layer Mainnet (Chain ID 196) in your wallet.";
+
+  if (lower.includes("gas") && lower.includes("estimate"))
+    return "Gas estimation failed — the transaction may fail. Try a different token pair or amount.";
+
+  // If it's already a reasonable length, return as-is
+  if (raw.length < 120) return raw;
+
+  // Truncate very long errors
+  return raw.slice(0, 100) + "... (check console for details)";
+}
+
 export interface SwapParams {
   fromToken: string;
   toToken: string;
@@ -122,7 +157,7 @@ export function useSwap(): UseSwapReturn {
         return result;
       } catch (err: any) {
         if (err.name === "AbortError") return null;
-        setError(err.message || "Failed to get quote");
+        setError(getFriendlyError(err.message || "Failed to get quote"));
         return null;
       } finally {
         setIsQuoting(false);
@@ -206,7 +241,10 @@ export function useSwap(): UseSwapReturn {
         setSwapResult(result);
         return result;
       } catch (err: any) {
-        setError(err.message || "Swap failed");
+        const msg = err.message || "Swap failed";
+        // Transform cryptic errors into user-friendly messages
+        const friendlyError = getFriendlyError(msg);
+        setError(friendlyError);
         return null;
       } finally {
         setIsSwapping(false);

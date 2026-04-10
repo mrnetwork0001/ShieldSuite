@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Header from "./components/Header";
 import SwapCard, { ActivityEntry } from "./components/SwapCard";
 import RiskReport from "./components/RiskReport";
+import AgentChat from "./components/AgentChat";
 import { ScanResult } from "./hooks/useScanGuard";
 import { connectWallet, disconnectWallet, WalletState } from "./lib/wallet";
 
@@ -79,6 +80,28 @@ const App: React.FC = () => {
   const handleActivityLog = useCallback((entry: ActivityEntry) => {
     setActivityLog((prev) => [...prev.slice(-49), entry]);
   }, []);
+
+  // ─── Agent Chat: trigger scan from chat command ─────────────────────
+  const [chatScanAddress, setChatScanAddress] = useState<string | null>(null);
+
+  const handleChatScan = useCallback((address: string) => {
+    setChatScanAddress(address);
+    handleActivityLog({
+      id: `chat-scan-${Date.now()}`,
+      timestamp: Date.now(),
+      type: "scan" as const,
+      message: `Agent chat: scanning ${address.slice(0, 10)}...`,
+    });
+  }, [handleActivityLog]);
+
+  const handleChatSwap = useCallback((from: string, to: string, amount: string) => {
+    handleActivityLog({
+      id: `chat-swap-${Date.now()}`,
+      timestamp: Date.now(),
+      type: "swap" as const,
+      message: `Agent chat: swap ${amount} ${from} → ${to}`,
+    });
+  }, [handleActivityLog]);
 
   return (
     <div className="app-container">
@@ -171,6 +194,12 @@ const App: React.FC = () => {
           <span className="text-purple">x402 Protocol</span>
         </p>
       </footer>
+
+      {/* Agent Chat */}
+      <AgentChat
+        onScanToken={handleChatScan}
+        onSwapCommand={handleChatSwap}
+      />
 
       <style>{`
         .hero-text {

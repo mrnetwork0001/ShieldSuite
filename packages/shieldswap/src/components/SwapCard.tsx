@@ -639,8 +639,8 @@ const SwapCard: React.FC<SwapCardProps> = ({
         {/* Powered by */}
         <div className="swap-powered-by">
           <span>🛡️ Protected by</span>
-          <span className="text-blue" style={{ fontWeight: 600 }}>ScanGuard</span>
-          <span className="badge badge-purple" style={{ marginLeft: "4px" }}>MCP</span>
+          <span style={{ fontWeight: 600, color: '#33ff00', textShadow: '0 0 8px rgba(51,255,0,0.3)', fontFamily: 'var(--font-mono)' }}>ScanGuard</span>
+          <span className="badge badge-safe" style={{ marginLeft: "4px", fontFamily: 'var(--font-mono)' }}>MCP</span>
           <span style={{ margin: "0 4px", color: "var(--text-tertiary)" }}>·</span>
           <span style={{ color: "var(--text-tertiary)" }}>Powered by</span>
           <span style={{ fontWeight: 600, color: "#4B7BF5" }}>OKX DEX</span>

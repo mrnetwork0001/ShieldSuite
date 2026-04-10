@@ -96,6 +96,7 @@ export default function App() {
   const [scanError, setScanError] = useState<string | null>(null);
   const [feed, setFeed] = useState<FeedEntry[]>([]);
   const [totalScans, setTotalScans] = useState(0);
+  const [chainStats, setChainStats] = useState<{ blockNumber: number; gasPrice: string } | null>(null);
 
   const hero = useTypewriter('SCANGUARD v1.0.0', 60);
 
@@ -130,7 +131,32 @@ export default function App() {
 
     pollData();
     const interval = setInterval(pollData, 3000);
-    return () => clearInterval(interval);
+
+    // Poll chain stats from X Layer RPC
+    const fetchChainStats = () => {
+      Promise.all([
+        fetch('https://rpc.xlayer.tech', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', method: 'eth_blockNumber', params: [], id: 1 }),
+        }).then(r => r.json()).catch(() => null),
+        fetch('https://rpc.xlayer.tech', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', method: 'eth_gasPrice', params: [], id: 2 }),
+        }).then(r => r.json()).catch(() => null),
+      ]).then(([blockRes, gasRes]) => {
+        if (blockRes?.result && gasRes?.result) {
+          const blockNumber = parseInt(blockRes.result, 16);
+          const gasPriceGwei = (parseInt(gasRes.result, 16) / 1e9).toFixed(2);
+          setChainStats({ blockNumber, gasPrice: gasPriceGwei });
+        }
+      }).catch(() => {});
+    };
+    fetchChainStats();
+    const chainInterval = setInterval(fetchChainStats, 15000);
+
+    return () => { clearInterval(interval); clearInterval(chainInterval); };
   }, []);
 
   // ─── Scan Token ────────────────────────────────────────────────────────
@@ -219,12 +245,12 @@ export default function App() {
           <div className="card-value">{totalScans}</div>
         </div>
         <div className="card">
-          <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>chain.id</div>
-          <div className="card-value">{health?.chainId || '—'}</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>xlayer.block</div>
+          <div className="card-value">{chainStats?.blockNumber?.toLocaleString() || '—'}</div>
         </div>
         <div className="card">
-          <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>skills.loaded</div>
-          <div className="card-value">{health?.onchainOs?.modules?.length || 4}</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>gas.gwei</div>
+          <div className="card-value">{chainStats?.gasPrice || '—'}</div>
         </div>
         <div className="card">
           <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>sys.uptime</div>

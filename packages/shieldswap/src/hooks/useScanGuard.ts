@@ -33,6 +33,11 @@ export interface ScanResult {
   scanTimestamp: number;
   scanDurationMs: number;
   xLayerExplorerUrl: string;
+  // Uniswap V3 data
+  uniswapHasPool?: boolean;
+  uniswapPoolCount?: number;
+  uniswapLiquidity?: string | null;
+  uniswapPoolAddress?: string | null;
 }
 
 export interface UseScanGuardReturn {

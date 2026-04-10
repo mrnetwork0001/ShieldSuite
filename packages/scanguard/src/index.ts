@@ -14,6 +14,7 @@ import { mcpRouter } from "./mcp.js";
 import { ApiResponse, ScanResult, XLAYER_CONFIG } from "./types.js";
 import { logger } from "./logger.js";
 import { getOnchainOsStatus, isOnchainOsConfigured } from "./onchainos.js";
+import { getBestUniswapQuote } from "./uniswap.js";
 
 export { logger };
 
@@ -261,6 +262,42 @@ app.get("/api/dex/quote", async (req, res) => {
     res.json({
       success: false,
       error: { code: "QUOTE_FAILED", message: "Failed to get quote — check VPN or try a different pair" },
+    });
+  }
+});
+
+/** GET /api/dex/uniswap-quote — Get Uniswap V3 quote for comparison */
+app.get("/api/dex/uniswap-quote", async (req, res) => {
+  const { fromToken, toToken, amount } = req.query;
+
+  if (!fromToken || !toToken || !amount) {
+    res.status(400).json({
+      success: false,
+      error: { code: "MISSING_PARAMS", message: "fromToken, toToken, and amount are required" },
+    });
+    return;
+  }
+
+  try {
+    const quote = await getBestUniswapQuote({
+      tokenIn: fromToken as string,
+      tokenOut: toToken as string,
+      amountIn: amount as string,
+    });
+
+    if (quote) {
+      res.json({ success: true, data: quote, meta: { source: "uniswap-v3" } });
+    } else {
+      res.json({
+        success: false,
+        error: { code: "NO_UNISWAP_POOL", message: "No Uniswap V3 pool found for this pair on X Layer" },
+      });
+    }
+  } catch (err: any) {
+    logger.error(`Uniswap quote error: ${err.message}`);
+    res.json({
+      success: false,
+      error: { code: "UNISWAP_QUOTE_FAILED", message: err.message },
     });
   }
 });

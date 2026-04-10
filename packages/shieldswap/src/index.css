@@ -18,18 +18,18 @@
   --glass-blur: 24px;
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 
-  /* Accents */
-  --accent-safe: #00FF88;
-  --accent-safe-dim: rgba(0, 255, 136, 0.12);
-  --accent-safe-glow: 0 0 20px rgba(0, 255, 136, 0.3);
+  /* Accents — aligned with ScanGuard Terminal palette */
+  --accent-safe: #33ff00;
+  --accent-safe-dim: rgba(51, 255, 0, 0.10);
+  --accent-safe-glow: 0 0 20px rgba(51, 255, 0, 0.25);
   --accent-danger: #FF3B5C;
   --accent-danger-dim: rgba(255, 59, 92, 0.12);
   --accent-danger-glow: 0 0 20px rgba(255, 59, 92, 0.3);
   --accent-blue: #4B7BF5;
   --accent-blue-dim: rgba(75, 123, 245, 0.12);
   --accent-blue-glow: 0 0 20px rgba(75, 123, 245, 0.3);
-  --accent-warning: #FFB020;
-  --accent-warning-dim: rgba(255, 176, 32, 0.12);
+  --accent-warning: #ffb000;
+  --accent-warning-dim: rgba(255, 176, 0, 0.12);
   --accent-purple: #A855F7;
   --accent-purple-dim: rgba(168, 85, 247, 0.12);
 
