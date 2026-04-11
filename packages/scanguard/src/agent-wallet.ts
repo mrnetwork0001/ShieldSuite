@@ -266,7 +266,7 @@ export async function pingOnChain(): Promise<boolean> {
     try {
       const targetAddress = process.env.AGENTIC_WALLET_ADDRESS || "0x0000000000000000000000000000000000000000";
       // Ensure the CLI forces the transaction through MEV/TEE automatically
-      const cmd = `onchainos wallet send --recipient ${targetAddress} --chain 196 --readable-amount 0`;
+      const cmd = `onchainos wallet send --recipient ${targetAddress} --chain 196 --amt 1`;
       const output = require("child_process").execSync(cmd, { encoding: 'utf-8', timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] });
       
       const txMatch = output.match(/txHash[:\s]*["']?(0x[a-fA-F0-9]{64})["']?/i);
