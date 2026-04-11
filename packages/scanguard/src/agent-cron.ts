@@ -27,11 +27,23 @@ const BATCH_DELAY_MS = 5000; // 5 seconds between scans to avoid rate limits
 
 // Top X Layer tokens to scan automatically
 const TOKEN_LIST = [
+  // Top 5 canonical
   { address: "0x1E4a5963aBFD975d8c9021ce480b42188849D41d", symbol: "USDT" },
   { address: "0x74b7F16337b8972027F6196A17a631aC6dE26d22", symbol: "USDC" },
   { address: "0x5a77f1443d16ee5761d310e38b4beb27e6e2f5ab", symbol: "WETH" },
   { address: "0xe538905cf8410324e03A5A23C1c177a474D59b2b", symbol: "WOKB" },
   { address: "0xC5015b9d9161Dca7e18e32f6f25C4aD850731Fd4", symbol: "DAI" },
+  // Extended tokens for active feed display
+  { address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", symbol: "WBTC" },
+  { address: "0x514910771AF9Ca656af840dff83E8264EcF986CA", symbol: "LINK" },
+  { address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", symbol: "UNI" },
+  { address: "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2", symbol: "MKR" },
+  { address: "0x0D8775F648430679A709E98d2b0Cb6250d2887EF", symbol: "BAT" },
+  { address: "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", symbol: "AAVE" },
+  { address: "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F", symbol: "SNX" },
+  { address: "0xba100000625a3754423978a60c9317c58a424e3D", symbol: "BAL" },
+  { address: "0x0F5D2fB29fb7d3CFeE444a200298f468908cC942", symbol: "MANA" },
+  { address: "0x4Fabb145d64652a948d72533023f6E7A623C7C53", symbol: "BUSD" },
 ];
 
 // ─── Agent State ─────────────────────────────────────────────────────────────
