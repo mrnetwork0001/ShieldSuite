@@ -176,10 +176,32 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
           break;
 
         case "scan":
-          if (intent.tokenAddress && onScanToken) {
+          if (intent.tokenAddress) {
             const label = intent.tokenName || `${intent.tokenAddress.slice(0, 10)}...`;
             addMessage("agent", `🔍 Initiating security scan for **${label}**...\n\n_Querying OKX Security API + bytecode analysis + Uniswap V3 liquidity..._`);
-            onScanToken(intent.tokenAddress);
+            
+            // Also notify the parent (App -> SwapCard) so it updates the main UI
+            if (onScanToken) onScanToken(intent.tokenAddress);
+
+            // Fetch the result autonomously and reply in chat
+            try {
+              const res = await fetch(`${import.meta.env.VITE_SCANGUARD_API_URL || "http://localhost:3000"}/api/scan`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tokenAddress: intent.tokenAddress, chainId: 196 })
+              });
+              const data = await res.json();
+              if (data.success && data.data) {
+                const sr = data.data;
+                const emoji = sr.riskLevel === "SAFE" ? "🟩" : sr.riskLevel === "HIGH" || sr.riskLevel === "CRITICAL" ? "🟥" : "🟨";
+                const reply = `✅ **Scan Complete: ${label}**\n\n${emoji} **Risk Level:** ${sr.riskLevel} (${sr.riskScore}/100)\n\n**Flags:** ${sr.flags.length}\n**Uniswap V3:** ${sr.uniswapHasPool ? "Active Pool" : "No Liquidity"}\n\n_${sr.flags.length > 0 ? "Check the main Risk Report panel for full alert details." : "Token looks clean. Safe to swap!"}_`;
+                addMessage("agent", reply);
+              } else {
+                addMessage("agent", "⚠️ Scan failed to retrieve risk metadata.");
+              }
+            } catch (e) {
+              addMessage("agent", "⚠️ Scan timed out or encountered an error.");
+            }
           } else {
             addMessage("agent", "⚠️ Couldn't identify the token. Try: \"Scan USDT\" or paste a contract address.");
           }
