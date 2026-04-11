@@ -86,27 +86,7 @@ function TerminalBar({ value, max, label }: { value: number; max: number; label:
   );
 }
 
-// ─── Clipboard Helper ────────────────────────────────────────────────────────
-const copyToClipboard = (text: string) => {
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).then(() => alert("Copied to clipboard!"));
-  } else {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "absolute";
-    textArea.style.opacity = "0";
-    document.body.appendChild(textArea);
-    textArea.select();
-    try {
-      document.execCommand('copy');
-      alert("Copied to clipboard!");
-    } catch (error) {
-      alert("Failed to copy. Please manually select the text.");
-    } finally {
-      textArea.remove();
-    }
-  }
-};
+// ─── Clipboard Helper handled inside App for state access ──────────────
 
 // ─── Main App ────────────────────────────────────────────────────────────────
 export default function App() {
@@ -119,8 +99,35 @@ export default function App() {
   const [feed, setFeed] = useState<FeedEntry[]>([]);
   const [totalScans, setTotalScans] = useState(0);
   const [chainStats, setChainStats] = useState<{ blockNumber: number; gasPrice: string } | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const hero = useTypewriter('SCANGUARD v1.0.0', 60);
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  const copyToClipboard = useCallback((text: string) => {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => showToast("Copied to clipboard!"));
+    } else {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "absolute";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showToast("Copied to clipboard!");
+      } catch (error) {
+        showToast("Failed to copy. Please manually select the text.");
+      } finally {
+        textArea.remove();
+      }
+    }
+  }, [showToast]);
 
   // ─── Polling for feed & stats ──────────────────────────────────────────
   useEffect(() => {
@@ -647,6 +654,21 @@ X-402-Payment: <signed-payment-receipt>`}
         <div>// ScanGuard — Built for <span style={{ color: 'var(--fg)' }}>X Layer Build X Season 2 AI Hackathon</span></div>
         <div style={{ marginTop: '0.25rem', color: 'var(--fg-subtle)' }}>OnchainOS × MCP × x402 × Uniswap Skills</div>
       </motion.footer>
+
+      {/* ═══ TOAST NOTIFICATION ═══ */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            className="toast-notification"
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
