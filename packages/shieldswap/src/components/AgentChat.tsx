@@ -185,7 +185,8 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
 
             // Fetch the result autonomously and reply in chat
             try {
-              const res = await fetch(`${import.meta.env.VITE_SCANGUARD_API_URL || "http://localhost:3000"}/api/scan`, {
+              const apiUrl = import.meta.env.VITE_SCANGUARD_URL || "";
+              const res = await fetch(`${apiUrl}/api/scan`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tokenAddress: intent.tokenAddress, chainId: 196 })
