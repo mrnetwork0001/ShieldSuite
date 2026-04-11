@@ -266,8 +266,8 @@ export async function pingOnChain(): Promise<boolean> {
     try {
       const targetAddress = process.env.AGENTIC_WALLET_ADDRESS || "0x0000000000000000000000000000000000000000";
       // Ensure the CLI forces the transaction through MEV/TEE automatically
-      const cmd = `onchainos wallet send --receipt ${targetAddress} --chain 196 --readable-amount 0`;
-      const output = require("child_process").execSync(cmd, { encoding: 'utf-8' });
+      const cmd = `onchainos wallet send --recipient ${targetAddress} --chain 196 --readable-amount 0`;
+      const output = require("child_process").execSync(cmd, { encoding: 'utf-8', timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] });
       
       const txMatch = output.match(/txHash[:\s]*["']?(0x[a-fA-F0-9]{64})["']?/i);
       if (txMatch) {
@@ -284,7 +284,11 @@ export async function pingOnChain(): Promise<boolean> {
       logger.warn(`[AgentWallet] CLI Ping failed or no hash returned. Output: ${output.slice(0, 100)}`);
       return false;
     } catch (e: any) {
-      logger.error(`[AgentWallet] TEE CLI Ping Error: ${e.message}`);
+      const stderr = e.stderr?.toString?.() || '';
+      const stdout = e.stdout?.toString?.() || '';
+      logger.error(`[AgentWallet] TEE CLI Ping Error: ${e.message?.slice(0, 200)}`);
+      if (stderr) logger.error(`[AgentWallet] CLI stderr: ${stderr.slice(0, 300)}`);
+      if (stdout) logger.info(`[AgentWallet] CLI stdout: ${stdout.slice(0, 300)}`);
       return false;
     }
   }
