@@ -86,6 +86,28 @@ function TerminalBar({ value, max, label }: { value: number; max: number; label:
   );
 }
 
+// ─── Clipboard Helper ────────────────────────────────────────────────────────
+const copyToClipboard = (text: string) => {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => alert("Copied to clipboard!"));
+  } else {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "absolute";
+    textArea.style.opacity = "0";
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      alert("Copied to clipboard!");
+    } catch (error) {
+      alert("Failed to copy. Please manually select the text.");
+    } finally {
+      textArea.remove();
+    }
+  }
+};
+
 // ─── Main App ────────────────────────────────────────────────────────────────
 export default function App() {
   const [activeTab, setActiveTab] = useState<'scanner' | 'feed' | 'mcp'>('scanner');
@@ -531,7 +553,7 @@ export default function App() {
                 <h4>STEP 1: DISCOVER TOOLS</h4>
                 <p>Query the MCP discovery endpoint</p>
                 <div className="code-block">
-                  <button className="copy-btn" onClick={() => navigator.clipboard.writeText('curl http://localhost:3402/mcp/tools')}>COPY</button>
+                  <button className="copy-btn" onClick={() => copyToClipboard('curl http://localhost:3402/mcp/tools')}>COPY</button>
 {`$ curl http://localhost:3402/mcp/tools
 
 # Response:
@@ -556,7 +578,7 @@ export default function App() {
                 <h4>STEP 2: CALL A TOOL</h4>
                 <p>Send a JSON-RPC request to execute a scan</p>
                 <div className="code-block">
-                  <button className="copy-btn" onClick={() => navigator.clipboard.writeText(`curl -X POST http://localhost:3402/mcp/call \\
+                  <button className="copy-btn" onClick={() => copyToClipboard(`curl -X POST http://localhost:3402/mcp/call \\
   -H "Content-Type: application/json" \\
   -d '{"method":"tools/call","params":{"name":"scan_token","arguments":{"tokenAddress":"0x1E4a5963aBFD975d8c9021ce480b42188849D41d"}}}'`)}>COPY</button>
 {`$ curl -X POST http://localhost:3402/mcp/call \\
@@ -592,7 +614,7 @@ X-402-Payment: <signed-payment-receipt>`}
                 <h4>CLAUDE DESKTOP / CURSOR CONFIG</h4>
                 <p>Add ScanGuard to your AI agent's MCP config</p>
                 <div className="code-block">
-                  <button className="copy-btn" onClick={() => navigator.clipboard.writeText(`{
+                  <button className="copy-btn" onClick={() => copyToClipboard(`{
   "mcpServers": {
     "scanguard": {
       "url": "http://localhost:3402/mcp",

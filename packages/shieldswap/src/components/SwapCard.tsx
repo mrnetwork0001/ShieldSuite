@@ -417,13 +417,6 @@ const SwapCard: React.FC<SwapCardProps> = ({
                 <span>Balance: {fromBalance} {fromToken.symbol}</span>
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                   <button
-                    className="refresh-btn"
-                    onClick={() => setBalanceRefreshKey(k => k + 1)}
-                    title="Refresh balance"
-                  >
-                    🔄
-                  </button>
-                  <button
                     className="max-btn"
                     onClick={() => setAmount(fromBalance)}
                   >
