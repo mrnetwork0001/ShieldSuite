@@ -260,11 +260,36 @@ export async function sendViaCli(params: {
 
 export async function pingOnChain(): Promise<boolean> {
   const privateKey = process.env.AGENT_PRIVATE_KEY;
+
   if (!privateKey) {
-    logger.warn("[AgentWallet] AGENT_PRIVATE_KEY not found in .env. Skipping ping.");
-    return false;
+    logger.info("[AgentWallet] Using Official OKX Agentic Wallet (TEE) for on-chain ping...");
+    try {
+      const targetAddress = process.env.AGENTIC_WALLET_ADDRESS || "0x0000000000000000000000000000000000000000";
+      // Ensure the CLI forces the transaction through MEV/TEE automatically
+      const cmd = `onchainos wallet send --recipient ${targetAddress} --chain 196 --readable-amount 0 --force`;
+      const output = require("child_process").execSync(cmd, { encoding: 'utf-8' });
+      
+      const txMatch = output.match(/txHash[:\s]*["']?(0x[a-fA-F0-9]{64})["']?/i);
+      if (txMatch) {
+         logger.info(`[AgentWallet] TEE ping sent successfully! Hash: ${txMatch[1]}`);
+         return true;
+      }
+      
+      const rawMatch = output.match(/(0x[a-fA-F0-9]{64})/);
+      if (rawMatch) {
+        logger.info(`[AgentWallet] TEE ping sent successfully! Hash: ${rawMatch[1]}`);
+        return true;
+      }
+      
+      logger.warn(`[AgentWallet] CLI Ping failed or no hash returned. Output: ${output.slice(0, 100)}`);
+      return false;
+    } catch (e: any) {
+      logger.error(`[AgentWallet] TEE CLI Ping Error: ${e.message}`);
+      return false;
+    }
   }
 
+  // Fallback to Ethers.js ONLY if they explicitly keep the private key
   try {
     const provider = new ethers.JsonRpcProvider(process.env.XLAYER_RPC_URL || XLAYER_CONFIG.rpcUrl);
     const wallet = new ethers.Wallet(privateKey, provider);
@@ -276,10 +301,10 @@ export async function pingOnChain(): Promise<boolean> {
       data: ethers.hexlify(ethers.toUtf8Bytes("ScanGuard Cycle Success"))
     });
     
-    logger.info(`[AgentWallet] On-chain ping sent successfully! Hash: ${tx.hash}`);
+    logger.info(`[AgentWallet] Ethers on-chain ping sent! Hash: ${tx.hash}`);
     return true;
   } catch (error: any) {
-    logger.error(`[AgentWallet] Ping failed: ${error.message}`);
+    logger.error(`[AgentWallet] Ethers Ping failed: ${error.message}`);
     return false;
   }
 }

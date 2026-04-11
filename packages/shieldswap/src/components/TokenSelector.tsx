@@ -13,23 +13,6 @@ interface TokenSelectorProps {
   excludeAddress?: string;
 }
 
-const MOCK_BALANCES: Record<string, string> = {
-  OKB: "14.25",
-  USDC: "1250.00",
-  USDT: "340.50",
-  WETH: "0.15",
-  WOKB: "2.5"
-};
-
-const MOCK_PRICES: Record<string, number> = {
-  OKB: 48.50,
-  WOKB: 48.50,
-  USDC: 1.00,
-  USDT: 1.00,
-  DAI: 1.00,
-  WETH: 3120.50,
-};
-
 const TokenLogo: React.FC<{ token: TokenInfo; size?: number }> = ({ token, size = 36 }) => {
   const [imgError, setImgError] = useState(false);
 
@@ -157,17 +140,6 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
                   <div className="token-selector-info">
                     <span className="token-selector-symbol">{token.symbol}</span>
                     <span className="token-selector-name">{token.name}</span>
-                  </div>
-                  
-                  <div style={{ flex: 1 }}></div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '0.9rem', fontFamily: 'var(--font-mono)' }}>
-                    <span style={{ color: 'var(--text-primary)' }}>{MOCK_BALANCES[token.symbol] || "0.00"}</span>
-                    {MOCK_BALANCES[token.symbol] && MOCK_PRICES[token.symbol] && (
-                       <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>
-                         ~${(parseFloat(MOCK_BALANCES[token.symbol]) * (MOCK_PRICES[token.symbol] || 0)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                       </span>
-                    )}
                   </div>
                   {token.isStable && (
                     <span className="token-selector-badge">Stablecoin</span>
