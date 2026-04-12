@@ -16,6 +16,7 @@ import { logger } from "./logger.js";
 import { getOnchainOsStatus, isOnchainOsConfigured } from "./onchainos.js";
 import { getBestUniswapQuote } from "./uniswap.js";
 import { checkAgentReady, getAgentBalance, pingOnChain } from "./agent-wallet.js";
+import { loadDatabase, saveDatabase } from "./database.js";
 
 export { logger };
 
@@ -32,9 +33,19 @@ const PORT = parseInt(process.env.PORT || "3402", 10);
 const HOST = process.env.HOST || "0.0.0.0";
 const NODE_ENV = process.env.NODE_ENV || "development";
 
-// ─── Scan Cache ──────────────────────────────────────────────────────────────
+// ─── Scan Cache (Persisted) ──────────────────────────────────────────────────
 const scanCache = new Map<string, ScanResult>();
 const scansByToken = new Map<string, string>();
+let totalLifetimeScans = 0;
+
+// Initialize Database Storage
+loadDatabase().then((db) => {
+  totalLifetimeScans = db.totalLifetimeScans;
+  for (const scan of db.scans) {
+    scanCache.set(scan.scanId, scan);
+    scansByToken.set(scan.tokenAddress.toLowerCase(), scan.scanId);
+  }
+});
 
 // ─── App Setup ───────────────────────────────────────────────────────────────
 const app = express();
@@ -87,22 +98,35 @@ app.get("/api/stats", (_req, res) => {
   res.json({
     success: true,
     data: {
-      cachedScans: scanCache.size,
+      cachedScans: totalLifetimeScans, // Display lifetime scans instead of cache size
       cachedTokens: scansByToken.size,
       ...paymentStats,
     },
   });
 });
 
-/** Live Scan Feed */
-app.get("/api/feed", (_req, res) => {
+/** Live Scan Feed (With Pagination) */
+app.get("/api/feed", (req, res) => {
+  const page = parseInt((req.query.page as string) || "1", 10);
+  const limit = Math.min(parseInt((req.query.limit as string) || "30", 10), 100);
+
   const scans = Array.from(scanCache.values())
-    .sort((a, b) => b.scanTimestamp - a.scanTimestamp)
-    .slice(0, 50);
+    .sort((a, b) => b.scanTimestamp - a.scanTimestamp);
+
+  const total = scans.length;
+  const totalPages = Math.ceil(total / limit) || 1;
+  const offset = (page - 1) * limit;
+  const paginatedScans = scans.slice(offset, offset + limit);
 
   res.json({
     success: true,
-    data: scans,
+    data: paginatedScans,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages
+    }
   });
 });
 
@@ -150,9 +174,11 @@ app.post("/api/scan", x402Middleware(), async (req, res) => {
     // Execute scan
     const result = await scanToken({ tokenAddress, chainId });
 
-    // Cache result
+    // Cache result and persist continuously
     scanCache.set(result.scanId, result);
     scansByToken.set(tokenAddress.toLowerCase(), result.scanId);
+    totalLifetimeScans++;
+    saveDatabase({ totalLifetimeScans, scans: Array.from(scanCache.values()) });
 
     logger.info(
       `[API] Scan complete: ${result.tokenSymbol || tokenAddress} → ` +

@@ -100,6 +100,8 @@ export default function App() {
   const [totalScans, setTotalScans] = useState(0);
   const [chainStats, setChainStats] = useState<{ blockNumber: number; gasPrice: string } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const hero = useTypewriter('SCANGUARD v1.0.0', 60);
 
@@ -142,7 +144,7 @@ export default function App() {
         .then(d => { if (d.success) setTotalScans(d.data.cachedScans || 0); })
         .catch(() => {});
 
-      fetch('/api/feed')
+      fetch(`/api/feed?page=${currentPage}&limit=30`)
         .then(r => r.json())
         .then(d => {
           if (d.success && Array.isArray(d.data)) {
@@ -153,6 +155,9 @@ export default function App() {
               riskLevel: scan.riskLevel,
               timestamp: scan.scanTimestamp,
             })));
+            if (d.meta?.totalPages) {
+              setTotalPages(d.meta.totalPages);
+            }
           }
         })
         .catch(() => {});
@@ -161,7 +166,7 @@ export default function App() {
     pollData();
     const interval = setInterval(pollData, 3000);
 
-    // Poll chain stats from X Layer RPC
+    // Initial chain stat poll
     const fetchChainStats = () => {
       Promise.all([
         fetch('https://rpc.xlayer.tech', {
@@ -183,10 +188,13 @@ export default function App() {
       }).catch(() => {});
     };
     fetchChainStats();
-    const chainInterval = setInterval(fetchChainStats, 15000);
+    const blockInterval = setInterval(fetchChainStats, 5000);
 
-    return () => { clearInterval(interval); clearInterval(chainInterval); };
-  }, []);
+    return () => {
+      clearInterval(interval);
+      clearInterval(blockInterval);
+    };
+  }, [currentPage]);
 
   // ─── Scan Token ────────────────────────────────────────────────────────
   const handleScan = useCallback(async () => {
@@ -540,6 +548,31 @@ export default function App() {
                       <div className="feed-time">{new Date(entry.timestamp).toLocaleTimeString()}</div>
                     </motion.div>
                   ))}
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+                      <button 
+                        className="btn-secondary" 
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.7rem' }}
+                      >
+                        &lt; PREVIOUS
+                      </button>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--fg-subtle)' }}>
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <button 
+                        className="btn-secondary" 
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.7rem' }}
+                      >
+                        NEXT &gt;
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

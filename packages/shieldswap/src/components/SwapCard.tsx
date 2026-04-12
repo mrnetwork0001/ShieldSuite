@@ -255,13 +255,9 @@ const SwapCard: React.FC<SwapCardProps> = ({
         return;
       }
 
-      // USDT-style tokens require reset to 0 before changing a non-zero allowance
-      // Only reset if there IS a non-zero partial allowance
-      if (currentAllowance > 0n) {
-        addLog("info", "Resetting old allowance to 0...");
-        const resetTx = await erc20.approve(approveTarget, 0);
-        await resetTx.wait();
-      }
+      // We are deliberately skipping the 'approve 0' step here to prioritize
+      // modern UX. Most DEX integrations on EVM/X-Layer no longer require this 
+      // strict legacy resetting, which saves the user an extra annoying popup.
 
       // Now approve MaxUint256
       const approveTx = await erc20.approve(approveTarget, ethers.MaxUint256);
