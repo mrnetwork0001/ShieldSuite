@@ -502,9 +502,31 @@ const SwapCard: React.FC<SwapCardProps> = ({
                   {quote.priceImpact}%
                 </span>
               </div>
-              <div className="quote-row">
-                <span>Source</span>
-                <span className="font-mono">{quote.source === "okx-dex" ? "OKX DEX Aggregator" : "Estimated"}</span>
+              {/* ── Route Comparison ── */}
+              <div className="route-comparison">
+                <div className="quote-row" style={{ marginBottom: '0.15rem' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Route Comparison</span>
+                </div>
+                <div className={`route-option ${!quote.uniswapAmountOut || parseFloat(quote.amountOut) >= parseFloat(quote.uniswapAmountOut) ? 'best' : ''}`}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span className="font-mono" style={{ fontSize: '0.8rem' }}>OKX Aggregator</span>
+                    {(!quote.uniswapAmountOut || parseFloat(quote.amountOut) >= parseFloat(quote.uniswapAmountOut)) && (
+                      <span className="best-route-badge">✓ Best</span>
+                    )}
+                  </div>
+                  <span className="font-mono" style={{ fontSize: '0.8rem' }}>{quote.amountOut} {toToken.symbol}</span>
+                </div>
+                <div className={`route-option ${quote.uniswapAmountOut && parseFloat(quote.uniswapAmountOut) > parseFloat(quote.amountOut) ? 'best' : ''}`}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span className="font-mono" style={{ fontSize: '0.8rem', opacity: quote.uniswapAmountOut ? 1 : 0.5 }}>Uniswap V3</span>
+                    {quote.uniswapAmountOut && parseFloat(quote.uniswapAmountOut) > parseFloat(quote.amountOut) && (
+                      <span className="best-route-badge">✓ Best</span>
+                    )}
+                  </div>
+                  <span className="font-mono" style={{ fontSize: '0.8rem', opacity: quote.uniswapAmountOut ? 1 : 0.5 }}>
+                    {quote.uniswapAmountOut ? `${quote.uniswapAmountOut} ${toToken.symbol}` : 'No direct pool'}
+                  </span>
+                </div>
               </div>
             </motion.div>
           )}
@@ -885,6 +907,39 @@ const SwapCard: React.FC<SwapCardProps> = ({
           justify-content: space-between;
           font-size: 0.78rem;
           color: var(--text-secondary);
+        }
+
+        .route-comparison {
+          margin-top: 8px;
+          padding-top: 8px;
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .route-option {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 8px 10px;
+          margin-top: 4px;
+          border-radius: var(--radius-sm);
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          transition: all 0.2s ease;
+        }
+        .route-option.best {
+          background: rgba(0, 255, 136, 0.04);
+          border-color: rgba(0, 255, 136, 0.15);
+        }
+        .best-route-badge {
+          display: inline-flex;
+          align-items: center;
+          font-size: 0.6rem;
+          font-weight: 700;
+          padding: 2px 6px;
+          border-radius: 4px;
+          background: rgba(0, 255, 136, 0.12);
+          color: var(--accent-safe);
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
         }
 
         .swap-danger-warning {

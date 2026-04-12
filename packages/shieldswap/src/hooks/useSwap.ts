@@ -57,6 +57,7 @@ export interface SwapQuote {
   gasEstimate: string;
   exchangeRate: string;
   source: string;        // "okx-dex" or "estimated"
+  uniswapAmountOut: string | null;  // human-readable Uniswap V3 quote (null if no pool)
 }
 
 export interface SwapResult {
@@ -145,12 +146,38 @@ export function useSwap(): UseSwapReturn {
 
         const source = data.meta?.source === "okx-dex" ? "okx-dex" : (data.meta?.source || "estimated");
 
+        // ── Fetch Uniswap V3 quote concurrently (fire-and-forget on failure) ──
+        let uniswapAmountOut: string | null = null;
+        try {
+          const uniQuery = new URLSearchParams({
+            fromToken: params.fromToken,
+            toToken: params.toToken,
+            amount: amountWei,
+          }).toString();
+          const uniRes = await fetch(`${API_BASE}/api/dex/uniswap-quote?${uniQuery}`, {
+            signal: controller.signal,
+          });
+          const uniData = await uniRes.json();
+          if (uniData.success && uniData.data?.amountOut) {
+            const rawUniOut = uniData.data.amountOut;
+            const outDec = params.toDecimals || 6;
+            try {
+              uniswapAmountOut = parseFloat(ethers.formatUnits(rawUniOut, outDec)).toFixed(Math.min(outDec, 6));
+            } catch {
+              uniswapAmountOut = null;
+            }
+          }
+        } catch {
+          // Uniswap quote failed or no pool — that's fine, leave null
+        }
+
         const result: SwapQuote = {
           amountOut,
           priceImpact: data.data.priceImpact || "0.01",
           gasEstimate: data.data.estimatedGas || "50000",
           exchangeRate: amountIn > 0 ? (parseFloat(amountOut) / amountIn).toFixed(6) : "0",
           source,
+          uniswapAmountOut,
         };
 
         setQuote(result);
