@@ -596,8 +596,8 @@ export default function App() {
                 <h4>STEP 1: DISCOVER TOOLS</h4>
                 <p>Query the MCP discovery endpoint</p>
                 <div className="code-block">
-                  <button className="copy-btn" onClick={() => copyToClipboard('curl http://localhost:3402/mcp/tools')}>COPY</button>
-{`$ curl http://localhost:3402/mcp/tools
+                  <button className="copy-btn" onClick={() => copyToClipboard('curl http://38.49.216.120:3402/mcp/tools')}>COPY</button>
+{`$ curl http://38.49.216.120:3402/mcp/tools
 
 # Response:
 {
@@ -621,10 +621,10 @@ export default function App() {
                 <h4>STEP 2: CALL A TOOL</h4>
                 <p>Send a JSON-RPC request to execute a scan</p>
                 <div className="code-block">
-                  <button className="copy-btn" onClick={() => copyToClipboard(`curl -X POST http://localhost:3402/mcp/call \\
+                  <button className="copy-btn" onClick={() => copyToClipboard(`curl -X POST http://38.49.216.120:3402/mcp/call \\
   -H "Content-Type: application/json" \\
   -d '{"method":"tools/call","params":{"name":"scan_token","arguments":{"tokenAddress":"0x1E4a5963aBFD975d8c9021ce480b42188849D41d"}}}'`)}>COPY</button>
-{`$ curl -X POST http://localhost:3402/mcp/call \\
+{`$ curl -X POST http://38.49.216.120:3402/mcp/call \\
   -H "Content-Type: application/json" \\
   -d '{
     "method": "tools/call",
@@ -660,7 +660,7 @@ X-402-Payment: <signed-payment-receipt>`}
                   <button className="copy-btn" onClick={() => copyToClipboard(`{
   "mcpServers": {
     "scanguard": {
-      "url": "http://localhost:3402/mcp",
+      "url": "http://38.49.216.120:3402/mcp",
       "description": "Security scanning for ERC-20 tokens on X Layer"
     }
   }
@@ -668,7 +668,7 @@ X-402-Payment: <signed-payment-receipt>`}
 {`{
   "mcpServers": {
     "scanguard": {
-      "url": "http://localhost:3402/mcp",
+      "url": "http://38.49.216.120:3402/mcp",
       "description": "Security scanning for ERC-20 tokens on X Layer"
     }
   }
