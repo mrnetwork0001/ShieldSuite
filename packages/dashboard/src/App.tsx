@@ -698,13 +698,20 @@ X-402-Payment: <signed-payment-receipt>`}
 
       {/* ═══ FOOTER ═══ */}
       <motion.footer
-        style={{ marginTop: '2rem', padding: '1rem 0', borderTop: '1px solid var(--border)', color: 'var(--fg-dim)', fontSize: '0.7rem', textAlign: 'center' }}
+        style={{ marginTop: '2rem', padding: '1.5rem 0', borderTop: '1px solid var(--border)', color: 'var(--fg-dim)', fontSize: '0.7rem' }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        <div>// ScanGuard — Built for <span style={{ color: 'var(--fg)' }}>X Layer Build X Season 2 AI Hackathon</span></div>
-        <div style={{ marginTop: '0.25rem', color: 'var(--fg-subtle)' }}>OnchainOS × MCP × x402 × Uniswap Skills</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+          <div style={{ textAlign: 'left', flex: '1 1 auto' }}>
+            // ScanGuard - Built for XLayer Ecosystem<br/>
+            <span style={{ color: 'var(--fg-subtle)' }}>OnchainOS × MCP × x402 × Uniswap Skills</span>
+          </div>
+          <div style={{ textAlign: 'center', fontWeight: 700, flex: '0 0 auto' }}>
+            <a href="https://x.com/encrypt_wizard" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--fg)', textDecoration: 'none', padding: '0.2rem 0.5rem', border: '1px solid var(--border)' }}>MrNetwork</a>
+          </div>
+        </div>
       </motion.footer>
 
       {/* ═══ TOAST NOTIFICATION ═══ */}
