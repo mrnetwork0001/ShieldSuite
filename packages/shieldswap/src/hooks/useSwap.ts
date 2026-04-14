@@ -261,6 +261,20 @@ export function useSwap(): UseSwapReturn {
           return result;
         }
 
+        // Case 3: WOKB → non-OKB token (unwrap to native OKB first, then DEX swap)
+        if (isFromWOKB && !isToNative) {
+          const wokb = new ethers.Contract(
+            WOKB_ADDRESS,
+            ["function withdraw(uint256 wad)"],
+            signer
+          );
+          const unwrapTx = await wokb.withdraw(amountWei);
+          await unwrapTx.wait();
+
+          // Update params to swap from native OKB instead
+          params = { ...params, fromToken: NATIVE_ADDRESS, isNative: true };
+        }
+
         // ── Standard DEX Aggregator Swap ────────────────────────────────
         // Get swap data from backend proxy
         const queryStr = new URLSearchParams({
@@ -296,6 +310,21 @@ export function useSwap(): UseSwapReturn {
           throw new Error(
             "Swap transaction not available. The OKX DEX API couldn't build the transaction. " +
             "Ensure your VPN is active and try again."
+          );
+        }
+
+        // ── Simulate the swap first to catch reverts early ──
+        try {
+          await signer.provider!.call({
+            to: txInfo.to,
+            data: txInfo.data,
+            from: params.recipient,
+            value: txInfo.value ? BigInt(txInfo.value) : 0n,
+          });
+        } catch (simError: any) {
+          throw new Error(
+            `Swap will revert on-chain: ${simError.reason || simError.shortMessage || "unknown reason"}. ` +
+            `Try increasing slippage, reducing the amount, or using a different token pair.`
           );
         }
 

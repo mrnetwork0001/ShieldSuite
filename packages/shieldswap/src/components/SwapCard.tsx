@@ -252,6 +252,12 @@ const SwapCard: React.FC<SwapCardProps> = ({
         wallet.signer
       );
 
+      // USDT-style tokens require resetting allowance to 0 before re-approving
+      const RESET_APPROVAL_TOKENS = [
+        "0x779ded0c9e1022225f8e0630b35a9b54be713736", // USDT0
+        "0x1e4a5963abfd975d8c9021ce480b42188849d41d", // USDT legacy
+      ];
+
       // Check current allowance
       const currentAllowance = await erc20.allowance(wallet.address!, approveTarget);
       const MAX_THRESHOLD = ethers.MaxUint256 / 2n;
@@ -263,9 +269,16 @@ const SwapCard: React.FC<SwapCardProps> = ({
         return;
       }
 
-      // We are deliberately skipping the 'approve 0' step here to prioritize
-      // modern UX. Most DEX integrations on EVM/X-Layer no longer require this 
-      // strict legacy resetting, which saves the user an extra annoying popup.
+      // For USDT-like tokens: must reset allowance to 0 first
+      const needsReset = RESET_APPROVAL_TOKENS.some(
+        t => t.toLowerCase() === fromToken.address.toLowerCase()
+      );
+      if (needsReset && currentAllowance > 0n) {
+        addLog("info", `Resetting ${fromToken.symbol} approval to 0 first (required by token contract)...`);
+        const resetTx = await erc20.approve(approveTarget, 0);
+        await resetTx.wait();
+        addLog("info", `Reset complete, now approving...`);
+      }
 
       // Now approve MaxUint256
       const approveTx = await erc20.approve(approveTarget, ethers.MaxUint256);
