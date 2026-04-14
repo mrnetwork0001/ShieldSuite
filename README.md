@@ -94,7 +94,7 @@ Requests are signed with HMAC-SHA256: `HMAC(timestamp + method + path + body, se
 ### Install & Run
 ```bash
 # Clone
-git clone https://github.com/YOUR_USERNAME/shield-suite.git
+git clone https://github.com/mrnetwork0001/ShieldSuite.git
 cd shield-suite
 
 # Install all dependencies
@@ -231,8 +231,8 @@ This creates an **agent economy loop** where AI agents securely pay for high-val
 - **Chain:** X Layer Mainnet (Chain ID 196)
 - **Agentic Wallet (EVM):** `0x821b9cc6a54272d0b5b106416fe360c162f2af85`
 - **Agentic Wallet (Solana):** `B72H614ET6scyxhN7Fdzn3PeKzzMqjJg3UYVp7EDFUh6`
-- **Dashboard Hub:** [Insert your deployed Vercel/Railway URL]
-- **ShieldSwap App:** [Insert your deployed Vercel/Railway URL]
+- **Dashboard Hub:** [scanguard-dashboard-main.vercel.app](https://scanguard-dashboard-main.vercel.app)
+- **ShieldSwap App:** [Deploy in progress]
 
 ---
 
