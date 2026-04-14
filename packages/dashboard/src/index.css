@@ -157,7 +157,7 @@ a:hover {
 .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
 .grid-4 { grid-template-columns: repeat(4, 1fr); }
 @media (max-width: 768px) {
-  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; gap: 1.5rem; }
 }
 
 /* ─── Card (Terminal Pane) ──────────────────────────────────────────────── */
@@ -595,6 +595,7 @@ a:hover {
   .scanner-card { grid-column: span 1; }
 
   .card {
+    margin-top: 1.25rem;
     overflow-x: auto;
     overflow-wrap: break-word;
     word-break: break-word;
