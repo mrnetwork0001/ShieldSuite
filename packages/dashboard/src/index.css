@@ -591,7 +591,6 @@ a:hover {
   html { font-size: 13px; }
   .dashboard { padding: 1rem 0.5rem; }
   .dashboard-header h1 { font-size: 1.8rem; }
-  .dashboard-header pre { display: none; } /* hide ASCII art on mobile */
 
   .scanner-input-row { flex-direction: column; }
   .scan-btn { width: 100%; }
