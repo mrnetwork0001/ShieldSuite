@@ -40,6 +40,18 @@ graph LR
   B --> I[OKX DEX API<br/>okx-dex-swap skill]
 ```
 
+### 🧠 Why No Custom Protocol Contract?
+**(The "Where is the Solidity?" Question)**
+
+Shield Suite was specifically built for the **AI Hackathon**. Rather than deploying a generic, localized smart contract (e.g., another standard AMM fork), we built an **Autonomous AI Intelligence Layer** that routes transactions natively through the official OKX DEX Aggregator. 
+
+Our architectural complexity lies in off-chain AI orchestration communicating securely with exactly X Layer:
+1. **TEE-Secured Agentic Wallets:** A Node.js agent running 24/7 signing true on-chain transactions without exposing its private key.
+2. **Model Context Protocol (MCP):** Exposing complex OnchainOS aggregation logic via a standard LLM protocol, allowing Claude or Cursor to actively scan tokens on X Layer before they interact.
+3. **The x402 Agent Economy:** A working HTTP 402 payment loop where AI agents pay for high-fidelity security scans.
+
+We route payload data directly to the native OKX Router because our focus is securing the transaction layer and enabling AI autonomy, not reinventing liquidity pools. Our "smart contracts" are the robust, audited OKX core contracts—our innovation is the intelligent agent executing them safely.
+
 ---
 
 ## 🏆 Hackathon Submissions
