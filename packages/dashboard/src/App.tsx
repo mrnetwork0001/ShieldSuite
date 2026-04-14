@@ -490,7 +490,7 @@ export default function App() {
               </div>
 
               {/* Agent Identity + Payment */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div className="card">
                   <div className="card-title">AGENT IDENTITY</div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', lineHeight: 1.8 }}>
