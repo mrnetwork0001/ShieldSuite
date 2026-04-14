@@ -1,6 +1,6 @@
 {
-  "buildCommand": "cd packages/shieldswap && npm run build",
-  "outputDirectory": "packages/shieldswap/dist",
+  "buildCommand": "cd packages/dashboard && npm run build",
+  "outputDirectory": "packages/dashboard/dist",
   "installCommand": "npm install",
   "rewrites": [
     {
