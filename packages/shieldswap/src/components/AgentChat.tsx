@@ -25,7 +25,8 @@ interface AgentChatProps {
 // ─── Known Token Map (for natural language resolution) ────────────────────────
 
 const TOKEN_MAP: Record<string, string> = {
-  usdt: "0x1e4a5963abfd975d8c9021ce480b42188849d41d",
+  usdt: "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+  usdt0: "0x779ded0c9e1022225f8e0630b35a9b54be713736",
   usdc: "0x74b7f16337b8972027f6196a17a631ac6de26d22",
   weth: "0x5a77f1443d16ee5761d310e38b4beb27e6e2f5ab",
   eth: "0x5a77f1443d16ee5761d310e38b4beb27e6e2f5ab",
