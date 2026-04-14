@@ -1,18 +1,16 @@
-# 🛡️ Shield Suite - X Layer Security Infrastructure
-
-[![OnchainOS](https://img.shields.io/badge/OnchainOS-Integrated-6366F1?style=flat-square)](https://web3.okx.com)
-[![MCP](https://img.shields.io/badge/MCP-Compatible-06B6D4?style=flat-square)](https://modelcontextprotocol.io)
-[![x402](https://img.shields.io/badge/x402-Monetized-10B981?style=flat-square)](https://www.x402.org)
-[![X Layer](https://img.shields.io/badge/X_Layer-Mainnet-F59E0B?style=flat-square)](https://www.okx.com/xlayer)
+# Shield Suite - X Layer Security Infrastructure
 
 > **The ultimate security-first DeFi infrastructure layer on X Layer.**  
 > Built specifically for the **X Layer Build X Season 2 AI Hackathon**.
+
+<img width="1510" height="736" alt="14 04 2026_23 24 57_REC" src="https://github.com/user-attachments/assets/11ff1bf9-193f-486d-b42e-c92e0014d8fd" />
+
 
 Shield Suite unifies the **Model Context Protocol (MCP)**, **OKX OnchainOS**, and **Autonomous TEE Agents** into a holistic ecosystem that protects users from malicious tokens and provides AI agents with high-fidelity, monetizable security intelligence.
 
 ---
 
-## 📖 Table of Contents
+## Table of Contents
 1. [The Problem & Our Solution](#the-problem--our-solution)
 2. [Ecosystem Components](#ecosystem-components)
 3. [Autonomous AI Agent (TEE)](#autonomous-ai-agent-tee)
@@ -24,7 +22,7 @@ Shield Suite unifies the **Model Context Protocol (MCP)**, **OKX OnchainOS**, an
 
 ---
 
-## 🛑 The Problem & Our Solution
+## The Problem & Our Solution
 
 ### The Problem
 With the proliferation of AI trading agents and rapid deployment of meme coins on L2 networks, malicious actors deploy honeypots, hidden taxes, and toxic bytecode to drain liquidity. Existing DEX aggregators execute swaps blindly, and AI agents lack a standard, machine-readable protocol to verify token safety natively before engaging.
@@ -36,7 +34,7 @@ We built a dual-layer security ecosystem:
 
 ---
 
-## 🧩 Ecosystem Components
+## Ecosystem Components
 
 The Shield Suite monorepo is divided into three highly integrated packages:
 
@@ -47,6 +45,10 @@ The brain of the operation. A Node.js backend that serves as both a RESTful API 
 
 ### 2. ShieldSwap (`packages/shieldswap`)
 A glassmorphic, terminal-inspired frontend built in React/Vite.
+
+<img width="1123" height="909" alt="14 04 2026_23 26 10_REC" src="https://github.com/user-attachments/assets/da2dc17f-4dc9-454f-a2cb-8bccdf66daa6" />
+
+
 - Integrates `okx-dex-swap` to route trades across 500+ liquidity sources on X Layer, guaranteeing optimal routing.
 - Features a conversational **AI Agent Chatbot** seamlessly integrated directly into the trading UI, allowing users to scan tokens and stage trades using natural language.
 
@@ -57,16 +59,16 @@ A real-time command center for monitoring the entire ecosystem.
 
 ---
 
-## 🤖 Autonomous AI Agent (TEE)
+## Autonomous AI Agent (TEE)
 
 We have deployed an autonomous Node.js agent running 24/7 on a VPS. It continuously invokes the ScanGuard API to monitor the top 11 X Layer core tokens (WOKB, USDC, USDT, USDe, etc.) for emerging threats.
 
 - **Institutional Security:** Utilizes the `okx-agentic-wallet` backed by a **Trusted Execution Environment (TEE)**. The private key is strictly isolated and never exposed to the application runtime, rendering it immune to memory-dump attacks.
-- **On-Chain Checkpoints:** Emits a literal `0 OKB` transaction on the X Layer ledger periodically. Attached to the transaction data is a UTF-8 encoded metadata string (`"ScanGuard Cycle Success"`), acting as an immutable public heartbeat proving the agent's uptime.
+- **Onchain Checkpoints:** Emits a literal `0 OKB` transaction on the X Layer ledger periodically. Attached to the transaction data is a UTF-8 encoded metadata string (`"ScanGuard Cycle Success"`), acting as an immutable public heartbeat proving the agent's uptime.
 
 ---
 
-## ⚡ OnchainOS Integration Deep-Dive
+## OnchainOS Integration Deep-Dive
 
 Our application deeply leverages the OKX OnchainOS ecosystem to provide unparalleled routing and analytical capabilities. Because building AI infrastructure requires scalable underlying primitives, we orchestrated the following Skills:
 
@@ -80,7 +82,7 @@ Our application deeply leverages the OKX OnchainOS ecosystem to provide unparall
 
 ---
 
-## 💳 x402 Agent Economy
+## x402 Agent Economy
 
 ScanGuard pioneers a monetized API standard for AI agents via [x402 Payment Required](https://www.x402.org):
 
@@ -94,7 +96,7 @@ ScanGuard pioneers a monetized API standard for AI agents via [x402 Payment Requ
 
 ---
 
-## 🎯 Model Context Protocol (MCP)
+## Model Context Protocol (MCP)
 
 ScanGuard exposes an HTTP MCP server that any standard AI client can query natively to give them "X Layer vision".
 
@@ -120,7 +122,7 @@ curl -X POST http://38.49.216.120:3402/mcp/tools/call \
 
 ---
 
-## 🛠 Local Setup & Deployment
+## Local Setup & Deployment
 
 ### Prerequisites
 - Node.js >= 18
@@ -155,7 +157,7 @@ This single command orchestrates:
 
 ---
 
-## 🌍 Live Endpoints & Infrastructure
+## Live Endpoints & Infrastructure
 
 - **Network:** X Layer Mainnet (`Chain ID 196`)
 - **ShieldSwap Application:** [https://shieldswap-main.vercel.app](https://shieldswap-main.vercel.app)
