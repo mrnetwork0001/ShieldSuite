@@ -1,6 +1,6 @@
 // ─── ScanGuard — MCP Security Scanner Server ─────────────────────────────────
 
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import { config } from "dotenv";
 import { v4 as uuidv4 } from "uuid";
@@ -87,6 +87,7 @@ app.get("/api/health", (_req, res) => {
       chainId: XLAYER_CONFIG.chainId,
       uptime: process.uptime(),
       environment: NODE_ENV,
+      demoMode: process.env.X402_DEMO_MODE === "true" || NODE_ENV !== "production",
       onchainOs: getOnchainOsStatus(),
     },
   });

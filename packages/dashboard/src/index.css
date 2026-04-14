@@ -179,12 +179,16 @@ a:hover {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px dashed var(--border);
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  position: absolute;
+  top: -12px;
+  left: 12px;
   text-shadow: 0 0 5px var(--glow-dim);
 }
-.card-title::before { content: '+--- '; color: var(--fg-dim); }
-.card-title::after { content: ' ---+'; color: var(--fg-dim); }
+.card-title::before { content: '[ '; color: var(--fg-dim); }
+.card-title::after { content: ' ]'; color: var(--fg-dim); }
 
 .card-value {
   font-size: 2rem;

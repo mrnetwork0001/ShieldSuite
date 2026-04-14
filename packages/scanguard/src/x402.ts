@@ -37,7 +37,7 @@ const defaultConfig: X402Config = {
   priceUsd: SCAN_PRICE_USD,
   acceptedCurrencies: ["OKB", "USDT", "USDC"],
   paymentAddress: PAYMENT_ADDRESS,
-  demoMode: process.env.NODE_ENV !== "production",
+  demoMode: process.env.X402_DEMO_MODE === "true" || process.env.NODE_ENV !== "production",
 };
 
 /**

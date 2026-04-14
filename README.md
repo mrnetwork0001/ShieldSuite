@@ -55,10 +55,10 @@ A reusable, MCP-compatible security scanning skill that any AI agent can call. U
 A premium, security-first DEX aggregator. Paste a token address → ScanGuard scans it → if safe, swap via OKX DEX aggregation → if risky, block with detailed threat report.
 
 ### Submission 3: **Autonomous Shield Agent** → Most Active Agent Arena
-A completely autonomous Node.js cron agent running 24/7 on a VPS. It continuously invokes the ScanGuard API to scan top X Layer core tokens.
-- **Ethers.js Wallet Engine:** Uses a secure `.env` injected private key to authenticate natively on X Layer Mainnet.
-- **On-Chain Heartbeats:** Emits a real `0 OKB` self-transfer on the ledger every scan cycle, attaching `UTF-8` encoded hexadecimal payloads (e.g., `"ScanGuard Cycle Success"`) directly into the blockchain as an immutable receipt.
-- **Live Agent Identity:** The Dashboard UI cryptographically derives the Agent's public wallet address securely from its active private key and tracks its activity in real-time.
+A completely autonomous Node.js scanning agent running 24/7 on a VPS. It continuously invokes the ScanGuard API to monitor the top 11 X Layer core tokens for emerging threats.
+- **TEE-Secured Identity:** Uses the **OKX Agentic Wallet** with Trusted Execution Environment (TEE) signing. The private key is never exposed to the application code, providing institutional-grade security.
+- **On-Chain Heartbeats:** Emits a real `0 OKB` self-transfer on the ledger every 5 minutes, attaching UTF-8 encoded metadata (e.g., `"ScanGuard Cycle Success"`) as an immutable record of system health.
+- **Live Agent Ledger:** The Dashboard UI cryptographically tracks the Agent's public wallet address (`0x821b...`) and audits its activity in real-time.
 
 ---
 
@@ -106,6 +106,21 @@ cp .env.example .env
 
 # Start all services (ScanGuard + ShieldSwap + Dashboard)
 npm run dev
+```
+
+### VPS Deployment (24/7 Autonomous Mode)
+For industrial-grade uptime, deploy the agent to a VPS using PM2:
+```bash
+# 1. Install PM2 globally
+sudo npm install -g pm2
+
+# 2. Start Project Ecosystem
+pm2 start "npm run dev:scanguard" --name scanguard-api
+pm2 start "npm run agent" --name shield-agent
+
+# 3. Setup Persistent Startup
+pm2 save
+pm2 startup
 ```
 
 ### Access Points
@@ -211,22 +226,22 @@ This creates an **agent economy loop** where AI agents securely pay for high-val
 
 ---
 
-## 📊 Deployed Contract / Agent
+## 📊 Live Infrastructure
 
 - **Chain:** X Layer Mainnet (Chain ID 196)
 - **Agentic Wallet (EVM):** `0x821b9cc6a54272d0b5b106416fe360c162f2af85`
 - **Agentic Wallet (Solana):** `B72H614ET6scyxhN7Fdzn3PeKzzMqjJg3UYVp7EDFUh6`
-- **ScanGuard API:** `[deployment URL]`
-- **ShieldSwap Frontend:** `[deployment URL]`
+- **Dashboard Hub:** [Insert your deployed Vercel/Railway URL]
+- **ShieldSwap App:** [Insert your deployed Vercel/Railway URL]
 
 ---
 
 ## 👥 Team
 
-- **[Your Name]** — Full-stack developer
+- **Shield Suite Core Team** — Full-stack decentralized security
 
 ---
 
 ## 📜 License
 
-MIT — © 2025 Shield Suite
+MIT — © 2026 Shield Suite

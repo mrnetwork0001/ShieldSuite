@@ -16,7 +16,9 @@
     "build:shieldswap": "npm run build -w packages/shieldswap",
     "build:dashboard": "npm run build -w packages/dashboard",
     "dev": "concurrently \"npm run dev:scanguard\" \"npm run dev:shieldswap\" \"npm run dev:dashboard\"",
-    "build": "npm run build:scanguard && npm run build:shieldswap && npm run build:dashboard"
+    "build": "npm run build:scanguard && npm run build:shieldswap && npm run build:dashboard",
+    "agent": "tsx packages/scanguard/src/agent-cron.ts",
+    "check-env": "node -e \"const fs=require('fs'); const e=fs.readFileSync('.env','utf8'); ['OKX_API_KEY','OKX_SECRET_KEY','OKX_PASSPHRASE','AGENT_PRIVATE_KEY'].forEach(k=>console.log(k+': '+(e.includes(k+'=')?'✅':'❌')))\""
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

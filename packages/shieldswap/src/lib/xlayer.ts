@@ -50,9 +50,9 @@ export const TOKEN_LIST: TokenInfo[] = [
     logoUrl: "https://s2.coinmarketcap.com/static/img/coins/64x64/3897.png",
   },
   {
-    address: "0x1e4a5963abfd975d8c9021ce480b42188849d41d",
+    address: "0x779ded0c9e1022225f8e0630b35a9b54be713736",
     symbol: "USDT",
-    name: "Tether USD",
+    name: "USDT0",
     decimals: 6,
     logoColor: "#26A17B",
     logoUrl: "https://assets.coingecko.com/coins/images/325/small/Tether.png",
@@ -90,7 +90,7 @@ export const TOKEN_LIST: TokenInfo[] = [
 export const XLAYER_TOKENS = {
   OKB: NATIVE_OKB.address,
   WOKB: "0xe538905cf8410324e03a5a23c1c177a474d59b2b",
-  USDT: "0x1e4a5963abfd975d8c9021ce480b42188849d41d",
+  USDT: "0x779ded0c9e1022225f8e0630b35a9b54be713736",
   USDC: "0x74b7f16337b8972027f6196a17a631ac6de26d22",
   ETH: "0x5a77f1443d16ee5761d310e38b4beb27e6e2f5ab",
   DAI: "0x2c03058e5f4e533f2263e748d1f43a3fe66b3e79",

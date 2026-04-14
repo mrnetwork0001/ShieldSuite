@@ -34,6 +34,7 @@ interface HealthData {
     modules: string[];
     agenticWallet: string | null;
   };
+  demoMode?: boolean;
 }
 
 interface FeedEntry {

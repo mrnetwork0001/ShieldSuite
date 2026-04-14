@@ -175,6 +175,14 @@ const SwapCard: React.FC<SwapCardProps> = ({
       return;
     }
 
+    // WOKB → OKB unwrap calls withdraw() directly — no router approval needed
+    const isUnwrap = fromToken.address.toLowerCase() === "0xe538905cf8410324e03a5a23c1c177a474d59b2b"
+      && toToken.address.toLowerCase() === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+    if (isUnwrap) {
+      setNeedsApproval(false);
+      return;
+    }
+
     // Need wallet + quote + valid amount to check
     if (!wallet.connected || !wallet.address || !wallet.provider || !quote) {
       return; // Don't change state — keep previous value
@@ -226,7 +234,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
 
     checkApproval();
     return () => { cancelled = true; };
-  }, [quote, fromToken.address, fromToken.isNative, fromToken.decimals, wallet.connected, wallet.address, amount, approveTarget]);
+  }, [quote, fromToken.address, fromToken.isNative, fromToken.decimals, toToken.address, wallet.connected, wallet.address, amount, approveTarget]);
 
   // ─── Handle Approve ───────────────────────────────────────────────────
   const handleApprove = useCallback(async () => {

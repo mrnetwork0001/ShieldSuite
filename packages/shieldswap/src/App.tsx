@@ -188,11 +188,15 @@ const App: React.FC = () => {
 
       {/* Footer */}
       <footer className="app-footer">
-        <p>
-          Built for <strong>X Layer Build X Season 2 AI Hackathon</strong> ·{" "}
+        <div className="footer-left">
+          Built for <strong>XLayer</strong> ·{" "}
           Powered by <span className="text-blue">ScanGuard MCP</span> +{" "}
           <span className="text-purple">x402 Protocol</span>
-        </p>
+        </div>
+        <div className="footer-center">
+          Built by <a href="https://x.com/encrypt_wizard" target="_blank" rel="noopener noreferrer">MrNetwork</a>
+        </div>
+        <div className="footer-right"></div>
       </footer>
 
       {/* Agent Chat */}
@@ -296,12 +300,41 @@ const App: React.FC = () => {
         }
 
         .app-footer {
-          text-align: center;
-          padding: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 24px 32px;
           font-size: 0.75rem;
           color: var(--text-tertiary);
           border-top: 1px solid var(--border-default);
           margin-top: auto;
+        }
+
+        .footer-left {
+          flex: 1;
+          text-align: left;
+          line-height: 1.5;
+        }
+
+        .footer-center {
+          flex: 1;
+          text-align: center;
+        }
+
+        .footer-right {
+          flex: 1;
+        }
+
+        .app-footer a {
+          color: var(--text-secondary);
+          font-weight: 600;
+          text-decoration: none;
+          transition: color 0.2s ease;
+        }
+
+        .app-footer a:hover {
+          color: #fff;
+          text-decoration: underline;
         }
 
         .app-footer strong {
@@ -319,6 +352,20 @@ const App: React.FC = () => {
 
           .activity-entry {
             font-size: 0.72rem;
+          }
+
+          .app-footer {
+            flex-direction: column;
+            gap: 12px;
+            padding: 20px 16px;
+          }
+
+          .footer-left, .footer-center, .footer-right {
+            text-align: center;
+          }
+
+          .footer-right {
+            display: none;
           }
         }
       `}</style>

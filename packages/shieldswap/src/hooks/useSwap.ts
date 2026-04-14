@@ -209,6 +209,59 @@ export function useSwap(): UseSwapReturn {
 
         const amountWei = ethers.parseUnits(params.amount, params.fromDecimals).toString();
 
+        // ── WOKB ↔ OKB Direct Wrap/Unwrap ──────────────────────────────
+        // WOKB is Wrapped OKB — converting between them is a simple
+        // deposit()/withdraw() call on the WOKB contract, NOT a DEX swap.
+        const WOKB_ADDRESS = "0xe538905cf8410324e03a5a23c1c177a474d59b2b";
+        const NATIVE_ADDRESS = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+        const isFromWOKB = params.fromToken.toLowerCase() === WOKB_ADDRESS;
+        const isToWOKB = params.toToken.toLowerCase() === WOKB_ADDRESS;
+        const isFromNative = params.fromToken.toLowerCase() === NATIVE_ADDRESS;
+        const isToNative = params.toToken.toLowerCase() === NATIVE_ADDRESS;
+
+        // Case 1: WOKB → OKB (unwrap)
+        if (isFromWOKB && isToNative) {
+          const wokb = new ethers.Contract(
+            WOKB_ADDRESS,
+            ["function withdraw(uint256 wad)"],
+            signer
+          );
+          const tx = await wokb.withdraw(amountWei);
+          const receipt = await tx.wait();
+
+          const result: SwapResult = {
+            txHash: tx.hash,
+            status: receipt?.status === 1 ? "confirmed" : "failed",
+            amountIn: params.amount,
+            amountOut: params.amount, // 1:1 unwrap
+            explorerUrl: `${XLAYER_CHAIN.blockExplorerUrls[0]}/tx/${tx.hash}`,
+          };
+          setSwapResult(result);
+          return result;
+        }
+
+        // Case 2: OKB → WOKB (wrap)
+        if (isFromNative && isToWOKB) {
+          const wokb = new ethers.Contract(
+            WOKB_ADDRESS,
+            ["function deposit() payable"],
+            signer
+          );
+          const tx = await wokb.deposit({ value: amountWei });
+          const receipt = await tx.wait();
+
+          const result: SwapResult = {
+            txHash: tx.hash,
+            status: receipt?.status === 1 ? "confirmed" : "failed",
+            amountIn: params.amount,
+            amountOut: params.amount, // 1:1 wrap
+            explorerUrl: `${XLAYER_CHAIN.blockExplorerUrls[0]}/tx/${tx.hash}`,
+          };
+          setSwapResult(result);
+          return result;
+        }
+
+        // ── Standard DEX Aggregator Swap ────────────────────────────────
         // Get swap data from backend proxy
         const queryStr = new URLSearchParams({
           fromToken: params.fromToken,
@@ -246,7 +299,7 @@ export function useSwap(): UseSwapReturn {
           );
         }
 
-        // ── Step 3: Execute the swap ──
+        // ── Execute the swap ──
         const tx = await signer.sendTransaction({
           to: txInfo.to,
           data: txInfo.data,

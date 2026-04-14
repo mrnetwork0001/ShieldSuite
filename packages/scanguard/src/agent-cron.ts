@@ -22,20 +22,26 @@ config();
 // ─── Configuration ───────────────────────────────────────────────────────────
 
 const SCANGUARD_URL = process.env.SCANGUARD_URL || "http://localhost:3402";
-const SCAN_INTERVAL_MS = parseInt(process.env.AGENT_SCAN_INTERVAL || "3600000", 10); // 1 hour default
-const BATCH_DELAY_MS = 5000; // 5 seconds between scans to avoid rate limits
+const SCAN_INTERVAL_MS = process.env.AGENT_DEMO_MODE === "true" 
+  ? 30000 // 30 seconds for quick demo
+  : parseInt(process.env.AGENT_SCAN_INTERVAL || "3600000", 10); // 1 hour default
+const BATCH_DELAY_MS = process.env.AGENT_DEMO_MODE === "true" ? 2000 : 5000;
 
-// Top X Layer tokens to scan automatically
+// Expanded token list for dynamic demo
 const TOKEN_LIST = [
-  // Top 5 canonical (Verified X Layer Contracts - SAFE)
-  { address: "0x1E4a5963aBFD975d8c9021ce480b42188849D41d", symbol: "USDT" },
-  { address: "0x74b7F16337b8972027F6196A17a631aC6dE26d22", symbol: "USDC" },
+  // Canonical / Safe
+  { address: "0x779ded0c9e1022225f8e0630b35a9b54be713736", symbol: "USDT" },
+  { address: "0x74b7f16337b8972027f6196a17a631ac6de26d22", symbol: "USDC" },
   { address: "0x5a77f1443d16ee5761d310e38b4beb27e6e2f5ab", symbol: "WETH" },
   { address: "0xe538905cf8410324e03A5A23C1c177a474D59b2b", symbol: "WOKB" },
   { address: "0xC5015b9d9161Dca7e18e32f6f25C4aD850731Fd4", symbol: "DAI" },
-  // 2 Demo tokens (Will trigger 'HIGH RISK' due to missing bytecode on X Layer)
-  { address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", symbol: "FAKE_WBTC" },
-  { address: "0x514910771AF9Ca656af840dff83E8264EcF986CA", symbol: "FAKE_LINK" },
+  { address: "0x2c03058e5f4e533f2263e748d1f43a3fe66b3e79", symbol: "DAI.old" },
+  // Risky / Demo Phishing
+  { address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", symbol: "WBTC-FAKE" },
+  { address: "0x514910771AF9Ca656af840dff83E8264EcF986CA", symbol: "LINK-SUS" },
+  { address: "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2", symbol: "MKR-MOCK" },
+  { address: "0x6B175474E89094C44Da98b954EedeAC495271d0F", symbol: "DAI-ETH" }, // Wrong chain token
+  { address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", symbol: "USDC-ETH" }, // Phishing check on X Layer
 ];
 
 // ─── Agent State ─────────────────────────────────────────────────────────────

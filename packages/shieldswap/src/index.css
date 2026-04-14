@@ -12,26 +12,50 @@
   --bg-input: #0D1224;
   --bg-elevated: #1A2140;
 
-  /* Glass */
-  --glass-bg: rgba(18, 23, 43, 0.72);
-  --glass-border: rgba(75, 123, 245, 0.12);
-  --glass-blur: 24px;
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-
-  /* Accents — aligned with ScanGuard Terminal palette */
+  /* Accents — Matrix Green Palette */
   --accent-safe: #33ff00;
   --accent-safe-dim: rgba(51, 255, 0, 0.10);
-  --accent-safe-glow: 0 0 20px rgba(51, 255, 0, 0.25);
-  --accent-danger: #FF3B5C;
-  --accent-danger-dim: rgba(255, 59, 92, 0.12);
-  --accent-danger-glow: 0 0 20px rgba(255, 59, 92, 0.3);
-  --accent-blue: #4B7BF5;
-  --accent-blue-dim: rgba(75, 123, 245, 0.12);
-  --accent-blue-glow: 0 0 20px rgba(75, 123, 245, 0.3);
-  --accent-warning: #ffb000;
-  --accent-warning-dim: rgba(255, 176, 0, 0.12);
-  --accent-purple: #A855F7;
-  --accent-purple-dim: rgba(168, 85, 247, 0.12);
+  --accent-safe-glow: 0 0 15px rgba(51, 255, 0, 0.4);
+  --accent-danger: #33ff00; /* Consistency */
+  --accent-danger-dim: rgba(51, 255, 0, 0.05);
+  --accent-danger-glow: 0 0 10px rgba(51, 255, 0, 0.2);
+  --accent-blue: #33ff00;
+  --accent-blue-dim: rgba(51, 255, 0, 0.05);
+  --accent-blue-glow: 0 0 10px rgba(51, 255, 0, 0.2);
+  --accent-warning: #33ff00;
+  --accent-warning-dim: rgba(51, 255, 0, 0.05);
+  --accent-purple: #33ff00;
+  --accent-purple-dim: rgba(51, 255, 0, 0.05);
+
+  /* Text */
+  --text-primary: #33ff00;
+  --text-secondary: #1f521f;
+  --text-tertiary: #145214;
+  --text-accent: #33ff00;
+
+  /* Borders */
+  --border-default: #1f521f;
+  --border-hover: #33ff00;
+  --border-active: #33ff00;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  /* Sharp Corners (Terminal Feel) */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-full: 0px;
+
+  /* Typography */
+  --font-sans: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-retro: 'VT323', monospace;
 
   /* Text */
   --text-primary: #F0F2F5;
@@ -109,28 +133,30 @@ body {
 }
 
 /* ─── Background Effects ──────────────────────────────────────────────────── */
+/* ─── CRT Scanline Overlay ──────────────────────────────────────────────── */
 body::before {
   content: '';
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--gradient-hero);
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.12) 2px,
+    rgba(0, 0, 0, 0.12) 4px
+  );
+  z-index: 9999;
   pointer-events: none;
-  z-index: 0;
 }
 
+/* ─── CRT Vignette ──────────────────────────────────────────────────────── */
 body::after {
   content: '';
   position: fixed;
-  top: -50%;
-  right: -30%;
-  width: 80%;
-  height: 80%;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.06) 0%, transparent 60%);
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%);
+  z-index: 9998;
   pointer-events: none;
-  z-index: 0;
 }
 
 /* ─── Scrollbar ───────────────────────────────────────────────────────────── */
@@ -154,18 +180,27 @@ body::after {
 
 /* ─── Glass Card ──────────────────────────────────────────────────────────── */
 .glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--glass-shadow);
-  transition: border-color var(--duration-normal) var(--ease-out),
-              box-shadow var(--duration-normal) var(--ease-out);
+  background: #000;
+  border: 1px solid var(--border-default);
+  padding: 1.5rem;
+  box-shadow: 0 0 10px rgba(51, 255, 0, 0.05);
+  position: relative;
 }
 
 .glass-card:hover {
-  border-color: rgba(75, 123, 245, 0.2);
+  border-color: var(--accent-safe);
+  box-shadow: 0 0 15px rgba(51, 255, 0, 0.15);
+}
+
+.glass-card::before {
+  content: '+--- SHIELD_LINK ---+';
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  background: #000;
+  padding: 0 8px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
 }
 
 /* ─── Buttons ─────────────────────────────────────────────────────────────── */
