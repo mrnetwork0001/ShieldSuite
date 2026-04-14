@@ -333,8 +333,8 @@ export function useSwap(): UseSwapReturn {
           to: txInfo.to,
           data: txInfo.data,
           value: txInfo.value ? BigInt(txInfo.value) : 0n,
-          gasLimit: txInfo.gas ? BigInt(txInfo.gas) : undefined,
-          gasPrice: txInfo.gasPrice ? BigInt(txInfo.gasPrice) : undefined,
+          // Let the wallet and ethers.js estimate gas dynamics natively to prevent 
+          // 'third-party contract execution error' wallet strict-simulation reverts.
         });
 
         const receipt = await tx.wait();
