@@ -1,0 +1,16 @@
+{
+  "buildCommand": "npm run build -w packages/dashboard",
+  "outputDirectory": "packages/dashboard/dist",
+  "installCommand": "npm install",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "http://38.49.216.120:3402/api/:path*"
+    },
+    {
+      "source": "/mcp/:path*",
+      "destination": "http://38.49.216.120:3402/mcp/:path*"
+    }
+  ]
+}

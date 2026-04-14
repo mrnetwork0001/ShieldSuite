@@ -90,6 +90,8 @@ function TerminalBar({ value, max, label }: { value: number; max: number; label:
 // ─── Clipboard Helper handled inside App for state access ──────────────
 
 // ─── Main App ────────────────────────────────────────────────────────────────
+const API_BASE = import.meta.env.VITE_SCANGUARD_URL || '';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<'scanner' | 'feed' | 'mcp'>('scanner');
   const [health, setHealth] = useState<HealthData | null>(null);
@@ -134,18 +136,18 @@ export default function App() {
 
   // ─── Polling for feed & stats ──────────────────────────────────────────
   useEffect(() => {
-    fetch('/api/health')
+    fetch(`${API_BASE}/api/health`)
       .then(r => r.json())
       .then(d => { if (d.success) setHealth(d.data); })
       .catch(() => {});
 
     const pollData = () => {
-      fetch('/api/stats')
+      fetch(`${API_BASE}/api/stats`)
         .then(r => r.json())
         .then(d => { if (d.success) setTotalScans(d.data.cachedScans || 0); })
         .catch(() => {});
 
-      fetch(`/api/feed?page=${currentPage}&limit=30`)
+      fetch(`${API_BASE}/api/feed?page=${currentPage}&limit=30`)
         .then(r => r.json())
         .then(d => {
           if (d.success && Array.isArray(d.data)) {
@@ -209,7 +211,7 @@ export default function App() {
     setScanResult(null);
 
     try {
-      const res = await fetch('/api/scan', {
+      const res = await fetch(`${API_BASE}/api/scan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tokenAddress: scanAddress }),
