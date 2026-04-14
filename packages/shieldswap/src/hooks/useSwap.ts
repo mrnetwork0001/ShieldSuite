@@ -313,20 +313,8 @@ export function useSwap(): UseSwapReturn {
           );
         }
 
-        // ── Simulate the swap first to catch reverts early ──
-        try {
-          await signer.provider!.call({
-            to: txInfo.to,
-            data: txInfo.data,
-            from: params.recipient,
-            value: txInfo.value ? BigInt(txInfo.value) : 0n,
-          });
-        } catch (simError: any) {
-          throw new Error(
-            `Swap will revert on-chain: ${simError.reason || simError.shortMessage || "unknown reason"}. ` +
-            `Try increasing slippage, reducing the amount, or using a different token pair.`
-          );
-        }
+        // Skip custom provider simulation to avoid false-positives from out-of-sync RPCs.
+        // The user's wallet extension (e.g. OKX Wallet) will native simulate the tx automatically.
 
         // ── Execute the swap ──
         const tx = await signer.sendTransaction({
