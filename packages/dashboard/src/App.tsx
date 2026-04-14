@@ -709,7 +709,7 @@ X-402-Payment: <signed-payment-receipt>`}
             <span style={{ color: 'var(--fg-subtle)' }}>OnchainOS × MCP × x402 × Uniswap Skills</span>
           </div>
           <div style={{ textAlign: 'center', fontWeight: 700, flex: '0 0 auto' }}>
-            <a href="https://x.com/encrypt_wizard" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--fg)', textDecoration: 'none', padding: '0.2rem 0.5rem', border: '1px solid var(--border)' }}>MrNetwork</a>
+            <a href="https://x.com/encrypt_wizard" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--fg)', textDecoration: 'none', padding: '0.2rem 0.5rem', border: '1px solid var(--border)' }}>Built by MrNetwork</a>
           </div>
         </div>
       </motion.footer>
