@@ -5,6 +5,7 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "jsx": "react-jsx",
+    "types": ["vite/client"],
     "moduleResolution": "bundler",
     "outDir": "./dist",
     "rootDir": ".",
