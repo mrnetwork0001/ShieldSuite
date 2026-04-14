@@ -317,12 +317,15 @@ export function useSwap(): UseSwapReturn {
         // The user's wallet extension (e.g. OKX Wallet) will native simulate the tx automatically.
 
         // ── Execute the swap ──
+        // We inject the OKX API gas estimate but padded by 150% to prevent strict 
+        // wallet simulations from failing, while also bypassing local eth_estimateGas reverts.
+        const gasLimit = txInfo.gas ? (BigInt(txInfo.gas) * 150n) / 100n : undefined;
+        
         const tx = await signer.sendTransaction({
           to: txInfo.to,
           data: txInfo.data,
           value: txInfo.value ? BigInt(txInfo.value) : 0n,
-          // Let the wallet and ethers.js estimate gas dynamics natively to prevent 
-          // 'third-party contract execution error' wallet strict-simulation reverts.
+          ...(gasLimit ? { gasLimit } : {}),
         });
 
         const receipt = await tx.wait();
