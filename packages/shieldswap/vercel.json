@@ -1,8 +1,8 @@
 {
-  "buildCommand": "npm run build -w packages/shieldswap",
-  "outputDirectory": "packages/shieldswap/dist",
-  "installCommand": "npm install",
   "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
   "rewrites": [
     {
       "source": "/api/:path*",
