@@ -525,9 +525,9 @@ export default function App() {
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', lineHeight: 1.8 }}>
                     <div><span style={{ color: 'var(--fg-dim)' }}>scan.price=</span><span style={{ color: 'var(--fg-amber)' }}>$0.005 USDC</span></div>
                     <div><span style={{ color: 'var(--fg-dim)' }}>protocol=</span>HTTP 402 Payment Required</div>
-                    <div><span style={{ color: 'var(--fg-dim)' }}>mode=</span><span style={{ color: 'var(--fg)' }}>DEMO (free scans)</span></div>
+                    <div><span style={{ color: 'var(--fg-dim)' }}>mode=</span><span style={{ color: 'var(--fg)' }}>LIVE (Payment Channel Active)</span></div>
                     <div style={{ marginTop: '0.4rem', fontSize: '0.7rem', color: 'var(--fg-subtle)' }}>
-                      // In production, agents pay per scan via x402 stablecoin micropayments
+                      // Currently subsidized per scan via x402 stablecoin micropayments
                     </div>
                   </div>
                 </div>

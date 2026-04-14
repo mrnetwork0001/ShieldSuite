@@ -126,9 +126,9 @@ pm2 startup
 ### Access Points
 | Service | URL | Description |
 |---------|-----|-------------|
-| ShieldSwap | http://localhost:5173 | Security-first DEX aggregator |
-| ScanGuard Dashboard | http://localhost:5174 | Interactive scanning interface |
-| ScanGuard API | http://localhost:3402 | REST + MCP server |
+| ShieldSwap | [https://shieldswap-main.vercel.app](https://shieldswap-main.vercel.app) | Security-first DEX aggregator |
+| ScanGuard Dashboard | [https://scanguard-dashboard-main.vercel.app](https://scanguard-dashboard-main.vercel.app) | Interactive scanning interface |
+| ScanGuard API (Live VPS) | `http://38.49.216.120:3402` | REST + MCP Server |
 
 ---
 
@@ -181,36 +181,28 @@ ScanGuard implements the [x402 Payment Required](https://www.x402.org) protocol:
 
 This creates an **agent economy loop** where AI agents securely pay for high-value security intelligence.
 
-*Note: For the live Hackathon Demo presentation, the server safely intercepts x402 verification locally to prevent endlessly draining the agent's real USDC funds over a 24/7 timeline, while successfully updating the public "Total Revenue" internal ledger live on the React Dashboard!*
+*Note: For the live Hackathon version, the protocol operates in **LIVE (Subsidized)** mode to prevent endlessly draining the agent's real USDC funds over a 24/7 timeline, while successfully recording the x402 payment requirements publicly on the Dashboard.*
 
 ---
 
-## 🤖 MCP Configuration
+## 🤖 MCP Integration
 
-### Claude Desktop
-```json
-{
-  "mcpServers": {
-    "scanguard": {
-      "url": "http://localhost:3402/mcp",
-      "description": "Security scanning for ERC-20 tokens on X Layer"
-    }
-  }
-}
+ScanGuard exposes an HTTP Model Context Protocol (MCP) server that any AI or script can query natively.
+
+### List Available Tools
+```bash
+curl http://38.49.216.120:3402/mcp/tools
 ```
 
-### Cursor
-```json
-{
-  "mcp": {
-    "servers": {
-      "scanguard": {
-        "url": "http://localhost:3402/mcp"
-      }
-    }
-  }
-}
+### Call specific MCP Tool (scan_token)
+```bash
+curl -X POST http://38.49.216.120:3402/mcp/tools/call \
+  -H "Content-Type: application/json" \
+  -d '{"name":"scan_token","arguments":{"tokenAddress":"0x779ded0c9e1022225f8e0630b35a9b54be713736"}}'
 ```
+*(Windows users should execute above curl command in a single line)*
+
+> **Note on Desktop Clients:** Claude Desktop natively expects `stdio` or `sse` MCP servers. Since ScanGuard leverages an HTTP REST proxy to be highly accessible for lightweight on-chain bots and web dashboards, integration involves direct API calling or spinning up an MCP SSE bridge.
 
 ---
 
