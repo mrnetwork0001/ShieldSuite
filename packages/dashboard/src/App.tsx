@@ -378,14 +378,30 @@ export default function App() {
                   <span style={{ color: 'var(--fg-dim)' }}>scanguard@xlayer:~$</span> scan --token &lt;address&gt;
                 </div>
                 <div className="scanner-input-row">
-                  <input
-                    className="scanner-input"
-                    type="text"
-                    placeholder="0x... paste token contract address"
-                    value={scanAddress}
-                    onChange={e => setScanAddress(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleScan()}
-                  />
+                  <div style={{ flex: 1, position: 'relative', display: 'flex' }}>
+                    <input
+                      className="scanner-input"
+                      type="text"
+                      placeholder="0x... paste token contract address"
+                      value={scanAddress}
+                      onChange={e => setScanAddress(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleScan()}
+                      style={{ paddingRight: scanAddress ? '4.5rem' : '0.8rem', width: '100%' }}
+                    />
+                    {scanAddress && (
+                      <button
+                        onClick={() => { setScanAddress(''); setScanResult(null); setScanError(null); }}
+                        style={{
+                          position: 'absolute', right: '0.8rem', top: '50%', transform: 'translateY(-50%)',
+                          background: 'transparent', border: '1px dashed var(--fg-dim)', color: 'var(--fg)',
+                          cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '0.65rem',
+                          padding: '0.15rem 0.4rem', fontWeight: 700
+                        }}
+                      >
+                        [X] CLEAR
+                      </button>
+                    )}
+                  </div>
                   <button
                     className="scan-btn"
                     onClick={handleScan}
