@@ -232,7 +232,7 @@ This creates an **agent economy loop** where AI agents securely pay for high-val
 - **Agentic Wallet (EVM):** `0x821b9cc6a54272d0b5b106416fe360c162f2af85`
 - **Agentic Wallet (Solana):** `B72H614ET6scyxhN7Fdzn3PeKzzMqjJg3UYVp7EDFUh6`
 - **Dashboard Hub:** [scanguard-dashboard-main.vercel.app](https://scanguard-dashboard-main.vercel.app)
-- **ShieldSwap App:** [Deploy in progress]
+- **ShieldSwap App:** [shieldswap-main.vercel.app](https://shieldswap-main.vercel.app)
 
 ---
 

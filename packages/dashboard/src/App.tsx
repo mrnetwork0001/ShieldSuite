@@ -329,7 +329,7 @@ export default function App() {
             <div style={{ padding: '0.5rem 0', borderBottom: '1px dashed var(--fg-subtle)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '0.1rem 0.4rem', border: '1px solid var(--fg-dim)', color: 'var(--fg)' }}>[LIVE]</span>
               <div>
-                <a href={import.meta.env.VITE_SHIELDSWAP_URL || "http://localhost:5173"} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', fontWeight: 600, fontSize: '0.8rem', color: 'var(--fg)', borderBottom: '1px dotted var(--fg-dim)' }}>ShieldSwap Protocol ↗</a>
+                <a href={import.meta.env.VITE_SHIELDSWAP_URL || "https://shieldswap-main.vercel.app"} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', fontWeight: 600, fontSize: '0.8rem', color: 'var(--fg)', borderBottom: '1px dotted var(--fg-dim)' }}>ShieldSwap Protocol ↗</a>
                 <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>interface=MCP | type=DEX_AGGREGATOR</div>
               </div>
             </div>
