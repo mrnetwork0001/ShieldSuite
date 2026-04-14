@@ -1,251 +1,167 @@
-# 🛡️ Shield Suite
-
-> **Security-first DeFi infrastructure for X Layer** — AI-powered token scanning skill + security-gated DEX aggregator  
-> Built for **X Layer Build X Season 2 AI Hackathon**
+# 🛡️ Shield Suite - X Layer Security Infrastructure
 
 [![OnchainOS](https://img.shields.io/badge/OnchainOS-Integrated-6366F1?style=flat-square)](https://web3.okx.com)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-06B6D4?style=flat-square)](https://modelcontextprotocol.io)
 [![x402](https://img.shields.io/badge/x402-Monetized-10B981?style=flat-square)](https://www.x402.org)
 [![X Layer](https://img.shields.io/badge/X_Layer-Mainnet-F59E0B?style=flat-square)](https://www.okx.com/xlayer)
 
----
+> **The ultimate security-first DeFi infrastructure layer on X Layer.**  
+> Built specifically for the **X Layer Build X Season 2 AI Hackathon**.
 
-## 🏗️ Architecture
-
-Shield Suite is a **monorepo** with three packages that work together:
-
-```
-shield-suite/
-├── packages/scanguard/       # 🔍 Security scanning engine (Express API + MCP server)
-├── packages/shieldswap/      # 🔄 Security-first DEX aggregator (React + Vite)
-├── packages/dashboard/       # 📊 ScanGuard interactive dashboard (React + Vite)
-└── docs/                     # 📖 Architecture documentation
-```
-
-### Data Flow
-```mermaid
-graph LR
-  A[User / AI Agent] --> B[ShieldSwap UI<br/>Port 5173]
-  A --> C[ScanGuard Dashboard<br/>Port 5174]
-  A --> D[MCP Client<br/>Claude / Cursor]
-  
-  B --> E[ScanGuard API<br/>Port 3402]
-  C --> E
-  D --> E
-  
-  E --> F[OKX Security API<br/>okx-security skill]
-  E --> G[Custom Bytecode<br/>Analysis Engine]
-  E --> H[X Layer RPC<br/>Chain ID 196]
-  
-  B --> I[OKX DEX API<br/>okx-dex-swap skill]
-```
-
-### 🧠 Why No Custom Protocol Contract?
-**(The "Where is the Solidity?" Question)**
-
-Shield Suite was specifically built for the **AI Hackathon**. Rather than deploying a generic, localized smart contract (e.g., another standard AMM fork), we built an **Autonomous AI Intelligence Layer** that routes transactions natively through the official OKX DEX Aggregator. 
-
-Our architectural complexity lies in off-chain AI orchestration communicating securely with exactly X Layer:
-1. **TEE-Secured Agentic Wallets:** A Node.js agent running 24/7 signing true on-chain transactions without exposing its private key.
-2. **Model Context Protocol (MCP):** Exposing complex OnchainOS aggregation logic via a standard LLM protocol, allowing Claude or Cursor to actively scan tokens on X Layer before they interact.
-3. **The x402 Agent Economy:** A working HTTP 402 payment loop where AI agents pay for high-fidelity security scans.
-
-We route payload data directly to the native OKX Router because our focus is securing the transaction layer and enabling AI autonomy, not reinventing liquidity pools. Our "smart contracts" are the robust, audited OKX core contracts—our innovation is the intelligent agent executing them safely.
+Shield Suite unifies the **Model Context Protocol (MCP)**, **OKX OnchainOS**, and **Autonomous TEE Agents** into a holistic ecosystem that protects users from malicious tokens and provides AI agents with high-fidelity, monetizable security intelligence.
 
 ---
 
-## 🏆 Hackathon Submissions
-
-### Submission 1: **ScanGuard** → Skills Arena
-A reusable, MCP-compatible security scanning skill that any AI agent can call. Uses the **dual-layer scanning** approach:
-- **Layer 1:** OKX OnchainOS Security API (`okx-security` skill) — official token risk data
-- **Layer 2:** Custom bytecode analysis — deep dive into contract code for additional risk flags
-
-**Monetized via x402** — agents pay $0.005/scan in USDC stablecoins.
-
-### Submission 2: **ShieldSwap** → X Layer Arena  
-A premium, security-first DEX aggregator. Paste a token address → ScanGuard scans it → if safe, swap via OKX DEX aggregation → if risky, block with detailed threat report.
-
-### Submission 3: **Autonomous Shield Agent** → Most Active Agent Arena
-A completely autonomous Node.js scanning agent running 24/7 on a VPS. It continuously invokes the ScanGuard API to monitor the top 11 X Layer core tokens for emerging threats.
-- **TEE-Secured Identity:** Uses the **OKX Agentic Wallet** with Trusted Execution Environment (TEE) signing. The private key is never exposed to the application code, providing institutional-grade security.
-- **On-Chain Heartbeats:** Emits a real `0 OKB` self-transfer on the ledger every 5 minutes, attaching UTF-8 encoded metadata (e.g., `"ScanGuard Cycle Success"`) as an immutable record of system health.
-- **Live Agent Ledger:** The Dashboard UI cryptographically tracks the Agent's public wallet address (`0x821b...`) and audits its activity in real-time.
+## 📖 Table of Contents
+1. [The Problem & Our Solution](#the-problem--our-solution)
+2. [Ecosystem Components](#ecosystem-components)
+3. [Autonomous AI Agent (TEE)](#autonomous-ai-agent-tee)
+4. [OnchainOS Integration Deep-Dive](#onchainos-integration-deep-dive)
+5. [x402 Agent Economy](#x402-agent-economy)
+6. [MCP Server Details](#mcp-server-details)
+7. [Local Setup & Deployment](#local-setup--deployment)
+8. [Live Endpoints & Infrastructure](#live-endpoints--infrastructure)
 
 ---
 
-## 🔧 OnchainOS Integration
+## 🛑 The Problem & Our Solution
 
-| Skill | Usage | Package |
-|-------|-------|---------|
-| `okx-security` | Token risk scanning, honeypot detection, buy/sell tax analysis | ScanGuard |
-| `okx-dex-swap` | DEX aggregation (500+ liquidity sources) for swap execution | ShieldSwap |
-| `okx-dex-token` | Token search, metadata, market data | ShieldSwap |
-| `okx-x402-payment` | x402 payment authorization via TEE | ScanGuard |
-| `okx-agentic-wallet` | Agent on-chain identity and wallet lifecycle | Both |
+### The Problem
+With the proliferation of AI trading agents and rapid deployment of meme coins on L2 networks, malicious actors deploy honeypots, hidden taxes, and toxic bytecode to drain liquidity. Existing DEX aggregators execute swaps blindly, and AI agents lack a standard, machine-readable protocol to verify token safety natively before engaging.
 
-### API Authentication
-```bash
-# .env (never commit this file)
-OKX_API_KEY=your-api-key
-OKX_SECRET_KEY=your-secret-key
-OKX_PASSPHRASE=your-passphrase
-```
-
-Requests are signed with HMAC-SHA256: `HMAC(timestamp + method + path + body, secretKey)`
+### The Solution: Shield Suite
+We built a dual-layer security ecosystem:
+1. **For Humans:** **ShieldSwap**, the first security-gated DEX Aggregator. If you attempt to swap a malicious token, the aggregator visually blocks the transaction with an interactive threat report.
+2. **For Machines:** **ScanGuard MCP**, a native Model Context Protocol server that implements the **x402 monetization standard**. AI agents (like Claude or Cursor) can query this server to get instantaneous, programmatic token risk data.
 
 ---
 
-## 🚀 Quick Start
+## 🧩 Ecosystem Components
 
-### Prerequisites
-- Node.js >= 18
-- OKX API credentials ([Developer Portal](https://web3.okx.com/onchainos/dev-portal))
-- onchainos CLI (`irm https://raw.githubusercontent.com/okx/onchainos-skills/main/install.ps1 | iex`)
+The Shield Suite monorepo is divided into three highly integrated packages:
 
-### Install & Run
-```bash
-# Clone
-git clone https://github.com/mrnetwork0001/ShieldSuite.git
-cd shield-suite
+### 1. ScanGuard (`packages/scanguard`)
+The brain of the operation. A Node.js backend that serves as both a RESTful API and a standard **MCP Server**. 
+- Executes **Dual-Layer Scanning**: Combines `okx-security` APIs with a custom bytecode heuristics engine.
+- Manages the **x402 Payment Loop**, requiring micro-payments for access to its intelligence.
 
-# Install all dependencies
-npm install
+### 2. ShieldSwap (`packages/shieldswap`)
+A glassmorphic, terminal-inspired frontend built in React/Vite.
+- Integrates `okx-dex-swap` to route trades across 500+ liquidity sources on X Layer, guaranteeing optimal routing.
+- Features a conversational **AI Agent Chatbot** seamlessly integrated directly into the trading UI, allowing users to scan tokens and stage trades using natural language.
 
-# Copy environment template
-cp .env.example .env
-# Edit .env with your OKX API credentials
-
-# Start all services (ScanGuard + ShieldSwap + Dashboard)
-npm run dev
-```
-
-### VPS Deployment (24/7 Autonomous Mode)
-For industrial-grade uptime, deploy the agent to a VPS using PM2:
-```bash
-# 1. Install PM2 globally
-sudo npm install -g pm2
-
-# 2. Start Project Ecosystem
-pm2 start "npm run dev:scanguard" --name scanguard-api
-pm2 start "npm run agent" --name shield-agent
-
-# 3. Setup Persistent Startup
-pm2 save
-pm2 startup
-```
-
-### Access Points
-| Service | URL | Description |
-|---------|-----|-------------|
-| ShieldSwap | [https://shieldswap-main.vercel.app](https://shieldswap-main.vercel.app) | Security-first DEX aggregator |
-| ScanGuard Dashboard | [https://scanguard-dashboard-main.vercel.app](https://scanguard-dashboard-main.vercel.app) | Interactive scanning interface |
-| ScanGuard API (Live VPS) | `http://38.49.216.120:3402` | REST + MCP Server |
+### 3. Agent Dashboard (`packages/dashboard`)
+A real-time command center for monitoring the entire ecosystem.
+- Provides a live, WebSocket-style data stream of all tokens being actively scanned across the network.
+- Cryptographically tracks the live balances and on-chain heartbeat activity of the autonomous scanning agent.
 
 ---
 
-## 🔍 API Reference
+## 🤖 Autonomous AI Agent (TEE)
 
-### Scan a Token
-```bash
-POST /api/scan
-Content-Type: application/json
+We have deployed an autonomous Node.js agent running 24/7 on a VPS. It continuously invokes the ScanGuard API to monitor the top 11 X Layer core tokens (WOKB, USDC, USDT, USDe, etc.) for emerging threats.
 
-{
-  "tokenAddress": "0x1E4a5963aBFD975d8c9021ce480b42188849D41d",
-  "chainId": 196
-}
-```
-
-### MCP Tool Call
-```bash
-POST /mcp/call
-Content-Type: application/json
-
-{
-  "method": "tools/call",
-  "params": {
-    "name": "scan_token",
-    "arguments": {
-      "tokenAddress": "0x..."
-    }
-  }
-}
-```
-
-### Health Check
-```bash
-GET /api/health
-# Returns: service status, OnchainOS configuration, uptime
-```
+- **Institutional Security:** Utilizes the `okx-agentic-wallet` backed by a **Trusted Execution Environment (TEE)**. The private key is strictly isolated and never exposed to the application runtime, rendering it immune to memory-dump attacks.
+- **On-Chain Checkpoints:** Emits a literal `0 OKB` transaction on the X Layer ledger periodically. Attached to the transaction data is a UTF-8 encoded metadata string (`"ScanGuard Cycle Success"`), acting as an immutable public heartbeat proving the agent's uptime.
 
 ---
 
-## 💳 x402 Payment Protocol
+## ⚡ OnchainOS Integration Deep-Dive
 
-ScanGuard implements the [x402 Payment Required](https://www.x402.org) protocol:
+Our application deeply leverages the OKX OnchainOS ecosystem to provide unparalleled routing and analytical capabilities. Because building AI infrastructure requires scalable underlying primitives, we orchestrated the following Skills:
 
-1. Agent calls `POST /api/scan` without payment
-2. Server returns `HTTP 402 Payment Required` with payment instructions
-3. Agent pays $0.005 USDC on X Layer
-4. Agent retries with `X-402-Payment: <signed-receipt>` header
-5. Server verifies payment and returns scan results
-
-This creates an **agent economy loop** where AI agents securely pay for high-value security intelligence.
-
-*Note: For the live Hackathon version, the protocol operates in **LIVE (Subsidized)** mode to prevent endlessly draining the agent's real USDC funds over a 24/7 timeline, while successfully recording the x402 payment requirements publicly on the Dashboard.*
+| SDK Module | Implementation Details |
+|------------|------------------------|
+| `okx-security` | Powers the core threat-detection engine. Checks for honeypot traits, hardcoded buy/sell taxes, contract authorship, and dynamically scores risk parameters. |
+| `okx-dex-swap` | Used in our ShieldSwap frontend to generate highly optimized, low-slippage trade execution call data natively across all aggregated X Layer DEXs. |
+| `okx-dex-token` | Provides real-time token metadata, market caps, dynamically fetching token logos, standardizing decimal formats, and validating address formats. |
+| `okx-agentic-wallet`| Manages the complex lifecycle of the Autonomous Bot, ensuring transactions are constructed correctly and pushed through securely via enclave signing. |
+| `okx-x402-payment` | Facilitates the cryptographic verification and conceptual architecture for streaming micropayments from client agents. |
 
 ---
 
-## 🤖 MCP Integration
+## 💳 x402 Agent Economy
 
-ScanGuard exposes an HTTP Model Context Protocol (MCP) server that any AI or script can query natively.
+ScanGuard pioneers a monetized API standard for AI agents via [x402 Payment Required](https://www.x402.org):
 
-### List Available Tools
-```bash
-curl http://38.49.216.120:3402/mcp/tools
-```
+1. **Request:** An external AI agent calls `POST /api/scan` without authorization.
+2. **Denial:** Server returns `HTTP 402 Payment Required` with instructions to pay $0.005 USDC.
+3. **Payment:** The agent signs and broadcasts the stablecoin transaction natively on X Layer.
+4. **Verification:** The agent retries the request providing `X-402-Payment: <signed-receipt>`.
+5. **Fulfillment:** The server confirms the on-chain transfer and returns the highly valuable security report.
 
-### Call specific MCP Tool (scan_token)
+*(Note: In the live demo environment, the protocol operates in "LIVE Subsidized" mode to prevent endlessly draining the agent's real USDC funds over a continuous 24/7 uptime window, while openly logging the gross revenue metrics on the Dashboard).*
+
+---
+
+## 🎯 Model Context Protocol (MCP)
+
+ScanGuard exposes an HTTP MCP server that any standard AI client can query natively to give them "X Layer vision".
+
+### Calling the MCP Tool natively via cURL
 ```bash
 curl -X POST http://38.49.216.120:3402/mcp/tools/call \
   -H "Content-Type: application/json" \
   -d '{"name":"scan_token","arguments":{"tokenAddress":"0x779ded0c9e1022225f8e0630b35a9b54be713736"}}'
 ```
-*(Windows users should execute above curl command in a single line)*
 
-> **Note on Desktop Clients:** Claude Desktop natively expects `stdio` or `sse` MCP servers. Since ScanGuard leverages an HTTP REST proxy to be highly accessible for lightweight on-chain bots and web dashboards, integration involves direct API calling or spinning up an MCP SSE bridge.
-
----
-
-## 🏗️ Tech Stack
-
-- **Runtime:** Node.js 18+ / TypeScript 5.7
-- **Backend:** Express.js, ethers.js v6
-- **Frontend:** React 19, Vite 6, Framer Motion
-- **Chain:** X Layer Mainnet (Chain ID: 196)
-- **SDK:** OKX OnchainOS Skills (okx-security, okx-dex-swap, okx-dex-token)
-- **Protocols:** MCP, x402, JSON-RPC
-- **Design:** Glassmorphism, dark mode, Inter/JetBrains Mono
+### Config Template
+```json
+{
+  "mcpServers": {
+    "scanguard": {
+      "url": "http://38.49.216.120:3402/mcp",
+      "description": "Native security scanning for ERC-20 tokens on X Layer"
+    }
+  }
+}
+```
+*(Desktop environments using `stdio` require standard bridging adapters).*
 
 ---
 
-## 📊 Live Infrastructure
+## 🛠 Local Setup & Deployment
 
-- **Chain:** X Layer Mainnet (Chain ID 196)
-- **Agentic Wallet (EVM):** `0x821b9cc6a54272d0b5b106416fe360c162f2af85`
-- **Agentic Wallet (Solana):** `B72H614ET6scyxhN7Fdzn3PeKzzMqjJg3UYVp7EDFUh6`
-- **Dashboard Hub:** [scanguard-dashboard-main.vercel.app](https://scanguard-dashboard-main.vercel.app)
-- **ShieldSwap App:** [shieldswap-main.vercel.app](https://shieldswap-main.vercel.app)
+### Prerequisites
+- Node.js >= 18
+- OKX Web3 API credentials (`OKX_API_KEY`, `OKX_SECRET_KEY`, `OKX_PASSPHRASE`)
+- `onchainos` CLI installed globally
+
+### 1. Installation
+```bash
+git clone https://github.com/mrnetwork0001/ShieldSuite.git
+cd shield-suite
+npm install
+```
+
+### 2. Environment Variables
+Create a root `.env` file (do not commit this):
+```env
+OKX_API_KEY=your_key
+OKX_SECRET_KEY=your_secret
+OKX_PASSPHRASE=your_passphrase
+PORT=3402
+NODE_ENV=development
+```
+
+### 3. Start the Ecosystem
+```bash
+npm run dev
+```
+This single command orchestrates:
+- The Backend / API (Port `3402`)
+- The ShieldSwap DEX Workspace (Port `5173`)
+- The ScanGuard Data Dashboard (Port `5174`)
 
 ---
 
-## 👥 Team
+## 🌍 Live Endpoints & Infrastructure
 
-- **Shield Suite Core Team** — Full-stack decentralized security
+- **Network:** X Layer Mainnet (`Chain ID 196`)
+- **ShieldSwap Application:** [https://shieldswap-main.vercel.app](https://shieldswap-main.vercel.app)
+- **ScanGuard Dashboard:** [https://scanguard-dashboard-main.vercel.app](https://scanguard-dashboard-main.vercel.app)
+- **Central API Node & MCP Host:** `http://38.49.216.120:3402`
+- **TEE Agent Identity (X Layer):** `0x821b9cc6a54272d0b5b106416fe360c162f2af85`
 
 ---
-
-## 📜 License
-
-MIT — © 2026 Shield Suite
+*Built defensively. Executed autonomously.*
