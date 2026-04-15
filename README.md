@@ -29,8 +29,8 @@ With the proliferation of AI trading agents and rapid deployment of meme coins o
 
 ### The Solution: Shield Suite
 We built a dual-layer security ecosystem:
-1. **For Humans:** **ShieldSwap**, the first security-gated DEX Aggregator. If you attempt to swap a malicious token, the aggregator visually blocks the transaction with an interactive threat report.
-2. **For Machines:** **ScanGuard MCP**, a native Model Context Protocol server that implements the **x402 monetization standard**. AI agents (like Claude or Cursor) can query this server to get instantaneous, programmatic token risk data.
+1. **For Humans:** [**ShieldSwap**](https://shieldswap-main.vercel.app/), the first security-gated DEX Aggregator. If you attempt to swap a malicious token, the aggregator visually blocks the transaction with an interactive threat report.
+2. **For Machines:** [**ScanGuard MCP**](https://scanguard-dashboard-main.vercel.app/), a native Model Context Protocol server that implements the **x402 monetization standard**. AI agents (like Claude or Cursor) can query this server to get instantaneous, programmatic token risk data.
 
 ---
 
@@ -167,8 +167,7 @@ This single command orchestrates:
 
 ---
 ## Contact & Socials
-- **Developer:** mrnetwork0001
-- **Email:** emma40mike@gmail.com
+- **Developer:** MrNetwork
 - **X (Twitter):** [@encrypt_wizard](https://x.com/encrypt_wizard)
 
 ---
