@@ -456,8 +456,8 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
 
         .mobile-wallet-card {
           padding: 16px;
-          background: #2d4890 !important;
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(255, 255, 255, 0.03) !important;
+          border: 1px solid var(--border-default);
         }
 
         .mw-label {
