@@ -213,7 +213,10 @@ export default function App() {
     try {
       const res = await fetch(`${API_BASE}/api/scan`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Shield-Key': 'shield-internal-2026'
+        },
         body: JSON.stringify({ tokenAddress: scanAddress }),
       });
 
