@@ -1,6 +1,6 @@
 # 🔄 ShieldSwap — Security-First DEX Aggregator
 
-> **X Layer Build X Season 2 AI Hackathon — X Layer Arena Submission**
+> **XLayer Build X Season 2 AI Hackathon — XLayer Arena Submission**
 
 ShieldSwap is a premium, security-first DEX aggregator that **scans every token for threats before allowing a swap**. Paste a token address → ShieldSwap calls [ScanGuard](#) to verify the token is safe → if safe, executes the swap → if risky, blocks the swap and shows a detailed threat report.
 
@@ -16,7 +16,7 @@ ShieldSwap is a premium, security-first DEX aggregator that **scans every token 
    ✅ SAFE  → Swap enabled, user can proceed
    ⚠️ RISKY → Warning shown, swap allowed with caution
    🚫 DANGER → Swap BLOCKED, detailed threat report shown
-5. If safe: swap executes via Uniswap/DEX aggregation on X Layer
+5. If safe: swap executes via Uniswap/DEX aggregation on XLayer
 ```
 
 ## ✨ Features
@@ -27,7 +27,7 @@ ShieldSwap is a premium, security-first DEX aggregator that **scans every token 
 - **Swap Blocking** — High-risk tokens are automatically blocked from trading
 - **Agent Activity Log** — Real-time feed of scan decisions and swap activity
 - **Glassmorphism UI** — Premium dark mode design with blur effects and micro-animations
-- **X Layer Native** — Built specifically for X Layer (Chain ID: 196) with OKB gas
+- **XLayer Native** — Built specifically for XLayer (Chain ID: 196) with OKB gas
 - **Wallet Integration** — MetaMask / OKX Wallet with auto chain switching
 
 ## 🚀 Quick Start
@@ -70,7 +70,7 @@ ShieldSwap Frontend (Vite + React)
 │   ├── useScanGuard.ts → Calls ScanGuard API
 │   └── useSwap.ts      → Swap quoting & execution
 └── lib/
-    ├── xlayer.ts       → X Layer chain config
+    ├── xlayer.ts       → XLayer chain config
     └── wallet.ts       → Wallet connection logic
 ```
 
@@ -80,4 +80,5 @@ _Coming soon — deploy in progress_
 
 ## 📄 License
 
-MIT — Built for the X Layer Build X Season 2 AI Hackathon
+MIT — Built for the XLayer Build X Season 2 AI Hackathon
+

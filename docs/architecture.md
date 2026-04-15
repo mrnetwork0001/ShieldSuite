@@ -1,6 +1,6 @@
 # Shield Suite — System Architecture
 
-> Technical architecture document for X Layer Build X Season 2 AI Hackathon judges
+> Technical architecture document for XLayer Build X Season 2 AI Hackathon judges
 
 ## Overview
 
@@ -20,7 +20,7 @@ User Action: "Swap 100 TOKEN_A for USDT"
    Header: X-402-Payment: <txHash or "demo">
 
 3. ScanGuard x402 middleware verifies payment
-4. Scanner engine connects to X Layer RPC
+4. Scanner engine connects to XLayer RPC
 5. Scanner reads:
    - Contract bytecode (dangerous selectors, proxy patterns)
    - ERC-20 metadata (name, symbol, decimals, totalSupply)
@@ -40,7 +40,7 @@ User Action: "Swap 100 TOKEN_A for USDT"
    - If MEDIUM → Allow with warning
    - If HIGH/CRITICAL → BLOCK swap, show threat report
 
-9. If swap approved → Execute via Uniswap Router on X Layer
+9. If swap approved → Execute via Uniswap Router on XLayer
 10. Activity log records all agent decisions in real-time
 ```
 
@@ -78,7 +78,7 @@ The x402 payment flow:
 Agent → POST /api/scan (no payment)
      ← 402 Payment Required + instructions
 
-Agent → Sends $0.005 to payment address on X Layer
+Agent → Sends $0.005 to payment address on XLayer
 
 Agent → POST /api/scan + X-402-Payment: <txHash>
      ← 200 OK + scan result
@@ -100,7 +100,7 @@ In development mode, `X-402-Payment: demo` bypasses payment.
                               │
                               ▼
                     ┌──────────────────┐
-                    │  X Layer RPC     │
+                    │  XLayer RPC     │
                     │  (Chain 196)     │
                     └──────────────────┘
 ```
@@ -115,3 +115,4 @@ In development mode, `X-402-Payment: demo` bypasses payment.
 | Framer Motion | Production-grade animations for premium UX |
 | npm workspaces | Zero-config monorepo without extra tools (Turborepo, Nx) |
 | Bytecode analysis | On-chain verification without relying on third-party APIs |
+

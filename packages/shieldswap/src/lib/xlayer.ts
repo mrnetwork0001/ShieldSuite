@@ -1,9 +1,9 @@
-// ─── X Layer Chain Configuration ──────────────────────────────────────────────
+// ─── XLayer Chain Configuration ──────────────────────────────────────────────
 
 export const XLAYER_CHAIN = {
   chainId: 196,
   chainIdHex: "0xc4",
-  chainName: "X Layer Mainnet",
+  chainName: "XLayer Mainnet",
   rpcUrls: ["https://rpc.xlayer.tech"],
   blockExplorerUrls: ["https://www.okx.com/explorer/xlayer"],
   nativeCurrency: {
@@ -38,7 +38,7 @@ const NATIVE_OKB: TokenInfo = {
   isNative: true,
 };
 
-/** All known X Layer tokens */
+/** All known XLayer tokens */
 export const TOKEN_LIST: TokenInfo[] = [
   NATIVE_OKB,
   {
@@ -157,7 +157,7 @@ export function getExplorerUrl(type: "address" | "tx", value: string): string {
   return `${XLAYER_CHAIN.blockExplorerUrls[0]}/${type}/${value}`;
 }
 
-/** Add X Layer to MetaMask / wallet */
+/** Add XLayer to MetaMask / wallet */
 export async function addXLayerToWallet(): Promise<boolean> {
   if (!window.ethereum) return false;
 
@@ -180,7 +180,7 @@ export async function addXLayerToWallet(): Promise<boolean> {
   }
 }
 
-/** Switch wallet to X Layer */
+/** Switch wallet to XLayer */
 export async function switchToXLayer(): Promise<boolean> {
   if (!window.ethereum) return false;
 
@@ -198,3 +198,4 @@ export async function switchToXLayer(): Promise<boolean> {
     return false;
   }
 }
+

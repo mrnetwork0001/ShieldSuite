@@ -224,7 +224,7 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
         case "status":
           addMessage(
             "agent",
-            `✅ **ScanGuard Status:**\n• Agent: Online\n• Chain: X Layer Mainnet (#196)\n• Skills: OKX Security, OKX DEX, Uniswap V3, x402\n• MCP: Ready\n• Scans: Free (demo mode)`
+            `✅ **ScanGuard Status:**\n• Agent: Online\n• Chain: XLayer Mainnet (#196)\n• Skills: OKX Security, OKX DEX, Uniswap V3, x402\n• MCP: Ready\n• Scans: Free (demo mode)`
           );
           break;
 
@@ -515,3 +515,4 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
 };
 
 export default AgentChat;
+

@@ -65,7 +65,7 @@ export interface HolderInfo {
 /** API request for a scan */
 export interface ScanRequest {
   tokenAddress: string;
-  chainId?: number; // defaults to 196 (X Layer)
+  chainId?: number; // defaults to 196 (XLayer)
 }
 
 /** x402 payment receipt */
@@ -120,10 +120,10 @@ export interface ApiResponse<T = unknown> {
   };
 }
 
-/** X Layer chain constants */
+/** XLayer chain constants */
 export const XLAYER_CONFIG = {
   chainId: 196,
-  chainName: "X Layer Mainnet",
+  chainName: "XLayer Mainnet",
   rpcUrl: "https://rpc.xlayer.tech",
   explorerUrl: "https://www.okx.com/explorer/xlayer",
   nativeCurrency: {
@@ -135,3 +135,4 @@ export const XLAYER_CONFIG = {
 
 /** Default scan price in USD */
 export const SCAN_PRICE_USD = 0.005;
+

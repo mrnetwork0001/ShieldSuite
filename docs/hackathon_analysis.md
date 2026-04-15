@@ -1,6 +1,6 @@
 # 🏆 Hackathon Strategic Analysis — Shield Suite
 
-## Arena: X Layer Arena (full-stack agentic apps)
+## Arena: XLayer Arena (full-stack agentic apps)
 
 ---
 
@@ -8,7 +8,7 @@
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| Built on X Layer | ✅ Done | Chain ID 196, all txns on X Layer Mainnet |
+| Built on XLayer | ✅ Done | Chain ID 196, all txns on XLayer Mainnet |
 | Agentic Wallet as onchain identity | ⚠️ Partial | Wallet address listed in README (`0x821b...`) but need to **prove it's active on-chain** |
 | Use ≥1 Onchain OS or Uniswap skill | ✅ Done | `okx-security`, `okx-dex-swap`, `okx-dex-token`, `okx-x402-payment` |
 | Public GitHub repo | ✅ Done | `mrnetwork0001/ShieldSuite` |
@@ -41,14 +41,14 @@
 
 ---
 
-### 📊 Criterion 2: X Layer Ecosystem Integration (25%)
+### 📊 Criterion 2: XLayer Ecosystem Integration (25%)
 
-**Current:** Strong. Everything runs on X Layer mainnet.
+**Current:** Strong. Everything runs on XLayer mainnet.
 
 **Recommendations:**
-1. ✅ We already scan X Layer tokens, swap on X Layer DEX, and link to X Layer Explorer
-2. **Add:** Display X Layer chain stats (block height, gas price) on the dashboard — shows deeper ecosystem awareness
-3. **Add:** Support for exploring X Layer native tokens beyond the whitelist (custom contract import already works)
+1. ✅ We already scan XLayer tokens, swap on XLayer DEX, and link to XLayer Explorer
+2. **Add:** Display XLayer chain stats (block height, gas price) on the dashboard — shows deeper ecosystem awareness
+3. **Add:** Support for exploring XLayer native tokens beyond the whitelist (custom contract import already works)
 
 ---
 
@@ -102,7 +102,7 @@ Missing: The "earn" side.
 This creates a self-sustaining agent economy.
 
 ### How to Win "Most Active Agent" (actionable):
-- Have the agent wallet perform automated scans of the top 50 X Layer tokens
+- Have the agent wallet perform automated scans of the top 50 XLayer tokens
 - Each scan = 1 onchain transaction (x402 payment)
 - Run a cron job scanning popular tokens every hour = 50+ daily txns
 - This also populates the "Live Feed" on the dashboard with real activity
@@ -135,7 +135,7 @@ This creates a self-sustaining agent economy.
 | # | Action | Why | Effort |
 |---|--------|-----|--------|
 | 10 | Polish error messages & edge cases | Product completeness points | 1 hr |
-| 11 | Add X Layer chain stats to dashboard | Ecosystem integration points | 1 hr |
+| 11 | Add XLayer chain stats to dashboard | Ecosystem integration points | 1 hr |
 | 12 | Add agent "thinking" animation to scans | AI experience points | 1 hr |
 
 ---
@@ -151,7 +151,7 @@ The README must contain ALL of these. Current gaps marked:
 - [ ] ⚠️ **Working mechanics** — need detailed step-by-step of how the agent works
 - [ ] ⚠️ **Team members** — currently placeholder "[Your Name]"
 - [ ] ⚠️ **Deployment URLs** — currently placeholder "[deployment URL]"
-- [ ] ⚠️ **Project positioning in X Layer ecosystem** — need a "Why X Layer?" section
+- [ ] ⚠️ **Project positioning in XLayer ecosystem** — need a "Why XLayer?" section
 
 ---
 
@@ -190,3 +190,4 @@ This means the **AI judges will programmatically check:**
 
 > [!WARNING]
 > **Deadline: April 15, 23:59 UTC.** That's ~5 days from now. The Uniswap integration and AI chat are the highest-leverage additions but also the most time-intensive. Prioritize deployment + demo video + README first, then add features.
+

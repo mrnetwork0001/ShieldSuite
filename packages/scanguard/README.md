@@ -1,6 +1,6 @@
 # 🛡️ ScanGuard — MCP Security Scanning Skill
 
-> **X Layer Build X Season 2 AI Hackathon — Skills Arena Submission**
+> **XLayer Build X Season 2 AI Hackathon — Skills Arena Submission**
 
 ScanGuard is a reusable, MCP-compatible security scanning skill that any AI agent can call via HTTP. It scans ERC-20 token contracts for rug-pull risk, phishing contracts, honeypots, and suspicious approvals **before** a trade executes.
 
@@ -84,7 +84,7 @@ Content-Type: application/json
 In production mode, agents must pay $0.005 per scan using the x402 protocol:
 
 1. Agent sends `POST /api/scan` without payment → receives **HTTP 402** with payment instructions
-2. Agent sends payment to the specified address on X Layer
+2. Agent sends payment to the specified address on XLayer
 3. Agent retries with `X-402-Payment: <txHash>` header → scan executes
 
 In development mode, use `X-402-Payment: demo` for free scans.
@@ -111,9 +111,9 @@ Add ScanGuard to your Claude Desktop or Cursor config:
 | `scan_token` | Full security scan returning JSON with risk score and flags |
 | `get_risk_summary` | Human-readable risk summary with emoji indicators |
 
-## 🌐 X Layer
+## 🌐 XLayer
 
-ScanGuard is designed for **X Layer Mainnet** (Chain ID: 196), OKX's EVM-compatible L2. It connects to X Layer's RPC to perform real-time on-chain analysis.
+ScanGuard is designed for **XLayer Mainnet** (Chain ID: 196), OKX's EVM-compatible L2. It connects to XLayer's RPC to perform real-time on-chain analysis.
 
 ## 📁 File Structure
 
@@ -132,4 +132,5 @@ packages/scanguard/
 
 ## 📄 License
 
-MIT — Built for the X Layer Build X Season 2 AI Hackathon
+MIT — Built for the XLayer Build X Season 2 AI Hackathon
+

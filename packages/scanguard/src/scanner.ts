@@ -1,6 +1,6 @@
 // ─── Core Security Scanner Engine ────────────────────────────────────────────
 //
-// Dual-layer security scanning for ERC-20 tokens on X Layer:
+// Dual-layer security scanning for ERC-20 tokens on XLayer:
 // Layer 1: OKX OnchainOS Security API (official, via /api/v6/security/token-scan)
 // Layer 2: Custom bytecode analysis (deep analysis for additional risk flags)
 //
@@ -57,7 +57,7 @@ const HONEYPOT_PATTERNS = [
 ];
 
 // ─── Known Safe Tokens (whitelist) ───────────────────────────────────────────
-// These are verified, legitimate tokens on X Layer. We still scan them for
+// These are verified, legitimate tokens on XLayer. We still scan them for
 // metadata but cap risk scores to avoid false positives from proxy patterns.
 
 const KNOWN_SAFE_TOKENS: Record<string, { symbol: string; name: string }> = {
@@ -141,8 +141,8 @@ export async function scanToken(request: ScanRequest): Promise<ScanResult> {
         category: "info" as RiskCategory,
         severity: "SAFE",
         title: "Verified Token",
-        description: `${tokenSymbol} is a verified, well-known token on X Layer. No security concerns detected.`,
-        evidence: "Token is on the ScanGuard whitelist of verified X Layer tokens",
+        description: `${tokenSymbol} is a verified, well-known token on XLayer. No security concerns detected.`,
+        evidence: "Token is on the ScanGuard whitelist of verified XLayer tokens",
       }],
       contractVerified: true,
       ownerAddress: null,
@@ -407,7 +407,7 @@ export async function scanToken(request: ScanRequest): Promise<ScanResult> {
           category: "info" as RiskCategory,
           severity: "SAFE",
           title: "Uniswap V3 Pool Found",
-          description: `Token has ${uniswapResult.totalPools} active Uniswap V3 pool(s) on X Layer with verified on-chain liquidity.`,
+          description: `Token has ${uniswapResult.totalPools} active Uniswap V3 pool(s) on XLayer with verified on-chain liquidity.`,
           evidence: `Best pool: ${uniswapResult.bestPool?.poolAddress?.slice(0, 10)}... | Liquidity: ${uniswapResult.bestPool?.liquidity}`,
         });
       } else {
@@ -415,7 +415,7 @@ export async function scanToken(request: ScanRequest): Promise<ScanResult> {
           category: "info" as RiskCategory,
           severity: "LOW",
           title: "No Uniswap V3 Pool",
-          description: "No active Uniswap V3 liquidity pool found on X Layer. Token may only trade on other DEXs.",
+          description: "No active Uniswap V3 liquidity pool found on XLayer. Token may only trade on other DEXs.",
         });
       }
     } catch (uniErr) {
@@ -518,3 +518,4 @@ function buildResult(
     uniswapPoolAddress: uni?.bestPool?.poolAddress || null,
   };
 }
+

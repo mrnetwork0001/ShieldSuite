@@ -20,6 +20,7 @@ interface TxHistoryItem {
 
 const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [txHistory, setTxHistory] = useState<TxHistoryItem[]>([]);
   const [loadingTx, setLoadingTx] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -114,12 +115,12 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
           </div>
         </div>
 
-        {/* Right side */}
-        <div className="header-actions">
+        {/* Desktop Actions */}
+        <div className="header-actions desktop-only">
           {/* Chain indicator */}
           <div className={`chain-badge ${wallet.isXLayer ? "chain-connected" : ""}`}>
             <span className="chain-dot" />
-            {wallet.isXLayer ? "X Layer" : "Not Connected"}
+            {wallet.isXLayer ? "XLayer" : "Not Connected"}
           </div>
 
           {/* Wallet button / dropdown */}
@@ -149,7 +150,6 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
                     exit={{ opacity: 0, y: -8, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
                   >
-                    {/* Address display */}
                     <div className="wd-address">
                       <span className="font-mono">{wallet.address}</span>
                       <button
@@ -162,13 +162,8 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
                         📋
                       </button>
                     </div>
-
                     <div className="wd-divider" />
-
-                    {/* Transaction history */}
-                    <div className="wd-section-title">
-                      📜 Recent Transactions
-                    </div>
+                    <div className="wd-section-title">📜 Recent Transactions</div>
                     {loadingTx ? (
                       <div className="wd-loading">Loading...</div>
                     ) : txHistory.length > 0 ? (
@@ -193,7 +188,6 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
                         No recent transactions found
                       </div>
                     )}
-
                     <a
                       href={getExplorerUrl("address", wallet.address || "")}
                       target="_blank"
@@ -202,10 +196,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
                     >
                       View all on Explorer →
                     </a>
-
                     <div className="wd-divider" />
-
-                    {/* Disconnect */}
                     <button
                       className="wd-disconnect"
                       onClick={() => {
@@ -228,7 +219,82 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
             </button>
           )}
         </div>
+
+        {/* Mobile Hamburger Button */}
+        <button 
+          className="mobile-menu-btn mobile-only"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          <div className={`hamburger ${mobileMenuOpen ? 'active' : ''}`}>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </button>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div 
+            className="mobile-menu-overlay glass-card"
+            initial={{ opacity: 0, x: "100%" }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+          >
+            <div className="mobile-menu-content">
+              <div className="mobile-menu-header">
+                <div />
+                <button className="close-btn" onClick={() => setMobileMenuOpen(false)}>×</button>
+              </div>
+
+              <div className="mobile-menu-actions">
+                <div className={`chain-badge ${wallet.isXLayer ? "chain-connected" : ""}`}>
+                  <span className="chain-dot" />
+                  {wallet.isXLayer ? "XLayer Mainnet" : "Not Connected"}
+                </div>
+
+                {wallet.connected ? (
+                  <div className="mobile-wallet-card glass-card">
+                    <div className="mw-label">Connected Wallet</div>
+                    <div className="mw-address font-mono">{shortenAddress(wallet.address || "")}</div>
+                    <div className="mw-balance font-mono">{formatBalance(wallet.balance || "0")} OKB</div>
+                    <button 
+                      className="wd-disconnect"
+                      style={{ marginTop: '12px', width: '100%' }}
+                      onClick={() => {
+                        onDisconnect();
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      🔌 Disconnect
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    className="btn btn-primary" 
+                    style={{ width: '100%', padding: '16px' }}
+                    onClick={() => {
+                      onConnect();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    Connect Wallet
+                  </button>
+                )}
+
+                <div className="mobile-nav-links">
+                  <a href="#" className="nav-link-item">Swap</a>
+                  <a href="https://scanguard-dashboard-main.vercel.app" target="_blank" className="nav-link-item">ScanGuard Dashboard</a>
+                  <a href="https://x.com/encrypt_wizard" target="_blank" className="nav-link-item">Twitter / X</a>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style>{`
         .header {
@@ -236,8 +302,8 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
           top: 0;
           left: 0;
           right: 0;
-          z-index: 100;
-          background: rgba(10, 14, 23, 0.85);
+          z-index: 1000;
+          background: rgba(10, 14, 23, 0.8);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
           border-bottom: 1px solid var(--border-default);
@@ -246,7 +312,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
         .header-inner {
           max-width: 1400px;
           margin: 0 auto;
-          padding: 14px 24px;
+          padding: 12px 24px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -289,6 +355,148 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
           gap: 12px;
         }
 
+        /* ─── Responsive Display Utilities ─── */
+        .desktop-only { display: flex; }
+        .mobile-only { display: none; }
+
+        @media (max-width: 900px) {
+          .desktop-only { display: none; }
+          .mobile-only { display: flex; }
+        }
+
+        /* ─── Mobile Hamburger ─── */
+        .mobile-menu-btn {
+          background: none;
+          border: none;
+          padding: 8px;
+          cursor: pointer;
+          color: var(--text-primary);
+        }
+
+        .hamburger {
+          width: 24px;
+          height: 18px;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+
+        .hamburger span {
+          display: block;
+          height: 2px;
+          width: 100%;
+          background: currentColor;
+          border-radius: 2px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hamburger.active span:nth-child(1) {
+          transform: translateY(8px) rotate(45deg);
+        }
+
+        .hamburger.active span:nth-child(2) {
+          opacity: 0;
+          transform: translateX(-10px);
+        }
+
+        .hamburger.active span:nth-child(3) {
+          transform: translateY(-8px) rotate(-45deg);
+        }
+
+        /* ─── Mobile Menu Overlay ─── */
+        .mobile-menu-overlay {
+          position: fixed;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          width: 300px;
+          max-width: 85%;
+          z-index: 2000;
+          border-left: 1px solid var(--border-default);
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          background: #2d4890 !important;
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          box-shadow: -20px 0 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .mobile-menu-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 32px;
+        }
+
+        .mobile-menu-header h3 {
+          font-size: 1.2rem;
+          font-weight: 700;
+          margin: 0;
+        }
+
+        .close-btn {
+          background: none;
+          border: none;
+          color: #fff;
+          font-size: 2.5rem;
+          line-height: 1;
+          cursor: pointer;
+          padding: 0;
+          opacity: 0.8;
+        }
+        .close-btn:hover { opacity: 1; }
+
+        .mobile-menu-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .mobile-wallet-card {
+          padding: 16px;
+          background: #2d4890 !important;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mw-label {
+          font-size: 0.7rem;
+          color: var(--text-tertiary);
+          text-transform: uppercase;
+          margin-bottom: 4px;
+        }
+
+        .mw-address {
+          font-size: 0.9rem;
+          color: var(--accent-blue);
+          margin-bottom: 8px;
+        }
+
+        .mw-balance {
+          font-size: 1.1rem;
+          font-weight: 700;
+        }
+
+        .mobile-nav-links {
+          margin-top: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          border-top: 1px solid var(--border-default);
+          padding-top: 24px;
+        }
+
+        .nav-link-item {
+          font-size: 1rem;
+          color: var(--text-secondary);
+          text-decoration: none;
+          padding: 8px 0;
+          transition: color 0.2s;
+        }
+        .nav-link-item:hover { color: #fff; }
+
+        /* ─── Desktop Header Components ─── */
         .chain-badge {
           display: flex;
           align-items: center;
@@ -361,7 +569,6 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
           border-radius: var(--radius-full);
         }
 
-        /* ─── Wallet Dropdown ─── */
         .wallet-dropdown {
           position: absolute;
           top: calc(100% + 8px);
@@ -480,16 +687,10 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
           min-width: 28px;
           min-height: 28px;
         }
-
-        @media (max-width: 600px) {
-          .header-tagline { display: none; }
-          .wallet-balance { display: none; }
-          .chain-badge span:not(.chain-dot) { display: none; }
-          .wallet-dropdown { width: 280px; }
-        }
       `}</style>
     </motion.header>
   );
 };
 
 export default Header;
+

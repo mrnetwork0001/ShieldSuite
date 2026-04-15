@@ -37,7 +37,7 @@ Common examples:
 | Chain        | Network Identifier |
 |--------------|--------------------|
 | Ethereum     | `eip155:1`         |
-| X Layer      | `eip155:196`       |
+| XLayer      | `eip155:196`       |
 | Base         | `eip155:8453`      |
 | Arbitrum One | `eip155:42161`     |
 | Linea        | `eip155:59144`     |
@@ -536,3 +536,4 @@ Common token decimal reference:
 - **Fallback path** (`onchainos payment eip3009-sign`): requires the user's own private key via `EVM_PRIVATE_KEY` env var or `~/.onchainos/.env`; signing is done entirely on the local machine — no JWT or TEE needed
 - This skill only signs — it does **not** broadcast or deduct balance directly; payment settles when the recipient redeems the authorization on-chain
 - The returned `authorization` object must be included alongside `signature` when building the payment header
+

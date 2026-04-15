@@ -672,7 +672,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
         {/* Powered by */}
         <div className="swap-powered-by">
           <span>🛡️ Protected by</span>
-          <span style={{ fontWeight: 600, color: '#33ff00', textShadow: '0 0 8px rgba(51,255,0,0.3)', fontFamily: 'var(--font-mono)' }}>ScanGuard</span>
+          <a href="https://scanguard-dashboard-main.vercel.app" target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: '#33ff00', textShadow: '0 0 8px rgba(51,255,0,0.3)', fontFamily: 'var(--font-mono)', textDecoration: 'none' }}>ScanGuard</a>
           <span className="badge badge-safe" style={{ marginLeft: "4px", fontFamily: 'var(--font-mono)' }}>MCP</span>
           <span style={{ margin: "0 4px", color: "var(--text-tertiary)" }}>·</span>
           <span style={{ color: "var(--text-tertiary)" }}>Powered by</span>
@@ -1060,6 +1060,12 @@ const SwapCard: React.FC<SwapCardProps> = ({
         @media (max-width: 500px) {
           .swap-card { padding: 16px; }
           .swap-amount-input, .swap-amount-output { font-size: 1.4rem; }
+          .swap-powered-by {
+            flex-wrap: nowrap;
+            white-space: nowrap;
+            font-size: 0.62rem;
+            gap: 4px;
+          }
         }
       `}</style>
     </>

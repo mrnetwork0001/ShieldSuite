@@ -180,7 +180,7 @@ body::after {
 
 /* ─── Glass Card ──────────────────────────────────────────────────────────── */
 .glass-card {
-  background: #000;
+  background: #2d4890;
   border: 1px solid var(--border-default);
   padding: 1.5rem;
   box-shadow: 0 0 10px rgba(51, 255, 0, 0.05);
@@ -197,7 +197,7 @@ body::after {
   position: absolute;
   top: -10px;
   left: 10px;
-  background: #000;
+  background: #2d4890;
   padding: 0 8px;
   font-size: 0.7rem;
   color: var(--text-secondary);

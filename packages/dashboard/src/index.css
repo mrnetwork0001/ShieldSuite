@@ -641,4 +641,10 @@ a:hover {
     white-space: nowrap;
     flex-shrink: 0;
   }
+
+  .dashboard-footer-inner {
+    flex-wrap: nowrap !important;
+    gap: 0.5rem !important;
+    font-size: 0.6rem !important;
+  }
 }

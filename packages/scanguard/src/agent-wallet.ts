@@ -107,7 +107,7 @@ async function okxRequest<T>(
 // ─── Direct RPC Balance Check ────────────────────────────────────────────────
 
 /**
- * Get native OKB balance directly from X Layer RPC (most reliable)
+ * Get native OKB balance directly from XLayer RPC (most reliable)
  */
 export async function getAgentBalanceRPC(): Promise<string> {
   const address = getAgentAddress();
@@ -341,3 +341,4 @@ export async function checkAgentReady(): Promise<{
     nonce,
   };
 }
+

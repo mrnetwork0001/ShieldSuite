@@ -236,7 +236,7 @@ app.get("/api/scan/:scanId", (req, res) => {
 
 // ─── DEX Proxy Routes (signed backend → OKX DEX API) ────────────────────────
 
-/** GET /api/dex/approve-address — Get the correct ERC20 approval target for X Layer */
+/** GET /api/dex/approve-address — Get the correct ERC20 approval target for XLayer */
 app.get("/api/dex/approve-address", async (_req, res) => {
   try {
     const { getApproveAddress } = await import("./onchainos.js");
@@ -318,7 +318,7 @@ app.get("/api/dex/uniswap-quote", async (req, res) => {
     } else {
       res.json({
         success: false,
-        error: { code: "NO_UNISWAP_POOL", message: "No Uniswap V3 pool found for this pair on X Layer" },
+        error: { code: "NO_UNISWAP_POOL", message: "No Uniswap V3 pool found for this pair on XLayer" },
       });
     }
   } catch (err: any) {
@@ -428,3 +428,4 @@ app.listen(PORT, HOST, () => {
 });
 
 export default app;
+

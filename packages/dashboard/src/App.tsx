@@ -257,7 +257,7 @@ export default function App() {
           {!hero.done && <span className="animate-blink">█</span>}
         </h1>
         <p className="subtitle">
-          AI-Powered Security Scanning Agent for X Layer — OnchainOS × MCP × x402
+          AI-Powered Security Scanning Agent for XLayer — OnchainOS × MCP × x402
         </p>
 
         <div className="badges">
@@ -310,7 +310,7 @@ export default function App() {
           <div className="card-title">SYSTEM INFO</div>
           <div style={{ color: 'var(--text-dim)', fontSize: '0.78rem', lineHeight: 1.7 }}>
             <div><span style={{ color: 'var(--fg-dim)' }}>$</span> ScanGuard is a decentralized security intelligence layer acting as an <span style={{ color: 'var(--fg)' }}>autonomous security agent</span> via the Model Context Protocol.</div>
-            <div style={{ marginTop: '0.5rem' }}><span style={{ color: 'var(--fg-dim)' }}>$</span> Any DeFi app, bot, or wallet can integrate ScanGuard to pre-flight token approvals on X Layer Mainnet.</div>
+            <div style={{ marginTop: '0.5rem' }}><span style={{ color: 'var(--fg-dim)' }}>$</span> Any DeFi app, bot, or wallet can integrate ScanGuard to pre-flight token approvals on XLayer Mainnet.</div>
           </div>
           <div style={{ marginTop: 'auto', border: '1px solid var(--border)', padding: '0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
@@ -511,7 +511,7 @@ export default function App() {
                   <div className="card-title">AGENT IDENTITY</div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', lineHeight: 1.8 }}>
                     <div><span style={{ color: 'var(--fg-dim)' }}>service=</span><span style={{ color: 'var(--fg)' }}>ScanGuard v1.0.0</span></div>
-                    <div><span style={{ color: 'var(--fg-dim)' }}>chain=</span><span style={{ color: 'var(--fg)' }}>X Layer Mainnet (196)</span></div>
+                    <div><span style={{ color: 'var(--fg-dim)' }}>chain=</span><span style={{ color: 'var(--fg)' }}>XLayer Mainnet (196)</span></div>
                     <div><span style={{ color: 'var(--fg-dim)' }}>protocol=</span><span style={{ color: 'var(--fg-cyan)' }}>MCP + x402</span></div>
                     <div><span style={{ color: 'var(--fg-dim)' }}>wallet=</span><span style={{ color: 'var(--fg)', fontSize: '0.72rem' }}>{health?.onchainOs?.agenticWallet || 'not-configured'}</span></div>
                     <div style={{ marginTop: '0.5rem' }}>
@@ -677,7 +677,7 @@ X-402-Payment: <signed-payment-receipt>`}
   "mcpServers": {
     "scanguard": {
       "url": "http://38.49.216.120:3402/mcp",
-      "description": "Security scanning for ERC-20 tokens on X Layer"
+      "description": "Security scanning for ERC-20 tokens on XLayer"
     }
   }
 }`)}>COPY</button>
@@ -685,7 +685,7 @@ X-402-Payment: <signed-payment-receipt>`}
   "mcpServers": {
     "scanguard": {
       "url": "http://38.49.216.120:3402/mcp",
-      "description": "Security scanning for ERC-20 tokens on X Layer"
+      "description": "Security scanning for ERC-20 tokens on XLayer"
     }
   }
 }`}
@@ -703,7 +703,7 @@ X-402-Payment: <signed-payment-receipt>`}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+        <div className="dashboard-footer-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
           <div style={{ textAlign: 'left', flex: '1 1 auto' }}>
             // ScanGuard - Built for XLayer Ecosystem<br/>
             <span style={{ color: 'var(--fg-subtle)' }}>OnchainOS × MCP × x402 × Uniswap Skills</span>
@@ -731,3 +731,4 @@ X-402-Payment: <signed-payment-receipt>`}
     </div>
   );
 }
+

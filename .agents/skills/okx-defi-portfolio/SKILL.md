@@ -52,7 +52,7 @@ onchainos defi position-detail \
 | Polygon | `polygon`, `matic` | `137` |
 | Arbitrum | `arbitrum`, `arb` | `42161` |
 | Base | `base` | `8453` |
-| X Layer | `xlayer`, `okb` | `196` |
+| XLayer | `xlayer`, `okb` | `196` |
 | Avalanche | `avalanche`, `avax` | `43114` |
 | Optimism | `optimism`, `op` | `10` |
 | Fantom | `fantom`, `ftm` | `250` |
@@ -194,3 +194,4 @@ For V3 Pool positions (`positionList` present), show an additional section per p
 - The wallet address parameter is `--address` for both commands
 - `position-detail` requires `analysisPlatformId` from `positions` output as `--platform-id`
 - The CLI resolves chain names automatically (`ethereum` → `1`, `bsc` → `56`, `solana` → `501`)
+

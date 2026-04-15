@@ -1,6 +1,6 @@
-// ─── Uniswap V3 Integration for X Layer ──────────────────────────────────────
+// ─── Uniswap V3 Integration for XLayer ──────────────────────────────────────
 //
-// Queries Uniswap V3 contracts on X Layer for:
+// Queries Uniswap V3 contracts on XLayer for:
 // - Pool existence (via Factory.getPool)
 // - Pool liquidity (via Pool.liquidity + slot0)
 // - Price quotes (via QuoterV2.quoteExactInputSingle)
@@ -89,7 +89,7 @@ function getProvider(): ethers.JsonRpcProvider {
 // ─── Core Functions ──────────────────────────────────────────────────────────
 
 /**
- * Check if Uniswap V3 Factory is deployed on X Layer
+ * Check if Uniswap V3 Factory is deployed on XLayer
  */
 export async function isUniswapAvailable(): Promise<boolean> {
   try {
@@ -122,7 +122,7 @@ export async function checkUniswapLiquidity(
     // First check if factory exists
     const factoryCode = await provider.getCode(UNISWAP_V3_FACTORY);
     if (factoryCode === "0x") {
-      logger.info("[Uniswap] Factory not deployed on X Layer — skipping");
+      logger.info("[Uniswap] Factory not deployed on XLayer — skipping");
       return { hasPool: false, bestPool: null, totalPools: 0, pools: [] };
     }
 
@@ -269,3 +269,4 @@ export async function getBestUniswapQuote(params: {
     BigInt(curr.amountOut) > BigInt(best.amountOut) ? curr : best
   );
 }
+

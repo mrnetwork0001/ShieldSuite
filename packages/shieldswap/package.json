@@ -2,7 +2,7 @@
   "name": "@shield-suite/shieldswap",
   "version": "1.0.0",
   "private": true,
-  "description": "Security-first DEX aggregator frontend powered by ScanGuard — X Layer Build X Season 2 AI Hackathon",
+  "description": "Security-first DEX aggregator frontend powered by ScanGuard — XLayer Build X Season 2 AI Hackathon",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
@@ -24,3 +24,4 @@
     "vite": "^6.2.4"
   }
 }
+

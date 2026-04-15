@@ -9,7 +9,7 @@ Implement 8 high-impact features to maximize scoring across all 4 judging criter
 
 ### 1A. Uniswap Liquidity Check in ScanGuard
 
-**What:** When scanning a token, query Uniswap V3 Factory on X Layer to check if a pool exists and how much liquidity it has. Display "Uniswap V3 Liquidity: $X" in scan results.
+**What:** When scanning a token, query Uniswap V3 Factory on XLayer to check if a pool exists and how much liquidity it has. Display "Uniswap V3 Liquidity: $X" in scan results.
 
 **Technical approach:**
 - Uniswap V3 Factory uses deterministic CREATE2 addresses: `0x1F98431c8aD98523631AE4a59f267346ea31F984`
@@ -129,7 +129,7 @@ Implement 8 high-impact features to maximize scoring across all 4 judging criter
 
 ### 3B. Agent Activity (Automated Scanning)
 
-**What:** A cron script that uses the agent wallet to scan top X Layer tokens periodically, generating on-chain x402 payment transactions.
+**What:** A cron script that uses the agent wallet to scan top XLayer tokens periodically, generating on-chain x402 payment transactions.
 
 > [!WARNING]
 > This requires the agent wallet to have USDC/OKB for gas + x402 payments. The user needs to fund the wallet.
@@ -143,7 +143,7 @@ Implement 8 high-impact features to maximize scoring across all 4 judging criter
 
 ## Workstream 4: Dashboard & Polish
 
-### 4A. X Layer Chain Stats on Dashboard
+### 4A. XLayer Chain Stats on Dashboard
 
 **What:** Show live block height, gas price, txn count on the ScanGuard dashboard header.
 
@@ -167,7 +167,7 @@ Implement 8 high-impact features to maximize scoring across all 4 judging criter
 | **2** | 2A (AI chat interface) | 3-4 hrs | Fills 25% scoring gap |
 | **3** | 2B + 2C (Thinking + Recommendations) | 1-2 hrs | Polish for AI criterion |
 | **4** | 1B (Uniswap quote comparison) | 2-3 hrs | Bonus Uniswap points |
-| **5** | 4A (X Layer chain stats) | 1 hr | Ecosystem integration |
+| **5** | 4A (XLayer chain stats) | 1 hr | Ecosystem integration |
 | **6** | 3A + 3B (Economy loop + cron) | 2-3 hrs | Special prizes |
 | **7** | 4B (Error handling) | 1 hr | Product completeness |
 
@@ -178,7 +178,7 @@ Implement 8 high-impact features to maximize scoring across all 4 judging criter
 ## Open Questions
 
 > [!IMPORTANT]
-> 1. **Uniswap on X Layer:** The Uniswap docs don't explicitly list X Layer in V3 deployments. The standard CREATE2 Factory (`0x1F98431c8aD98523631AE4a59f267346ea31F984`) may or may not exist on X Layer chain 196. We need to verify by checking bytecode at that address. If it doesn't exist, we'll use Uniswap's universal deployment or reference pools from OKX's internal routing.
+> 1. **Uniswap on XLayer:** The Uniswap docs don't explicitly list XLayer in V3 deployments. The standard CREATE2 Factory (`0x1F98431c8aD98523631AE4a59f267346ea31F984`) may or may not exist on XLayer chain 196. We need to verify by checking bytecode at that address. If it doesn't exist, we'll use Uniswap's universal deployment or reference pools from OKX's internal routing.
 >
 > 2. **AI Chat:** Should we use a simple pattern matcher (fast, no dependencies) or integrate with an actual LLM API for natural language understanding? Pattern matcher is faster to build and has no API costs.
 >
@@ -195,3 +195,4 @@ Implement 8 high-impact features to maximize scoring across all 4 judging criter
 - Scan USDT → see Uniswap liquidity in report
 - Type "Is USDT safe?" in chat → see scan trigger
 - Check dashboard shows live block height
+

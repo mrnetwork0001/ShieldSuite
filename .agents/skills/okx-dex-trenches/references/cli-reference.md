@@ -19,7 +19,7 @@ onchainos memepump chains
 | `data[].protocolList[].protocolId` | String | Protocol unique ID |
 | `data[].protocolList[].protocolName` | String | Protocol display name (e.g., `pumpfun`, `fourmeme`) |
 
-> Currently supports: Solana (501), BSC (56), X Layer (196), TRON (195).
+> Currently supports: Solana (501), BSC (56), XLayer (196), TRON (195).
 
 ## 2. onchainos memepump tokens
 
@@ -279,3 +279,4 @@ onchainos memepump token-bundle-info --address <address> --chain solana
 onchainos memepump aped-wallet --address <address> --chain solana
 # -> Display aped wallets with wallet type, holding %, and PnL
 ```
+

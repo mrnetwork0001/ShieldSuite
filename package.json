@@ -2,7 +2,7 @@
   "name": "shield-suite",
   "version": "1.0.0",
   "private": true,
-  "description": "Monorepo for ScanGuard (MCP security scanner), ShieldSwap (security-first DEX aggregator), and ScanGuard Dashboard — X Layer Build X Season 2 AI Hackathon",
+  "description": "Monorepo for ScanGuard (MCP security scanner), ShieldSwap (security-first DEX aggregator), and ScanGuard Dashboard — XLayer Build X Season 2 AI Hackathon",
   "workspaces": [
     "packages/scanguard",
     "packages/shieldswap",
@@ -29,3 +29,4 @@
   },
   "license": "MIT"
 }
+

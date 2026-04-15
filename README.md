@@ -1,7 +1,7 @@
-# Shield Suite - X Layer Security Infrastructure
+# Shield Suite - XLayer Security Infrastructure
 
-> **The ultimate security-first DeFi infrastructure layer on X Layer.**  
-> Built specifically for the **X Layer Build X Season 2 AI Hackathon**.
+> **The ultimate security-first DeFi infrastructure layer on XLayer.**  
+> Built specifically for the **XLayer Build X Season 2 AI Hackathon**.
 
 <img width="1510" height="736" alt="14 04 2026_23 24 57_REC" src="https://github.com/user-attachments/assets/11ff1bf9-193f-486d-b42e-c92e0014d8fd" />
 
@@ -49,7 +49,7 @@ A glassmorphic, terminal-inspired frontend built in React/Vite.
 <img width="1123" height="909" alt="14 04 2026_23 26 10_REC" src="https://github.com/user-attachments/assets/da2dc17f-4dc9-454f-a2cb-8bccdf66daa6" />
 
 
-- Integrates `okx-dex-swap` to route trades across 500+ liquidity sources on X Layer, guaranteeing optimal routing.
+- Integrates `okx-dex-swap` to route trades across 500+ liquidity sources on XLayer, guaranteeing optimal routing.
 - Features a conversational **AI Agent Chatbot** seamlessly integrated directly into the trading UI, allowing users to scan tokens and stage trades using natural language.
 
 ### 3. Agent Dashboard (`packages/dashboard`)
@@ -61,10 +61,10 @@ A real-time command center for monitoring the entire ecosystem.
 
 ## Autonomous AI Agent (TEE)
 
-We have deployed an autonomous Node.js agent running 24/7 on a VPS. It continuously invokes the ScanGuard API to monitor the top 11 X Layer core tokens (WOKB, USDC, USDT, USDe, etc.) for emerging threats.
+We have deployed an autonomous Node.js agent running 24/7 on a VPS. It continuously invokes the ScanGuard API to monitor the top 11 XLayer core tokens (WOKB, USDC, USDT, USDe, etc.) for emerging threats.
 
 - **Institutional Security:** Utilizes the `okx-agentic-wallet` backed by a **Trusted Execution Environment (TEE)**. The private key is strictly isolated and never exposed to the application runtime, rendering it immune to memory-dump attacks.
-- **Onchain Checkpoints:** Emits a literal `0 OKB` transaction on the X Layer ledger periodically. Attached to the transaction data is a UTF-8 encoded metadata string (`"ScanGuard Cycle Success"`), acting as an immutable public heartbeat proving the agent's uptime.
+- **Onchain Checkpoints:** Emits a literal `0 OKB` transaction on the XLayer ledger periodically. Attached to the transaction data is a UTF-8 encoded metadata string (`"ScanGuard Cycle Success"`), acting as an immutable public heartbeat proving the agent's uptime.
 
 ---
 
@@ -75,7 +75,7 @@ Our application deeply leverages the OKX OnchainOS ecosystem to provide unparall
 | SDK Module | Implementation Details |
 |------------|------------------------|
 | `okx-security` | Powers the core threat-detection engine. Checks for honeypot traits, hardcoded buy/sell taxes, contract authorship, and dynamically scores risk parameters. |
-| `okx-dex-swap` | Used in our ShieldSwap frontend to generate highly optimized, low-slippage trade execution call data natively across all aggregated X Layer DEXs. |
+| `okx-dex-swap` | Used in our ShieldSwap frontend to generate highly optimized, low-slippage trade execution call data natively across all aggregated XLayer DEXs. |
 | `okx-dex-token` | Provides real-time token metadata, market caps, dynamically fetching token logos, standardizing decimal formats, and validating address formats. |
 | `okx-agentic-wallet`| Manages the complex lifecycle of the Autonomous Bot, ensuring transactions are constructed correctly and pushed through securely via enclave signing. |
 | `okx-x402-payment` | Facilitates the cryptographic verification and conceptual architecture for streaming micropayments from client agents. |
@@ -88,7 +88,7 @@ ScanGuard pioneers a monetized API standard for AI agents via [x402 Payment Requ
 
 1. **Request:** An external AI agent calls `POST /api/scan` without authorization.
 2. **Denial:** Server returns `HTTP 402 Payment Required` with instructions to pay $0.005 USDC.
-3. **Payment:** The agent signs and broadcasts the stablecoin transaction natively on X Layer.
+3. **Payment:** The agent signs and broadcasts the stablecoin transaction natively on XLayer.
 4. **Verification:** The agent retries the request providing `X-402-Payment: <signed-receipt>`.
 5. **Fulfillment:** The server confirms the on-chain transfer and returns the highly valuable security report.
 
@@ -98,7 +98,7 @@ ScanGuard pioneers a monetized API standard for AI agents via [x402 Payment Requ
 
 ## Model Context Protocol (MCP)
 
-ScanGuard exposes an HTTP MCP server that any standard AI client can query natively to give them "X Layer vision".
+ScanGuard exposes an HTTP MCP server that any standard AI client can query natively to give them "XLayer vision".
 
 ### Calling the MCP Tool natively via cURL
 ```bash
@@ -113,7 +113,7 @@ curl -X POST http://38.49.216.120:3402/mcp/tools/call \
   "mcpServers": {
     "scanguard": {
       "url": "http://38.49.216.120:3402/mcp",
-      "description": "Native security scanning for ERC-20 tokens on X Layer"
+      "description": "Native security scanning for ERC-20 tokens on XLayer"
     }
   }
 }
@@ -159,11 +159,12 @@ This single command orchestrates:
 
 ## Live Endpoints & Infrastructure
 
-- **Network:** X Layer Mainnet (`Chain ID 196`)
+- **Network:** XLayer Mainnet (`Chain ID 196`)
 - **ShieldSwap Application:** [https://shieldswap-main.vercel.app](https://shieldswap-main.vercel.app)
 - **ScanGuard Dashboard:** [https://scanguard-dashboard-main.vercel.app](https://scanguard-dashboard-main.vercel.app)
 - **Central API Node & MCP Host:** `http://38.49.216.120:3402`
-- **TEE Agent Identity (X Layer):** `0x821b9cc6a54272d0b5b106416fe360c162f2af85`
+- **TEE Agent Identity (XLayer):** `0x821b9cc6a54272d0b5b106416fe360c162f2af85`
 
 ---
 *Built defensively. Executed autonomously.*
+

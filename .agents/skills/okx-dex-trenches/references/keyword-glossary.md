@@ -32,8 +32,9 @@
 | BNB Chain | flap | `129826` |
 | Base | clanker | `130981` |
 | Base | bankr | `134522` |
-| X Layer | dyorfun | `137823` |
-| X Layer | flap | `129826` |
+| XLayer | dyorfun | `137823` |
+| XLayer | flap | `129826` |
 | TRON | sunpump | `121263` |
 
 > **Disclaimer**: This list is not exhaustive and may be updated from time to time as new platforms launch. Always run `onchainos memepump chains` for the latest full list.
+

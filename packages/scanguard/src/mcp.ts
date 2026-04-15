@@ -23,7 +23,7 @@ const SCANGUARD_TOOLS: McpToolDefinition[] = [
   {
     name: "scan_token",
     description:
-      "Scan an ERC-20 token contract for security risks including rug-pull indicators, honeypot detection, phishing patterns, suspicious approvals, mint functions, blacklist capabilities, and proxy/upgrade patterns. Returns a comprehensive risk score (0-100) and detailed threat flags. Designed for X Layer (Chain ID: 196) but supports any EVM chain.",
+      "Scan an ERC-20 token contract for security risks including rug-pull indicators, honeypot detection, phishing patterns, suspicious approvals, mint functions, blacklist capabilities, and proxy/upgrade patterns. Returns a comprehensive risk score (0-100) and detailed threat flags. Designed for XLayer (Chain ID: 196) but supports any EVM chain.",
     inputSchema: {
       type: "object",
       properties: {
@@ -34,7 +34,7 @@ const SCANGUARD_TOOLS: McpToolDefinition[] = [
         },
         chainId: {
           type: "number",
-          description: "The chain ID to scan on. Defaults to 196 (X Layer Mainnet).",
+          description: "The chain ID to scan on. Defaults to 196 (XLayer Mainnet).",
           default: 196,
         },
       },
@@ -81,7 +81,7 @@ mcpRouter.get("/tools", (_req: Request, res: Response) => {
     server: {
       name: "ScanGuard",
       version: "1.0.0",
-      description: "AI-powered ERC-20 token security scanner for X Layer",
+      description: "AI-powered ERC-20 token security scanner for XLayer",
     },
   });
 });
@@ -177,7 +177,7 @@ mcpRouter.post("/tools/call", async (req: Request, res: Response) => {
         let summary = `${riskEmoji} **${result.tokenName || "Unknown"} (${result.tokenSymbol || "???"})**\n`;
         summary += `Risk Score: ${result.riskScore}/100 — ${result.riskLevel}\n`;
         summary += `Contract: ${result.tokenAddress}\n`;
-        summary += `Chain: X Layer (#${result.chainId})\n\n`;
+        summary += `Chain: XLayer (#${result.chainId})\n\n`;
 
         if (result.flags.length === 0) {
           summary += "No risks detected. Token appears safe for trading.\n";
@@ -233,3 +233,4 @@ mcpRouter.post("/tools/call", async (req: Request, res: Response) => {
 });
 
 export { mcpRouter };
+

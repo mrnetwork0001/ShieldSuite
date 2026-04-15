@@ -182,7 +182,7 @@ async function okxRequest<T>(
  * Scan a token for security risks using OKX Security API
  * Endpoint: POST /api/v6/security/token-scan
  *
- * @param chainId - Chain ID (e.g., "196" for X Layer)
+ * @param chainId - Chain ID (e.g., "196" for XLayer)
  * @param tokenAddress - Token contract address
  * @returns Token scan result with risk assessment
  */
@@ -431,3 +431,4 @@ export function getOnchainOsStatus(): {
     agenticWallet: getAgentAddress() || null,
   };
 }
+

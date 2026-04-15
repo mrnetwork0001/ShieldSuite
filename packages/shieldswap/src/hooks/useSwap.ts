@@ -28,7 +28,7 @@ function getFriendlyError(raw: string): string {
     return "Request timed out — the network may be congested. Please try again in a moment.";
 
   if (lower.includes("chain") || lower.includes("network mismatch"))
-    return "Wrong network — please switch to X Layer Mainnet (Chain ID 196) in your wallet.";
+    return "Wrong network — please switch to XLayer Mainnet (Chain ID 196) in your wallet.";
 
   if (lower.includes("gas") && lower.includes("estimate"))
     return "Gas estimation failed — the transaction may fail. Try a different token pair or amount.";
@@ -204,7 +204,7 @@ export function useSwap(): UseSwapReturn {
       try {
         const network = await signer.provider?.getNetwork();
         if (network && Number(network.chainId) !== XLAYER_CHAIN.chainId) {
-          throw new Error("Please switch to X Layer network");
+          throw new Error("Please switch to XLayer network");
         }
 
         const amountWei = ethers.parseUnits(params.amount, params.fromDecimals).toString();
@@ -370,3 +370,4 @@ export function useSwap(): UseSwapReturn {
     reset,
   };
 }
+

@@ -124,7 +124,7 @@ const App: React.FC = () => {
             <span className="text-blue">Every trade protected.</span>
           </h2>
           <p className="hero-subtitle">
-            AI-powered security scanning meets DeFi. Swap tokens on X Layer with confidence.
+            AI-powered security scanning meets DeFi. Swap tokens on XLayer with confidence.
           </p>
         </motion.div>
 
@@ -190,7 +190,7 @@ const App: React.FC = () => {
       <footer className="app-footer">
         <div className="footer-left">
           Built for <strong>XLayer</strong> ·{" "}
-          Powered by <span className="text-blue">ScanGuard MCP</span> +{" "}
+          Powered by <a href="https://scanguard-dashboard-main.vercel.app" target="_blank" rel="noopener noreferrer" className="text-blue" style={{ textDecoration: 'none' }}>ScanGuard MCP</a> +{" "}
           <span className="text-purple">x402 Protocol</span>
         </div>
         <div className="footer-center">
@@ -360,7 +360,13 @@ const App: React.FC = () => {
             padding: 20px 16px;
           }
 
-          .footer-left, .footer-center, .footer-right {
+          .footer-left {
+            text-align: center;
+            font-size: 0.65rem;
+            white-space: nowrap;
+          }
+
+          .footer-center, .footer-right {
             text-align: center;
           }
 
@@ -374,3 +380,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

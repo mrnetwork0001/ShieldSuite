@@ -44,7 +44,7 @@ export async function connectWallet(): Promise<WalletState> {
     const balance = ethers.formatEther(await provider.getBalance(address));
     const isXLayer = chainId === XLAYER_CHAIN.chainId;
 
-    // Switch to X Layer if not already on it
+    // Switch to XLayer if not already on it
     if (!isXLayer) {
       await switchToXLayer();
       // Re-check after switch
@@ -102,3 +102,4 @@ declare global {
     ethereum?: any;
   }
 }
+
