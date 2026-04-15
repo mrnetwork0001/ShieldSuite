@@ -65,7 +65,7 @@ export function useScanGuard(): UseScanGuardReturn {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Shield-Key": "shield-internal-2026",
+          "X-402-Payment": "demo",
         },
         body: JSON.stringify({
           tokenAddress,

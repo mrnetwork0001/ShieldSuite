@@ -16,7 +16,6 @@ interface SwapCardProps {
   onConnect: () => void;
   onScanResult: (result: ScanResult | null) => void;
   onActivityLog: (entry: ActivityEntry) => void;
-  initialCommand?: { from: string; to: string; amount: string; timestamp: number } | null;
 }
 
 export interface ActivityEntry {
@@ -37,7 +36,6 @@ const SwapCard: React.FC<SwapCardProps> = ({
   onConnect,
   onScanResult,
   onActivityLog,
-  initialCommand,
 }) => {
   const [fromToken, setFromToken] = useState<TokenInfo>(DEFAULT_FROM);
   const [toToken, setToToken] = useState<TokenInfo>(DEFAULT_TO);
@@ -90,21 +88,6 @@ const SwapCard: React.FC<SwapCardProps> = ({
       }
     });
   }, [fromToken.address]);
-
-  // ─── AI Command Handling: update tokens/amount from and chat ────────
-  useEffect(() => {
-    if (!initialCommand) return;
-
-    // Resolve tokens
-    const fromT = TOKEN_LIST.find(t => t.symbol.toUpperCase() === initialCommand.from.toUpperCase());
-    const toT = TOKEN_LIST.find(t => t.symbol.toUpperCase() === initialCommand.to.toUpperCase());
-
-    if (fromT) setFromToken(fromT);
-    if (toT) setToToken(toT);
-    if (initialCommand.amount) setAmount(initialCommand.amount);
-    
-    // reset scroll to top of card if needed or focus
-  }, [initialCommand]);
 
   // ─── Fetch wallet balance for sell token ──────────────────────────────
   useEffect(() => {

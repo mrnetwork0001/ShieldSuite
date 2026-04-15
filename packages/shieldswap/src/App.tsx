@@ -81,9 +81,8 @@ const App: React.FC = () => {
     setActivityLog((prev) => [...prev.slice(-49), entry]);
   }, []);
 
-  // ─── Agent Chat: trigger scan/swap from chat command ──────────────
+  // ─── Agent Chat: trigger scan from chat command ─────────────────────
   const [chatScanAddress, setChatScanAddress] = useState<string | null>(null);
-  const [swapCommand, setSwapCommand] = useState<{ from: string; to: string; amount: string; timestamp: number } | null>(null);
 
   const handleChatScan = useCallback((address: string) => {
     setChatScanAddress(address);
@@ -96,7 +95,6 @@ const App: React.FC = () => {
   }, [handleActivityLog]);
 
   const handleChatSwap = useCallback((from: string, to: string, amount: string) => {
-    setSwapCommand({ from, to, amount, timestamp: Date.now() });
     handleActivityLog({
       id: `chat-swap-${Date.now()}`,
       timestamp: Date.now(),
@@ -137,7 +135,6 @@ const App: React.FC = () => {
             onConnect={handleConnect}
             onScanResult={handleScanResult}
             onActivityLog={handleActivityLog}
-            initialCommand={swapCommand}
           />
           <RiskReport
             result={scanResult}

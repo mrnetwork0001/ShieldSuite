@@ -86,8 +86,8 @@ app.get("/api/health", (_req, res) => {
       chain: XLAYER_CONFIG.chainName,
       chainId: XLAYER_CONFIG.chainId,
       uptime: process.uptime(),
-      environment: "production",
-      demoMode: false, // Explicitly false for hackathon enforcement
+      environment: NODE_ENV,
+      demoMode: process.env.X402_DEMO_MODE === "true" || NODE_ENV !== "production",
       onchainOs: getOnchainOsStatus(),
     },
   });

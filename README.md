@@ -122,22 +122,6 @@ curl -X POST http://38.49.216.120:3402/mcp/tools/call \
 
 ---
 
-## 💸 x402 Agentic Monetization
-Shield Suite implements the **HTTP 402 Payment Required** protocol to create a sustainable economy loop for security intelligence.
-
-### The Monetization Loop (Earn-Pay-Earn)
-1. **The Gate**: External AI agents calling the `/api/scan` endpoint receive a `402 Payment Required` response.
-2. **The Fee**: Scans are priced at **$0.005 USDC** per token, payable to the Agentic Wallet on X Layer.
-3. **The Proof**: The agent executes a micro-transaction and retries with the `X-402-Payment` header containing the transaction hash.
-4. **Verification**: The ScanGuard backend verifies the transaction on-chain via `okx-onchain-gateway` before releasing the security report.
-
-### Technical Implementation
-- **Strict Enforcement**: External unauthenticated requests are automatically denied results via 402 mid-stream.
-- **Ecosystem Bypass**: ShieldSwap and the ScanGuard Dashboard use a cryptographically secured `X-Shield-Key` bypass for seamless user experience while maintaining the public monetization gate.
-- **Live Revenue Tracking**: Payments and revenue throughput are tracked in real-time on the ScanGuard Dashboard.
-
----
-
 ## Local Setup & Deployment
 
 ### Prerequisites

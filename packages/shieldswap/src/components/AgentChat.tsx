@@ -189,10 +189,7 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
               const apiUrl = import.meta.env.VITE_SCANGUARD_URL || "";
               const res = await fetch(`${apiUrl}/api/scan`, {
                 method: "POST",
-                headers: { 
-                  "Content-Type": "application/json",
-                  "X-Shield-Key": "shield-internal-2026"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tokenAddress: intent.tokenAddress, chainId: 196 })
               });
               const data = await res.json();

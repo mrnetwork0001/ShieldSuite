@@ -56,10 +56,7 @@ async function scanToken(address: string, symbol: string): Promise<boolean> {
   try {
     const res = await fetch(`${SCANGUARD_URL}/api/scan`, {
       method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "X-Shield-Key": "shield-internal-2026"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tokenAddress: address }),
     });
 
