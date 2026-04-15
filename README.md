@@ -166,5 +166,11 @@ This single command orchestrates:
 - **TEE Agent Identity (XLayer):** `0x821b9cc6a54272d0b5b106416fe360c162f2af85`
 
 ---
+## Contact & Socials
+- **Developer:** mrnetwork0001
+- **Email:** emma40mike@gmail.com
+- **X (Twitter):** [@encrypt_wizard](https://x.com/encrypt_wizard)
+
+---
 *Built defensively. Executed autonomously.*
 
