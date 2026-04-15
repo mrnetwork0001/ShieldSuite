@@ -36,8 +36,8 @@ export interface X402Config {
 const defaultConfig: X402Config = {
   priceUsd: SCAN_PRICE_USD,
   acceptedCurrencies: ["OKB", "USDT", "USDC"],
-  paymentAddress: PAYMENT_ADDRESS,
-  demoMode: false, // Enforce x402 for external callers
+  paymentAddress: "0x0000000000000000000000000000000000000000", // Placeholder, filled by middleware
+  demoMode: false,
 };
 
 // Internal bypass key — our own frontends and agent use this to skip x402
@@ -50,7 +50,13 @@ const INTERNAL_KEY = process.env.X402_INTERNAL_KEY || "shield-internal-2026";
  * Internal callers bypass via X-Shield-Key header.
  */
 export function x402Middleware(config: Partial<X402Config> = {}) {
-  const cfg = { ...defaultConfig, ...config };
+  // Always use the latest env address or default
+  const paymentAddress = process.env.PAYMENT_ADDRESS || "0x0000000000000000000000000000000000000000";
+  const cfg = { 
+    ...defaultConfig, 
+    paymentAddress, 
+    ...config 
+  };
 
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const paymentHeader = req.headers["x-402-payment"] as string | undefined;
