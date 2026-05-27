@@ -111,7 +111,7 @@ function parseIntent(input: string): ParsedIntent {
     return { type: "scan", tokenAddress: text };
   }
 
-  // Partial 0x address — give helpful feedback instead of "unknown"
+  // Partial 0x address - give helpful feedback instead of "unknown"
   if (/0x[a-fA-F0-9]+/.test(text)) {
     return { type: "unknown" };
   }
@@ -233,7 +233,7 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
           addMessage(
             "agent",
             hasPartialAddr
-              ? `⚠️ That address looks incomplete — I need the full 42-character address (0x + 40 hex chars).\n\nPaste the complete address or try:\n• "Scan USDT"\n• "Is USDC safe?"`
+              ? `⚠️ That address looks incomplete - I need the full 42-character address (0x + 40 hex chars).\n\nPaste the complete address or try:\n• "Scan USDT"\n• "Is USDC safe?"`
               : `🤔 I didn't understand that. Try:\n• "Is USDT safe?"\n• "Scan USDC"\n• "Swap 10 USDC to OKB"\n• "help"`
           );
         }

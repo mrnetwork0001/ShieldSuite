@@ -108,7 +108,7 @@ export function tokenSymbol(address: string): string {
   return findToken(address)?.symbol || address.slice(0, 6) + "...";
 }
 
-/** Resolve a custom contract address to TokenInfo by querying on-chain metadata */
+/** Resolve a custom contract address to TokenInfo by querying onchain metadata */
 export async function resolveCustomToken(address: string, provider: any): Promise<TokenInfo | null> {
   // Check if already in list
   const existing = findToken(address);
@@ -149,28 +149,44 @@ export async function resolveCustomToken(address: string, provider: any): Promis
   }
 }
 
+export const XLAYER_TESTNET = {
+  chainId: 1952,
+  chainIdHex: "0x7a0",
+  chainName: "XLayer Testnet",
+  rpcUrls: ["https://testrpc.xlayer.tech"],
+  blockExplorerUrls: ["https://www.okx.com/explorer/xlayer-test"],
+  nativeCurrency: {
+    name: "OKB",
+    symbol: "OKB",
+    decimals: 18,
+  },
+} as const;
+
 /** Default RPC URL */
 export const RPC_URL = XLAYER_CHAIN.rpcUrls[0];
 
 /** Explorer link helper */
-export function getExplorerUrl(type: "address" | "tx", value: string): string {
-  return `${XLAYER_CHAIN.blockExplorerUrls[0]}/${type}/${value}`;
+export function getExplorerUrl(type: "address" | "tx", value: string, chainId = 196): string {
+  const base = chainId === 1952 ? XLAYER_TESTNET.blockExplorerUrls[0] : XLAYER_CHAIN.blockExplorerUrls[0];
+  return `${base}/${type}/${value}`;
 }
 
-/** Add XLayer to MetaMask / wallet */
-export async function addXLayerToWallet(): Promise<boolean> {
+/** Add chain to MetaMask / wallet */
+export async function addChainToWallet(chainId: number): Promise<boolean> {
   if (!window.ethereum) return false;
+
+  const info = chainId === 1952 ? XLAYER_TESTNET : XLAYER_CHAIN;
 
   try {
     await window.ethereum.request({
       method: "wallet_addEthereumChain",
       params: [
         {
-          chainId: XLAYER_CHAIN.chainIdHex,
-          chainName: XLAYER_CHAIN.chainName,
-          rpcUrls: XLAYER_CHAIN.rpcUrls,
-          blockExplorerUrls: XLAYER_CHAIN.blockExplorerUrls,
-          nativeCurrency: XLAYER_CHAIN.nativeCurrency,
+          chainId: info.chainIdHex,
+          chainName: info.chainName,
+          rpcUrls: info.rpcUrls,
+          blockExplorerUrls: info.blockExplorerUrls,
+          nativeCurrency: info.nativeCurrency,
         },
       ],
     });
@@ -180,22 +196,29 @@ export async function addXLayerToWallet(): Promise<boolean> {
   }
 }
 
-/** Switch wallet to XLayer */
-export async function switchToXLayer(): Promise<boolean> {
+/** Switch wallet to a specific chain */
+export async function switchToChain(chainId: number): Promise<boolean> {
   if (!window.ethereum) return false;
+
+  const hex = chainId === 1952 ? XLAYER_TESTNET.chainIdHex : XLAYER_CHAIN.chainIdHex;
 
   try {
     await window.ethereum.request({
       method: "wallet_switchEthereumChain",
-      params: [{ chainId: XLAYER_CHAIN.chainIdHex }],
+      params: [{ chainId: hex }],
     });
     return true;
   } catch (error: any) {
-    // Chain not added yet — try adding
+    // Chain not added yet - try adding
     if (error.code === 4902) {
-      return addXLayerToWallet();
+      return addChainToWallet(chainId);
     }
     return false;
   }
+}
+
+/** Switch wallet to XLayer Mainnet (backward compatibility) */
+export async function switchToXLayer(): Promise<boolean> {
+  return switchToChain(196);
 }
 

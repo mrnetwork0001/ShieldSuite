@@ -4,13 +4,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WalletState, shortenAddress, formatBalance } from "../lib/wallet";
-import { XLAYER_CHAIN, getExplorerUrl } from "../lib/xlayer";
+import { XLAYER_CHAIN, XLAYER_TESTNET, getExplorerUrl, switchToChain } from "../lib/xlayer";
 import { ethers } from "ethers";
 
 interface HeaderProps {
   wallet: WalletState;
   onConnect: () => void;
   onDisconnect: () => void;
+  activeTab: "swap" | "pitchside";
+  setActiveTab: (tab: "swap" | "pitchside") => void;
 }
 
 interface TxHistoryItem {
@@ -18,7 +20,7 @@ interface TxHistoryItem {
   blockNumber: number;
 }
 
-const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
+const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, activeTab, setActiveTab }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [txHistory, setTxHistory] = useState<TxHistoryItem[]>([]);
@@ -115,13 +117,41 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
           </div>
         </div>
 
+        {/* Navigation Tabs */}
+        <div className="header-tabs">
+          <button
+            className={`tab-btn ${activeTab === "swap" ? "active" : ""}`}
+            onClick={() => setActiveTab("swap")}
+          >
+            🛡️ ShieldSwap
+          </button>
+          <button
+            className={`tab-btn ${activeTab === "pitchside" ? "active" : ""}`}
+            onClick={() => setActiveTab("pitchside")}
+          >
+            ⚽ Pitchside AI
+          </button>
+        </div>
+
         {/* Desktop Actions */}
         <div className="header-actions desktop-only">
-          {/* Chain indicator */}
-          <div className={`chain-badge ${wallet.isXLayer ? "chain-connected" : ""}`}>
-            <span className="chain-dot" />
-            {wallet.isXLayer ? "XLayer" : "Not Connected"}
-          </div>
+          {/* Chain switcher */}
+          <select
+            className="chain-switcher-select font-mono"
+            value={wallet.chainId === 196 ? "196" : wallet.chainId === 1952 ? "1952" : wallet.chainId === 31337 ? "31337" : "196"}
+            onChange={async (e) => {
+              const targetChain = Number(e.target.value);
+              try {
+                await switchToChain(targetChain);
+              } catch (err) {
+                console.error("Failed to switch network:", err);
+              }
+            }}
+          >
+            <option value="196">🔵 XLayer Mainnet</option>
+            <option value="1952">🟢 XLayer Testnet</option>
+            <option value="31337">⚙️ Localhost</option>
+          </select>
 
           {/* Wallet button / dropdown */}
           {wallet.connected ? (
@@ -171,7 +201,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
                         {txHistory.map((tx) => (
                           <a
                             key={tx.hash}
-                            href={getExplorerUrl("tx", tx.hash)}
+                            href={getExplorerUrl("tx", tx.hash, wallet.chainId || 196)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="wd-tx-item"
@@ -189,7 +219,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
                       </div>
                     )}
                     <a
-                      href={getExplorerUrl("address", wallet.address || "")}
+                      href={getExplorerUrl("address", wallet.address || "", wallet.chainId || 196)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="wd-view-all"
@@ -251,10 +281,23 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
               </div>
 
               <div className="mobile-menu-actions">
-                <div className={`chain-badge ${wallet.isXLayer ? "chain-connected" : ""}`}>
-                  <span className="chain-dot" />
-                  {wallet.isXLayer ? "XLayer Mainnet" : "Not Connected"}
-                </div>
+                <select
+                  className="chain-switcher-select font-mono"
+                  style={{ width: "100%" }}
+                  value={wallet.chainId === 196 ? "196" : wallet.chainId === 1952 ? "1952" : wallet.chainId === 31337 ? "31337" : "196"}
+                  onChange={async (e) => {
+                    const targetChain = Number(e.target.value);
+                    try {
+                      await switchToChain(targetChain);
+                    } catch (err) {
+                      console.error("Failed to switch network:", err);
+                    }
+                  }}
+                >
+                  <option value="196">🔵 XLayer Mainnet</option>
+                  <option value="1952">🟢 XLayer Testnet</option>
+                  <option value="31337">⚙️ Localhost</option>
+                </select>
 
                 {wallet.connected ? (
                   <div className="mobile-wallet-card glass-card">
@@ -316,6 +359,41 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
           display: flex;
           align-items: center;
           justify-content: space-between;
+        }
+
+        .header-tabs {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--border-default);
+          padding: 4px;
+          border-radius: var(--radius-full);
+        }
+
+        .tab-btn {
+          font-family: var(--font-mono);
+          font-size: 0.82rem;
+          font-weight: 600;
+          color: var(--text-secondary);
+          background: transparent;
+          border: none;
+          padding: 6px 16px;
+          border-radius: var(--radius-full);
+          cursor: pointer;
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .tab-btn:hover {
+          color: var(--text-primary);
+          background: rgba(255, 255, 255, 0.04);
+        }
+
+        .tab-btn.active {
+          color: #fff;
+          background: linear-gradient(135deg, rgba(75, 123, 245, 0.25), rgba(168, 85, 247, 0.25));
+          border: 1px solid rgba(75, 123, 245, 0.3);
+          box-shadow: 0 0 12px rgba(75, 123, 245, 0.15);
         }
 
         .header-brand {
@@ -497,6 +575,28 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect }) => {
         .nav-link-item:hover { color: #fff; }
 
         /* ─── Desktop Header Components ─── */
+        .chain-switcher-select {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-full);
+          color: var(--text-secondary);
+          padding: 6px 14px;
+          font-family: var(--font-mono);
+          font-size: 0.8rem;
+          font-weight: 500;
+          cursor: pointer;
+          outline: none;
+          transition: all 0.2s;
+        }
+        .chain-switcher-select:hover {
+          border-color: var(--accent-blue);
+          background: rgba(75, 123, 245, 0.05);
+        }
+        .chain-switcher-select option {
+          background: #0a0e17;
+          color: #fff;
+        }
+
         .chain-badge {
           display: flex;
           align-items: center;

@@ -10,28 +10,28 @@ function getFriendlyError(raw: string): string {
   const lower = raw.toLowerCase();
 
   if (lower.includes("user rejected") || lower.includes("user denied"))
-    return "Transaction cancelled — you rejected the request in your wallet.";
+    return "Transaction cancelled - you rejected the request in your wallet.";
 
   if (lower.includes("insufficient funds") || lower.includes("insufficient balance"))
-    return "Insufficient balance — you don't have enough tokens or OKB for gas. Check your wallet balance.";
+    return "Insufficient balance - you don't have enough tokens or OKB for gas. Check your wallet balance.";
 
   if (lower.includes("nonce"))
-    return "Transaction nonce error — try resetting your wallet's pending transactions.";
+    return "Transaction nonce error - try resetting your wallet's pending transactions.";
 
   if (lower.includes("network") || lower.includes("fetch") || lower.includes("failed to fetch"))
-    return "Network error — please check your internet connection and VPN, then try again.";
+    return "Network error - please check your internet connection and VPN, then try again.";
 
-  if (lower.includes("execution reverted") || lower.includes("third-party"))
-    return "Swap reverted on-chain — this usually means high slippage or low liquidity. Try increasing slippage or reducing the amount.";
+  if (lower.includes("execution reverted") || lower.includes("third-party") || lower.includes("contract execution"))
+    return "Swap transaction failed - possible causes: (1) Not enough OKB for gas fees, (2) Token approval expired - try approving again, (3) Price moved - try increasing slippage. Check the browser console (F12) for details.";
 
   if (lower.includes("timeout") || lower.includes("timed out"))
-    return "Request timed out — the network may be congested. Please try again in a moment.";
+    return "Request timed out - the network may be congested. Please try again in a moment.";
 
   if (lower.includes("chain") || lower.includes("network mismatch"))
-    return "Wrong network — please switch to XLayer Mainnet (Chain ID 196) in your wallet.";
+    return "Wrong network - please switch to XLayer Mainnet (Chain ID 196) in your wallet.";
 
   if (lower.includes("gas") && lower.includes("estimate"))
-    return "Gas estimation failed — the transaction may fail. Try a different token pair or amount.";
+    return "Gas estimation failed - the transaction may fail. Try a different token pair or amount.";
 
   // If it's already a reasonable length, return as-is
   if (raw.length < 120) return raw;
@@ -130,7 +130,7 @@ export function useSwap(): UseSwapReturn {
           throw new Error(data.error?.message || "Quote failed");
         }
 
-        // Parse the response — toTokenAmount is in minimal units (wei)
+        // Parse the response - toTokenAmount is in minimal units (wei)
         const rawAmountOut = data.data.toTokenAmount || data.data.amountOut || "0";
         const outDecimals = params.toDecimals || 6;
         
@@ -168,7 +168,7 @@ export function useSwap(): UseSwapReturn {
             }
           }
         } catch {
-          // Uniswap quote failed or no pool — that's fine, leave null
+          // Uniswap quote failed or no pool - that's fine, leave null
         }
 
         const result: SwapQuote = {
@@ -210,7 +210,7 @@ export function useSwap(): UseSwapReturn {
         const amountWei = ethers.parseUnits(params.amount, params.fromDecimals).toString();
 
         // ── WOKB ↔ OKB Direct Wrap/Unwrap ──────────────────────────────
-        // WOKB is Wrapped OKB — converting between them is a simple
+        // WOKB is Wrapped OKB - converting between them is a simple
         // deposit()/withdraw() call on the WOKB contract, NOT a DEX swap.
         const WOKB_ADDRESS = "0xe538905cf8410324e03a5a23c1c177a474d59b2b";
         const NATIVE_ADDRESS = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
@@ -313,20 +313,33 @@ export function useSwap(): UseSwapReturn {
           );
         }
 
-        // Skip custom provider simulation to avoid false-positives from out-of-sync RPCs.
-        // The user's wallet extension (e.g. OKX Wallet) will native simulate the tx automatically.
+        // Log the raw swap tx info for debugging
+        console.log("[Swap] OKX tx info:", {
+          to: txInfo.to,
+          value: txInfo.value,
+          gas: txInfo.gas,
+          gasPrice: txInfo.gasPrice,
+          dataLength: txInfo.data?.length,
+        });
 
         // ── Execute the swap ──
-        // We inject the OKX API gas estimate but padded by 150% to prevent strict 
-        // wallet simulations from failing, while also bypassing local eth_estimateGas reverts.
-        const gasLimit = txInfo.gas ? (BigInt(txInfo.gas) * 150n) / 100n : undefined;
-        
-        const tx = await signer.sendTransaction({
+        // Let the wallet estimate gas naturally instead of overriding with a
+        // padded gasLimit. Overriding gasLimit bypasses eth_estimateGas which
+        // means the wallet can't properly check if the tx will succeed, leading
+        // to confusing "third-party contract execution error" messages.
+        // We DO pass gasPrice from the OKX API to ensure price consistency.
+        const txParams: any = {
           to: txInfo.to,
           data: txInfo.data,
           value: txInfo.value ? BigInt(txInfo.value) : 0n,
-          ...(gasLimit ? { gasLimit } : {}),
-        });
+        };
+
+        // Pass gasPrice from OKX API if available (prevents gas price mismatch)
+        if (txInfo.gasPrice) {
+          txParams.gasPrice = BigInt(txInfo.gasPrice);
+        }
+
+        const tx = await signer.sendTransaction(txParams);
 
         const receipt = await tx.wait();
 

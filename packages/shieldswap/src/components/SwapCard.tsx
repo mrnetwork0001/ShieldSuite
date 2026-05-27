@@ -175,7 +175,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
       return;
     }
 
-    // WOKB → OKB unwrap calls withdraw() directly — no router approval needed
+    // WOKB → OKB unwrap calls withdraw() directly - no router approval needed
     const isUnwrap = fromToken.address.toLowerCase() === "0xe538905cf8410324e03a5a23c1c177a474d59b2b"
       && toToken.address.toLowerCase() === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
     if (isUnwrap) {
@@ -185,7 +185,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
 
     // Need wallet + quote + valid amount to check
     if (!wallet.connected || !wallet.address || !wallet.provider || !quote) {
-      return; // Don't change state — keep previous value
+      return; // Don't change state - keep previous value
     }
 
     if (!amount || parseFloat(amount) <= 0) {
@@ -207,7 +207,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
           }
         }
         if (!target) {
-          // Can't determine approve target — assume needed for safety
+          // Can't determine approve target - assume needed for safety
           if (!cancelled) setNeedsApproval(true);
           return;
         }
@@ -219,7 +219,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
           wallet.provider!
         );
         const allowance = await erc20.allowance(wallet.address!, target);
-        // Use a high threshold — if not approved with MaxUint256, always require approval
+        // Use a high threshold - if not approved with MaxUint256, always require approval
         // This prevents edge cases where partial allowance passes the check but the swap router needs more
         const MAX_THRESHOLD = ethers.MaxUint256 / 2n;
         const needsIt = allowance < MAX_THRESHOLD;
@@ -612,7 +612,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
             </button>
           ) : isDangerous ? (
             <button className="btn btn-danger swap-btn" disabled>
-              🚫 Swap Blocked — High Risk
+              🚫 Swap Blocked - High Risk
             </button>
           ) : stage === "complete" ? (
             <button
