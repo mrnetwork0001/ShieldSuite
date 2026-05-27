@@ -229,19 +229,26 @@ const App: React.FC = () => {
           <div className="pitchside-portal animate-fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
             <div className="glass-card text-center" style={{ maxWidth: '550px', padding: '45px 30px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', margin: '0 auto' }}>
               <span style={{ fontSize: '3rem' }}>⚽</span>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Connect to X Layer</h3>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Explore Pitchside AI</h3>
               <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0 }}>
                 The Pitchside AI Autonomous Scouting & Trading Network is deployed on X Layer. 
-                Connect to X Layer Mainnet for production staking, or switch to X Layer Testnet to try the match simulator sandbox.
+                Choose a network to explore — connect your wallet later to stake and trade.
               </p>
               <div style={{ display: 'flex', gap: '12px', width: '100%', justifyContent: 'center' }}>
                 <button 
                   className="btn btn-primary"
-                  onClick={async () => {
-                    try {
-                      const { switchToChain } = await import("./lib/xlayer");
-                      await switchToChain(196);
-                    } catch (err) {}
+                  onClick={() => {
+                    // Create read-only provider for mainnet exploration
+                    const readOnlyProvider = new ethers.JsonRpcProvider("https://rpc.xlayer.tech");
+                    setWallet(prev => ({
+                      ...prev,
+                      chainId: 196,
+                      isXLayer: true,
+                      provider: readOnlyProvider,
+                      connected: false,
+                      address: null,
+                      signer: null,
+                    }));
                   }}
                   style={{ padding: '12px 20px', fontWeight: 'bold', flex: 1 }}
                 >
@@ -249,11 +256,18 @@ const App: React.FC = () => {
                 </button>
                 <button 
                   className="btn btn-panel"
-                  onClick={async () => {
-                    try {
-                      const { switchToChain } = await import("./lib/xlayer");
-                      await switchToChain(1952);
-                    } catch (err) {}
+                  onClick={() => {
+                    // Create read-only provider for testnet exploration
+                    const readOnlyProvider = new ethers.JsonRpcProvider("https://testrpc.xlayer.tech");
+                    setWallet(prev => ({
+                      ...prev,
+                      chainId: 1952,
+                      isXLayer: true,
+                      provider: readOnlyProvider,
+                      connected: false,
+                      address: null,
+                      signer: null,
+                    }));
                   }}
                   style={{ padding: '12px 20px', fontWeight: 'bold', flex: 1 }}
                 >
