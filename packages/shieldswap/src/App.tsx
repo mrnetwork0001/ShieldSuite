@@ -384,7 +384,7 @@ const App: React.FC = () => {
 
         {/* Agent Activity Log */}
         <motion.div
-          className="activity-log glass-card"
+          className={`activity-log glass-card ${activeTab === 'pitchside' ? 'hide-on-mobile-pitchside' : ''}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
@@ -1076,11 +1076,14 @@ const App: React.FC = () => {
 
         @media (max-width: 1000px) {
           .pitchside-grid {
-            grid-template-columns: 1fr;
+            display: flex !important;
+            flex-direction: column-reverse !important;
+            gap: 24px !important;
           }
           .pitchside-right-column {
             position: relative;
             top: 0;
+            margin-bottom: 8px;
           }
           .scout-console {
             height: 450px;
@@ -1195,14 +1198,10 @@ const App: React.FC = () => {
             font-size: 0.82rem !important;
           }
 
-          /* Responsive TEE Enclave Status & Simulator */
+          /* Responsive TEE Enclave Status */
           .tee-status-inner {
             flex-direction: column !important;
             align-items: flex-start !important;
-            gap: 10px !important;
-          }
-          .sim-row {
-            flex-direction: column !important;
             gap: 10px !important;
           }
 
@@ -1211,6 +1210,11 @@ const App: React.FC = () => {
             padding: 16px !important;
             border-radius: 12px !important;
             max-width: 95% !important;
+          }
+
+          /* Hide Agent Activity Log on Mobile under Pitchside tab */
+          .hide-on-mobile-pitchside {
+            display: none !important;
           }
 
           /* Mainnet warning banner */
