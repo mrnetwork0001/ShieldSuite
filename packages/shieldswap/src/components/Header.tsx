@@ -3,6 +3,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { WalletState, shortenAddress, formatBalance } from "../lib/wallet";
 import { XLAYER_CHAIN, XLAYER_TESTNET, getExplorerUrl, switchToChain } from "../lib/xlayer";
 import { ethers } from "ethers";
@@ -87,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
     >
       <div className="header-inner">
         {/* Logo */}
-        <div className="header-brand">
+        <div className="header-brand" onClick={() => setActiveTab("swap")} style={{ cursor: 'pointer' }}>
           <div className="header-logo">
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
               <defs>
@@ -265,79 +266,112 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
       </div>
 
       {/* Mobile Menu Overlay */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div 
-            className="mobile-menu-overlay glass-card"
-            initial={{ opacity: 0, x: "100%" }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-          >
-            <div className="mobile-menu-content">
-              <div className="mobile-menu-header">
-                <div />
-                <button className="close-btn" onClick={() => setMobileMenuOpen(false)}>×</button>
-              </div>
+      {typeof document !== "undefined" && createPortal(
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <>
+              {/* Dark backdrop scrim */}
+              <motion.div
+                key="mobile-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setMobileMenuOpen(false)}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'rgba(0, 0, 0, 0.7)',
+                  zIndex: 9995, // Above everything in #root, but below CRT overlays
+                }}
+              />
+              {/* Slide-in menu panel */}
+              <motion.div 
+                key="mobile-menu"
+                className="mobile-menu-overlay"
+                initial={{ opacity: 0, x: "100%" }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              >
+                <div className="mobile-menu-content">
+                  <div className="mobile-menu-header">
+                    <div />
+                    <button className="close-btn" onClick={() => setMobileMenuOpen(false)}>×</button>
+                  </div>
 
-              <div className="mobile-menu-actions">
-                <select
-                  className="chain-switcher-select font-mono"
-                  style={{ width: "100%" }}
-                  value={wallet.chainId === 196 ? "196" : wallet.chainId === 1952 ? "1952" : wallet.chainId === 31337 ? "31337" : "196"}
-                  onChange={async (e) => {
-                    const targetChain = Number(e.target.value);
-                    try {
-                      await switchToChain(targetChain);
-                    } catch (err) {
-                      console.error("Failed to switch network:", err);
-                    }
-                  }}
-                >
-                  <option value="196">🔵 XLayer Mainnet</option>
-                  <option value="1952">🟢 XLayer Testnet</option>
-                  <option value="31337">⚙️ Localhost</option>
-                </select>
-
-                {wallet.connected ? (
-                  <div className="mobile-wallet-card glass-card">
-                    <div className="mw-label">Connected Wallet</div>
-                    <div className="mw-address font-mono">{shortenAddress(wallet.address || "")}</div>
-                    <div className="mw-balance font-mono">{formatBalance(wallet.balance || "0")} OKB</div>
-                    <button 
-                      className="wd-disconnect"
-                      style={{ marginTop: '12px', width: '100%' }}
-                      onClick={() => {
-                        onDisconnect();
-                        setMobileMenuOpen(false);
+                  <div className="mobile-menu-actions">
+                    <select
+                      className="chain-switcher-select font-mono"
+                      style={{ width: "100%" }}
+                      value={wallet.chainId === 196 ? "196" : wallet.chainId === 1952 ? "1952" : wallet.chainId === 31337 ? "31337" : "196"}
+                      onChange={async (e) => {
+                        const targetChain = Number(e.target.value);
+                        try {
+                          await switchToChain(targetChain);
+                        } catch (err) {
+                          console.error("Failed to switch network:", err);
+                        }
                       }}
                     >
-                      🔌 Disconnect
-                    </button>
-                  </div>
-                ) : (
-                  <button 
-                    className="btn btn-primary" 
-                    style={{ width: '100%', padding: '16px' }}
-                    onClick={() => {
-                      onConnect();
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    Connect Wallet
-                  </button>
-                )}
+                      <option value="196">🔵 XLayer Mainnet</option>
+                      <option value="1952">🟢 XLayer Testnet</option>
+                      <option value="31337">⚙️ Localhost</option>
+                    </select>
 
-                <div className="mobile-nav-links">
-                  <a href="#" className="nav-link-item">Swap</a>
-                  <a href="https://scanguard-dashboard-main.vercel.app" target="_blank" className="nav-link-item">ScanGuard Dashboard</a>
-                  <a href="https://x.com/encrypt_wizard" target="_blank" className="nav-link-item">Twitter / X</a>
+                    {wallet.connected ? (
+                      <div className="mobile-wallet-card glass-card">
+                        <div className="mw-label">Connected Wallet</div>
+                        <div className="mw-address font-mono">{shortenAddress(wallet.address || "")}</div>
+                        <div className="mw-balance font-mono">{formatBalance(wallet.balance || "0")} OKB</div>
+                        <button 
+                          className="wd-disconnect"
+                          style={{ marginTop: '12px', width: '100%' }}
+                          onClick={() => {
+                            onDisconnect();
+                            setMobileMenuOpen(false);
+                          }}
+                        >
+                          🔌 Disconnect
+                        </button>
+                      </div>
+                    ) : (
+                      <button 
+                        className="btn btn-primary" 
+                        style={{ width: '100%', padding: '16px' }}
+                        onClick={() => {
+                          onConnect();
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        Connect Wallet
+                      </button>
+                    )}
+
+                    <div className="mobile-nav-links">
+                      <button 
+                        className={`nav-link-item ${activeTab === 'swap' ? 'active' : ''}`}
+                        onClick={() => { setActiveTab('swap'); setMobileMenuOpen(false); }}
+                        style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                      >🛡️ ShieldSwap</button>
+                      <button 
+                        className={`nav-link-item ${activeTab === 'pitchside' ? 'active' : ''}`}
+                        onClick={() => { setActiveTab('pitchside'); setMobileMenuOpen(false); }}
+                        style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                      >⚽ Pitchside AI</button>
+                      <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                      <a href="https://x.com/encrypt_wizard" target="_blank" className="nav-link-item">Twitter / X</a>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      ) /* End of Mobile Menu Portal */}
 
       <style>{`
         .header {
@@ -345,7 +379,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
           top: 0;
           left: 0;
           right: 0;
-          z-index: 1000;
+          z-index: 9990;
           background: rgba(10, 14, 23, 0.8);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
@@ -490,15 +524,18 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
           bottom: 0;
           width: 300px;
           max-width: 85%;
-          z-index: 2000;
-          border-left: 1px solid var(--border-default);
+          z-index: 9999;
+          border-left: 1px solid rgba(75, 123, 245, 0.2);
           padding: 24px;
           display: flex;
           flex-direction: column;
-          background: #2d4890 !important;
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          box-shadow: -20px 0 40px rgba(0, 0, 0, 0.8);
+          background: #0d1526 !important;
+          box-shadow: -20px 0 60px rgba(0, 0, 0, 0.9);
+          overflow-y: auto;
+        }
+
+        .mobile-menu-overlay::before {
+          display: none !important;
         }
 
         .mobile-menu-header {
@@ -573,6 +610,38 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
           transition: color 0.2s;
         }
         .nav-link-item:hover { color: #fff; }
+        .nav-link-item.active { color: var(--accent-blue); font-weight: 700; }
+
+        @media (max-width: 768px) {
+          .header-tabs {
+            display: none !important;
+          }
+          .header-inner {
+            padding: 10px 16px;
+          }
+          .header-title {
+            font-size: 1rem;
+          }
+          .header-tagline {
+            font-size: 0.6rem;
+          }
+          .header-logo svg {
+            width: 26px;
+            height: 26px;
+          }
+          .header-brand {
+            gap: 8px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .header-title {
+            font-size: 0.9rem;
+          }
+          .header-tagline {
+            display: none;
+          }
+        }
 
         /* ─── Desktop Header Components ─── */
         .chain-switcher-select {

@@ -1073,6 +1073,103 @@ const App: React.FC = () => {
             height: 450px;
           }
         }
+
+        /* ─── Mobile: 768px and below ─── */
+        @media (max-width: 768px) {
+          .header-tabs {
+            display: none;
+          }
+
+          .hero-section {
+            padding: 16px !important;
+            margin-bottom: 16px !important;
+          }
+
+          .hero-title {
+            font-size: 1.1rem !important;
+          }
+
+          .hero-subtitle {
+            font-size: 0.78rem !important;
+            padding: 0 4px;
+          }
+
+          .pitchside-portal {
+            padding: 0 8px !important;
+            margin-top: 16px !important;
+          }
+
+          .pitchside-grid {
+            gap: 16px;
+          }
+
+          /* Tighter panel padding on mobile */
+          .glass-card {
+            padding: 16px !important;
+          }
+
+          /* Compact the onboarding banner */
+          .testnet-onboarding-banner {
+            padding: 14px 16px !important;
+          }
+
+          .testnet-onboarding-banner h4 {
+            font-size: 0.9rem !important;
+          }
+
+          .testnet-onboarding-banner p {
+            font-size: 0.75rem !important;
+          }
+
+          /* Mainnet warning banner */
+          .mainnet-warning-banner {
+            flex-direction: column !important;
+            gap: 12px !important;
+            text-align: center;
+          }
+
+          .mainnet-warning-banner button {
+            width: 100% !important;
+          }
+        }
+
+        /* ─── Mobile: 480px and below ─── */
+        @media (max-width: 480px) {
+          .hero-title {
+            font-size: 0.95rem !important;
+          }
+
+          .hero-subtitle {
+            font-size: 0.72rem !important;
+          }
+
+          .pitchside-portal {
+            padding: 0 4px !important;
+          }
+
+          .glass-card {
+            padding: 12px !important;
+            border-radius: 10px !important;
+          }
+
+          .panel-header h3 {
+            font-size: 0.9rem !important;
+          }
+
+          .activity-log {
+            padding: 12px !important;
+          }
+
+          .activity-entry {
+            font-size: 0.68rem !important;
+          }
+
+          /* Stack the 4-step onboarding grid */
+          .testnet-onboarding-banner > div:last-child {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+          }
+        }
       `}</style>
     </div>
   );
