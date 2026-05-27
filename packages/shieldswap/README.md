@@ -1,84 +1,74 @@
-# 🔄 ShieldSwap — Security-First DEX Aggregator
+# 🔄 ShieldSwap & Pitchside AI — Dynamic World Cup Speculation & DEX Aggregator
 
-> **XLayer Build X Season 2 AI Hackathon — XLayer Arena Submission**
+> **X Layer X Cup Hackathon Submission — Built on X Layer Testnet / Mainnet**
 
-ShieldSwap is a premium, security-first DEX aggregator that **scans every token for threats before allowing a swap**. Paste a token address → ShieldSwap calls [ScanGuard](#) to verify the token is safe → if safe, executes the swap → if risky, blocks the swap and shows a detailed threat report.
+**ShieldSwap** is a premium, security-first DEX aggregator and sports speculation platform. It consists of the core **ShieldSwap Aggregator** (which routes swaps safely via OKX OnchainOS) and **Pitchside AI** (the World Cup autonomous speculation loop). 
 
 ---
 
 ## 🎯 How It Works
 
 ```
-1. User pastes token address + swap amount
-2. ShieldSwap calls ScanGuard API (POST /api/scan)
-3. ScanGuard analyzes the contract on-chain
-4. Results displayed:
-   ✅ SAFE  → Swap enabled, user can proceed
-   ⚠️ RISKY → Warning shown, swap allowed with caution
-   🚫 DANGER → Swap BLOCKED, detailed threat report shown
-5. If safe: swap executes via Uniswap/DEX aggregation on XLayer
+1. User deposits USDT/USDC into the No-Loss Vault
+2. User delegates Scout Credits (yield) to the TEE Scout Agent
+3. AI Agent monitors real-time World Cup matches
+4. Match events trigger sentiment analysis
+5. Agent calls ScanGuard to verify the player share token bytecode
+6. If safe, Agent executes the swap on PlayerDex using delegated credits
+7. All transaction receipts are shown live in the Scout Console
 ```
+
+---
 
 ## ✨ Features
 
-- **AI-Powered Token Scanning** — Every token verified before trading via ScanGuard MCP
-- **Risk Score Visualization** — Animated SVG ring with 0–100 score and color-coded severity
-- **Threat Report** — Detailed breakdown of detected risks with evidence
-- **Swap Blocking** — High-risk tokens are automatically blocked from trading
-- **Agent Activity Log** — Real-time feed of scan decisions and swap activity
-- **Glassmorphism UI** — Premium dark mode design with blur effects and micro-animations
-- **XLayer Native** — Built specifically for XLayer (Chain ID: 196) with OKB gas
-- **Wallet Integration** — MetaMask / OKX Wallet with auto chain switching
+- **No-Loss Staking Vault** — Stake stablecoins, keep 100% of your principal, and earn virtual Scout Credits to fund speculation.
+- **Dynamic Player Index Market** — Buy/Sell dynamic player shares whose prices update on-chain based on real-world FIFA ratings and World Cup performances.
+- **Autonomous TEE Agent Trader** — Let a secure, TEE-protected agent scout news, analyze sentiment, verify safety, and trade index tokens on your behalf.
+- **ScanGuard Bytecode Verification** — Automatic security scans prevent agents from executing swaps on honeypots or malicious tokens.
+- **Real-Time Scout Console** — Live logs showing the AI Scout's decision-making flow and transaction confirmations.
+- **Agent Chat Interface** — A natural language copilot allowing you to scan contracts, execute swaps, and interact using conversational prompts.
+- **Premium Glassmorphic UI** — High-end dark mode design featuring interactive glow cards, ticker animations, and smooth transitions.
+
+---
+
+## 🏗️ Folder Structure
+
+```
+packages/shieldswap/src/
+├── components/
+│   ├── VaultPanel.tsx     → No-loss vault staking interface
+│   ├── PlayerMarket.tsx   → World Cup speculation board
+│   ├── ScoutConsole.tsx   → AI Scout real-time logs terminal
+│   ├── AgentChat.tsx      → Conversational AI copilot interface
+│   ├── SwapCard.tsx       → Core DEX Aggregator swap card
+│   └── RiskReport.tsx     → Animated security scan report
+├── hooks/
+│   ├── useScanGuard.ts    → Calls ScanGuard API
+│   └── useSwap.ts         → Swap quoting & execution
+└── lib/
+    ├── wallet.ts          → Wallet connection & provider logic
+    └── xlayer.ts          → X Layer chain metadata
+```
+
+---
 
 ## 🚀 Quick Start
 
+1. Start from the monorepo root:
 ```bash
-# From the monorepo root
 npm install
-
-# Start ScanGuard backend first
-npm run dev:scanguard
-
-# In another terminal, start ShieldSwap
-npm run dev:shieldswap
-
-# Open http://localhost:5173
 ```
 
-## 🎨 Design System
-
-| Token | Value |
-|-------|-------|
-| Background | `#0A0E17` (deep space) |
-| Card | `#12172B` + glassmorphism blur |
-| Safe | `#00FF88` (neon green) |
-| Danger | `#FF3B5C` (alert red) |
-| Interactive | `#4B7BF5` (electric blue) |
-| UI Font | Inter (300–900) |
-| Data Font | JetBrains Mono |
-
-## 🏗️ Architecture
-
-```
-ShieldSwap Frontend (Vite + React)
-├── components/
-│   ├── Header.tsx      → Logo, wallet connect, chain status
-│   ├── SwapCard.tsx    → Main swap interface with multi-stage flow
-│   ├── TokenInput.tsx  → Address input with validation & quick-select
-│   └── RiskReport.tsx  → Animated risk score & threat flags
-├── hooks/
-│   ├── useScanGuard.ts → Calls ScanGuard API
-│   └── useSwap.ts      → Swap quoting & execution
-└── lib/
-    ├── xlayer.ts       → XLayer chain config
-    └── wallet.ts       → Wallet connection logic
+2. Boot all development servers (Backend, Dashboard, Frontend, and TEE Agent):
+```bash
+npm run dev
 ```
 
-## 📱 Screenshots
+3. Open `http://localhost:5173` to interact with ShieldSwap & Pitchside AI.
 
-_Coming soon — deploy in progress_
+---
 
 ## 📄 License
 
-MIT — Built for the XLayer Build X Season 2 AI Hackathon
-
+MIT — Expanded for the X Layer X Cup Hackathon (May 19 - May 28, 2026).

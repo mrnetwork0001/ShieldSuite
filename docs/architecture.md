@@ -1,6 +1,6 @@
 # Shield Suite — System Architecture
 
-> Technical architecture document for XLayer Build X Season 2 AI Hackathon judges
+> Technical architecture document for X Layer X Cup Hackathon judges
 
 ## Overview
 

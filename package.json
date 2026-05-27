@@ -2,20 +2,23 @@
   "name": "shield-suite",
   "version": "1.0.0",
   "private": true,
-  "description": "Monorepo for ScanGuard (MCP security scanner), ShieldSwap (security-first DEX aggregator), and ScanGuard Dashboard — XLayer Build X Season 2 AI Hackathon",
+  "description": "Monorepo for Pitchside AI (dynamic World Cup speculation network), ScanGuard (MCP security scanner), and ShieldSwap (security-first DEX aggregator) — X Layer X Cup Hackathon",
   "workspaces": [
     "packages/scanguard",
     "packages/shieldswap",
-    "packages/dashboard"
+    "packages/dashboard",
+    "packages/agent",
+    "contracts"
   ],
   "scripts": {
     "dev:scanguard": "npm run dev -w packages/scanguard",
     "dev:shieldswap": "npm run dev -w packages/shieldswap",
     "dev:dashboard": "npm run dev -w packages/dashboard",
+    "dev:scout": "npm start -w packages/agent",
     "build:scanguard": "npm run build -w packages/scanguard",
     "build:shieldswap": "npm run build -w packages/shieldswap",
     "build:dashboard": "npm run build -w packages/dashboard",
-    "dev": "concurrently \"npm run dev:scanguard\" \"npm run dev:shieldswap\" \"npm run dev:dashboard\"",
+    "dev": "concurrently \"npm run dev:scanguard\" \"npm run dev:shieldswap\" \"npm run dev:dashboard\" \"npm run dev:scout\"",
     "build": "npm run build:scanguard && npm run build:shieldswap && npm run build:dashboard",
     "agent": "tsx packages/scanguard/src/agent-cron.ts",
     "check-env": "node -e \"const fs=require('fs'); const e=fs.readFileSync('.env','utf8'); ['OKX_API_KEY','OKX_SECRET_KEY','OKX_PASSPHRASE','AGENT_PRIVATE_KEY'].forEach(k=>console.log(k+': '+(e.includes(k+'=')?'✅':'❌')))\""

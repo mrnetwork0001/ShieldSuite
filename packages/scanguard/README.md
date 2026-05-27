@@ -1,97 +1,67 @@
-# 🛡️ ScanGuard — MCP Security Scanning Skill
+# 🛡️ ScanGuard & Pitchside API — MCP Security Scanning & Sports Analytics Engine
 
-> **XLayer Build X Season 2 AI Hackathon — Skills Arena Submission**
+> **X Layer X Cup Hackathon Submission — Built on X Layer Testnet / Mainnet**
 
-ScanGuard is a reusable, MCP-compatible security scanning skill that any AI agent can call via HTTP. It scans ERC-20 token contracts for rug-pull risk, phishing contracts, honeypots, and suspicious approvals **before** a trade executes.
-
-External agents pay **$0.005/scan** via the [x402 protocol](https://x402.org) (HTTP 402 Payment Required), creating a sustainable pay-per-use economy for AI security services.
+**ScanGuard** is a reusable, MCP-compatible security scanning engine and sports analytics backend. In the Pitchside AI ecosystem, it executes dynamic token scanning and serves as the oracle-feed manager for World Cup match analytics.
 
 ---
 
 ## 🎯 What It Does
 
-| Check | Description |
-|-------|-------------|
-| 🪤 Rug-Pull Detection | Identifies active ownership, mint functions, and centralization risks |
-| 🍯 Honeypot Detection | Analyzes bytecode for missing/modified transfer functions |
-| 🎣 Phishing Detection | Flags non-contract addresses and non-standard ERC-20 implementations |
-| 🔐 Approval Risks | Detects unlimited approval patterns and allowance manipulation |
-| 📋 Blacklist Detection | Finds blacklist/freeze functions in contract bytecode |
-| 🔄 Proxy Detection | Identifies upgradeable/delegatecall proxy contracts |
-| 💰 Tax Analysis | Detects hidden fee/tax mechanisms on transfers |
-| 📊 Liquidity Analysis | Checks contract balance and liquidity status |
+1. **Bytecode Analysis:** Runs dual-layer scans on ERC-20 tokens, scanning for honeypots, delegatecalls, freeze lists, and hidden taxes.
+2. **x402 Pay-Per-Scan Economy:** Gated with HTTP 402 Payment Required middleware, charging client agents $0.005/scan dynamically.
+3. **World Cup Analytics Feed:** Serves live/simulated match logs (e.g. goals, cards, injuries) to drive autonomous agent trading.
+4. **Agent Logging Server:** Feeds execution logs back to the frontend console.
 
-## 🏗️ Architecture
-
-```
-AI Agent ──→ POST /api/scan ──→ x402 Payment Check ──→ Scanner Engine ──→ Results
-                                     │
-Claude/Cursor ──→ POST /mcp/tools/call ──→ MCP Handler ──→ Scanner Engine ──→ Results
-```
+---
 
 ## 🚀 Quick Start
 
+1. Start from the monorepo root:
 ```bash
-# From the monorepo root
 npm install
-npm run dev:scanguard
-
-# Server starts at http://localhost:3402
 ```
+
+2. Start the ScanGuard backend server:
+```bash
+npm run dev:scanguard
+```
+*(Backend runs at http://localhost:3402)*
+
+---
 
 ## 📡 API Endpoints
 
-### Scan a Token
+### 1. Token Scanner API
 ```bash
 POST /api/scan
 Content-Type: application/json
-X-402-Payment: demo  # Use "demo" for free scans in dev mode
+X-402-Payment: demo  # Use "demo" for free scans in development
 
 {
-  "tokenAddress": "0x1234567890abcdef1234567890abcdef12345678",
-  "chainId": 196
+  "tokenAddress": "0xE8a63B4a905d9C1C2262F261dee90478d6fFD3De",
+  "chainId": 1952
 }
 ```
 
-### Health Check
+### 2. World Cup Match & News Feed
 ```bash
-GET /api/health
+GET /api/worldcup/matches
 ```
+Returns a JSON array of match statistics and player performance events.
 
-### MCP Tool Discovery
+### 3. Agent Execution Logging
 ```bash
-GET /mcp/tools
+POST /api/worldcup/agent-logs
+GET /api/worldcup/agent-logs
 ```
+Post and fetch live execution events to render on the Scout Console.
 
-### MCP Tool Invocation
-```bash
-POST /mcp/tools/call
-Content-Type: application/json
-
-{
-  "method": "tools/call",
-  "params": {
-    "name": "scan_token",
-    "arguments": {
-      "tokenAddress": "0x1234567890abcdef1234567890abcdef12345678"
-    }
-  }
-}
-```
-
-## 💳 x402 Payment Protocol
-
-In production mode, agents must pay $0.005 per scan using the x402 protocol:
-
-1. Agent sends `POST /api/scan` without payment → receives **HTTP 402** with payment instructions
-2. Agent sends payment to the specified address on XLayer
-3. Agent retries with `X-402-Payment: <txHash>` header → scan executes
-
-In development mode, use `X-402-Payment: demo` for free scans.
+---
 
 ## 🔧 MCP Integration
 
-Add ScanGuard to your Claude Desktop or Cursor config:
+Add ScanGuard to your Claude Desktop or Cursor configuration:
 
 ```json
 {
@@ -108,29 +78,26 @@ Add ScanGuard to your Claude Desktop or Cursor config:
 
 | Tool | Description |
 |------|-------------|
-| `scan_token` | Full security scan returning JSON with risk score and flags |
-| `get_risk_summary` | Human-readable risk summary with emoji indicators |
+| `scan_token` | Performs security scan returning JSON risk score and flags. |
+| `get_risk_summary` | Returns a human-readable text summary of the security status. |
 
-## 🌐 XLayer
-
-ScanGuard is designed for **XLayer Mainnet** (Chain ID: 196), OKX's EVM-compatible L2. It connects to XLayer's RPC to perform real-time on-chain analysis.
+---
 
 ## 📁 File Structure
 
 ```
-packages/scanguard/
-├── src/
-│   ├── index.ts      Express server + route setup
-│   ├── scanner.ts    Core security scanning engine
-│   ├── x402.ts       x402 payment middleware
-│   ├── mcp.ts        MCP tool definitions & handlers
-│   └── types.ts      Shared TypeScript types
-├── package.json
-├── tsconfig.json
-└── README.md
+packages/scanguard/src/
+├── index.ts           → Express server and routing definitions
+├── scanner.ts         → Core bytecode security analysis engine
+├── x402.ts            → x402 HTTP 402 middleware
+├── mcp.ts             → Model Context Protocol tools definition
+├── routes/
+│   └── worldcup.ts    → World Cup sports matches & agent logging APIs
+└── types.ts           → Shared types
 ```
+
+---
 
 ## 📄 License
 
-MIT — Built for the XLayer Build X Season 2 AI Hackathon
-
+MIT — Expanded for the X Layer X Cup Hackathon (May 19 - May 28, 2026).
