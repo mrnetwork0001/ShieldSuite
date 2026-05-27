@@ -30,6 +30,7 @@ const App: React.FC = () => {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [activeTab, setActiveTab] = useState<"swap" | "pitchside">("swap");
+  const [instructionsExpanded, setInstructionsExpanded] = useState(false);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([
     {
       id: "init",
@@ -328,14 +329,26 @@ const App: React.FC = () => {
                   textAlign: 'left'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '1.4rem' }}>🧪</span>
-                  <h4 style={{ fontSize: '1.05rem', fontWeight: 'bold', margin: 0, color: 'var(--accent-blue)' }}>Welcome to the Pitchside AI Testnet Sandbox!</h4>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '1.4rem' }}>🧪</span>
+                    <h4 style={{ fontSize: '1.05rem', fontWeight: 'bold', margin: 0, color: 'var(--accent-blue)' }}>Welcome to the Pitchside AI Testnet Sandbox!</h4>
+                  </div>
+                  <button 
+                    className="btn btn-sm btn-ghost mobile-instructions-toggle"
+                    onClick={() => setInstructionsExpanded(!instructionsExpanded)}
+                    style={{ fontSize: '0.75rem', padding: '4px 10px', height: 'auto', minHeight: 'auto', display: 'none' }}
+                  >
+                    {instructionsExpanded ? "Read Less ▴" : "Read More ▾"}
+                  </button>
                 </div>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 16px 0' }}>
                   Pitchside AI is an autonomous, no-loss World Cup speculation network. You deposit stablecoins risk-free, earn virtual yield (Scout Credits) in real-time, and delegate them to a secure TEE AI Scout Agent to speculate on player performance index tokens.
                 </p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', fontSize: '0.78rem', color: 'var(--text-secondary)', borderTop: '1px solid var(--border-default)', paddingTop: '16px' }}>
+                <div 
+                  className={`instructions-grid ${instructionsExpanded ? 'expanded' : 'collapsed'}`}
+                  style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', fontSize: '0.78rem', color: 'var(--text-secondary)', borderTop: '1px solid var(--border-default)', paddingTop: '16px' }}
+                >
                   <div>
                     <strong style={{ color: '#fff', display: 'block', marginBottom: '4px' }}>1. Claim Faucet USDT</strong>
                     Click the Faucet button in the Staking Vault panel to claim 1,000 Mock USDT and Approve the Vault.
@@ -1119,6 +1132,85 @@ const App: React.FC = () => {
 
           .testnet-onboarding-banner p {
             font-size: 0.75rem !important;
+          }
+
+          /* Toggle instructions on mobile */
+          .mobile-instructions-toggle {
+            display: inline-block !important;
+          }
+          .instructions-grid.collapsed {
+            display: none !important;
+          }
+          .instructions-grid.expanded {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
+
+          /* Responsive Staking Balances */
+          .staking-balances {
+            flex-direction: column !important;
+            gap: 10px !important;
+            margin-bottom: 12px !important;
+          }
+          .balance-item {
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+            font-size: 0.8rem !important;
+          }
+
+          /* Responsive Player Cards */
+          .player-card {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 14px !important;
+          }
+          .player-trade-area {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+            border-top: 1px solid var(--border-default);
+            padding-top: 12px;
+          }
+          .player-price-box, .player-balance-box {
+            text-align: left !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+          }
+          .price-label, .balance-label {
+            margin-bottom: 0 !important;
+          }
+          .player-actions {
+            display: flex !important;
+            gap: 8px !important;
+            width: 100% !important;
+            margin-top: 4px;
+          }
+          .player-actions button {
+            flex: 1 !important;
+            padding: 10px !important;
+            font-size: 0.82rem !important;
+          }
+
+          /* Responsive TEE Enclave Status & Simulator */
+          .tee-status-inner {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+          }
+          .sim-row {
+            flex-direction: column !important;
+            gap: 10px !important;
+          }
+
+          /* Responsive ESPN Modal */
+          .espn-modal-inner {
+            padding: 16px !important;
+            border-radius: 12px !important;
+            max-width: 95% !important;
           }
 
           /* Mainnet warning banner */

@@ -158,14 +158,14 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
 
       {/* TEE Enclave Status */}
       <div className="tee-status-box glass-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="tee-status-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div className="tee-label">ENCLAVE ATTESTATION STATUS</div>
             <div className="tee-address font-mono">
               Address: {agentAddress ? `${agentAddress.slice(0, 10)}...${agentAddress.slice(-8)}` : "Loading..."}
             </div>
           </div>
-          <span className="tee-badge badge-safe">● TEE ACTIVE</span>
+          <span className="tee-badge badge-safe" style={{ flexShrink: 0 }}>● TEE ACTIVE</span>
         </div>
       </div>
 
@@ -331,6 +331,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
         >
           <div
             onClick={(e) => e.stopPropagation()}
+            className="espn-modal-inner"
             style={{
               background: 'linear-gradient(135deg, rgba(15,20,35,0.98), rgba(20,28,50,0.98))',
               border: '1px solid rgba(75,123,245,0.3)',
