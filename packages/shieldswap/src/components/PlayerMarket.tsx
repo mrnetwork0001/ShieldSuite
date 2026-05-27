@@ -42,6 +42,7 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
   const [players, setPlayers] = useState(INITIAL_PLAYERS);
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [marketExpanded, setMarketExpanded] = useState(false);
 
   // ─── Success Modal State ──────────────────────────────────────────────────────
   const [txModal, setTxModal] = useState<{
@@ -193,7 +194,7 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
           Trade Player Index Tokens. Token prices represent the live scouting valuation and increase with player stats and performances.
         </p>
 
-        <div className="player-list">
+        <div className={`player-list ${marketExpanded ? "expanded" : "collapsed"}`}>
           {players.map((p) => {
             const hasBalance = parseFloat(p.balance) > 0;
             return (
@@ -245,6 +246,13 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
             );
           })}
         </div>
+        <button 
+          className="btn btn-sm btn-ghost mobile-market-toggle"
+          onClick={() => setMarketExpanded(!marketExpanded)}
+          style={{ display: 'none', width: '100%', marginTop: '16px', padding: '12px' }}
+        >
+          {marketExpanded ? "View Less ▴" : "View More ▾"}
+        </button>
       </div>
     </>
   );

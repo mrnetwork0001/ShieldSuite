@@ -1086,7 +1086,7 @@ const App: React.FC = () => {
             margin-bottom: 8px;
           }
           .scout-console {
-            height: 450px;
+            height: 580px;
           }
         }
 
@@ -1196,6 +1196,26 @@ const App: React.FC = () => {
             flex: 1 !important;
             padding: 10px !important;
             font-size: 0.82rem !important;
+          }
+
+          /* Mobile Player Market View More/Less Toggle */
+          .mobile-market-toggle {
+            display: block !important;
+          }
+          .player-list.collapsed .player-card:nth-child(n+3) {
+            display: none !important;
+          }
+
+          /* Console Logs Unclustering */
+          .console-logs {
+            padding: 16px !important;
+            gap: 10px !important;
+            font-size: 0.82rem !important;
+            line-height: 1.6 !important;
+          }
+          .console-line {
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
           }
 
           /* Responsive TEE Enclave Status */
