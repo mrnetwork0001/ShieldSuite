@@ -17,6 +17,7 @@ import { getOnchainOsStatus, isOnchainOsConfigured } from "./onchainos.js";
 import { getBestUniswapQuote } from "./uniswap.js";
 import { checkAgentReady, getAgentBalance, pingOnChain } from "./agent-wallet.js";
 import { loadDatabase, saveDatabase } from "./database.js";
+import { worldCupRouter } from "./routes/worldcup.js";
 
 export { logger };
 
@@ -374,6 +375,9 @@ app.get("/api/dex/swap", async (req, res) => {
 
 // ─── MCP Routes ──────────────────────────────────────────────────────────────
 app.use("/mcp", mcpRouter);
+
+// ─── World Cup Routes ────────────────────────────────────────────────────────
+app.use("/api/worldcup", worldCupRouter);
 
 // ─── Agentic Wallet Routes ───────────────────────────────────────────────────
 

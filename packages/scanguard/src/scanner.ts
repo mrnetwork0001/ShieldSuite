@@ -9,6 +9,12 @@
 
 import { ethers } from "ethers";
 import { v4 as uuidv4 } from "uuid";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import {
   ScanResult,
   ScanRequest,
@@ -82,7 +88,9 @@ let provider: ethers.JsonRpcProvider;
 function getProvider(): ethers.JsonRpcProvider {
   if (!provider) {
     provider = new ethers.JsonRpcProvider(
-      process.env.XLAYER_RPC_URL || XLAYER_CONFIG.rpcUrl
+      process.env.XLAYER_RPC_URL || XLAYER_CONFIG.rpcUrl,
+      undefined,
+      { staticNetwork: true }
     );
   }
   return provider;
@@ -99,7 +107,24 @@ export async function scanToken(request: ScanRequest): Promise<ScanResult> {
   logger.info(`[Scanner] Starting scan ${scanId} for ${tokenAddress} on chain ${chainId}`);
 
   // ── Whitelist Check ──────────────────────────────────────────────────────
-  const knownToken = KNOWN_SAFE_TOKENS[tokenAddress.toLowerCase()];
+  let knownToken = KNOWN_SAFE_TOKENS[tokenAddress.toLowerCase()];
+
+  // Dynamic Whitelist for PlayerShares (since it is an ERC-1155 contract and otherwise fails ERC-20 rules)
+  try {
+    const addressPath = path.resolve(__dirname, "../../../contracts/deployed-addresses.json");
+    if (fs.existsSync(addressPath)) {
+      const content = fs.readFileSync(addressPath, "utf-8");
+      const addresses = JSON.parse(content);
+      // Check both mainnet and testnet address sets
+      const allSets = [addresses.xlayerMainnet, addresses.xlayerTestnet, addresses].filter(Boolean);
+      for (const addrSet of allSets) {
+        if (addrSet.PlayerShares && tokenAddress.toLowerCase() === addrSet.PlayerShares.toLowerCase()) {
+          knownToken = { symbol: "XCPS", name: "X-Cup Player Shares" };
+          break;
+        }
+      }
+    }
+  } catch (err) {}
   if (knownToken) {
     logger.info(`[Scanner] ${tokenAddress} is whitelisted as ${knownToken.symbol} — fast-track safe scan`);
 
