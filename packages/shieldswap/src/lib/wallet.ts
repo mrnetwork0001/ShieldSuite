@@ -7,7 +7,7 @@ export interface WalletState {
   chainId: number | null;
   balance: string | null;
   isXLayer: boolean;
-  provider: ethers.BrowserProvider | null;
+  provider: ethers.BrowserProvider | ethers.JsonRpcProvider | null;
   signer: ethers.Signer | null;
 }
 

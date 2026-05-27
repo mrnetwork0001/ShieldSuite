@@ -79,31 +79,42 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         setLoading(true);
         const vault = new ethers.Contract(DEPLOYED_ADDRESSES.NoLossVault, VAULT_ABI, wallet.provider!);
         
-        // 1. Scan blocks to discover active user addresses
-        const currentBlock = await wallet.provider!.getBlockNumber();
-        // Wider scan block range on Testnet since RPCs are faster and deployments are newer
-        const lookback = isMainnet ? 5000 : 50000;
-        const startBlock = Math.max(0, currentBlock - lookback);
-        
-        const depositFilter = vault.filters.Deposited();
-        const depositEvents = await vault.queryFilter(depositFilter, startBlock, currentBlock).catch(() => []);
-        
-        const userAddresses = new Set<string>();
+        // 1. Load cached stakers from localStorage
+        const storageKey = isMainnet ? "shieldsuite_stakers_mainnet" : "shieldsuite_stakers_testnet";
+        const cachedStakers = (() => {
+          try {
+            const raw = localStorage.getItem(storageKey);
+            return raw ? (JSON.parse(raw) as string[]) : [];
+          } catch {
+            return [];
+          }
+        })();
+
+        const userAddresses = new Set<string>(cachedStakers);
         
         // Always include default participants to ensure leaderboard layout is full
         if (wallet.address) userAddresses.add(wallet.address);
         if (DEPLOYED_ADDRESSES.deployer) userAddresses.add(DEPLOYED_ADDRESSES.deployer);
         
+        // Scan blocks to discover recent stakers/deposits.
+        // Limit query block range lookback to 99 blocks to comply with XLayer RPC strict limits.
+        const currentBlock = await wallet.provider!.getBlockNumber();
+        const lookback = 99;
+        const startBlock = Math.max(0, currentBlock - lookback);
+        
+        const depositFilter = vault.filters.Deposited();
+        const depositEvents = await vault.queryFilter(depositFilter, startBlock, currentBlock).catch(() => []);
+        
         for (const event of depositEvents) {
           const user = (event as any).args[0];
-          userAddresses.add(user);
+          if (user) userAddresses.add(user);
         }
 
         const delegateFilter = vault.filters.AgentDelegated();
         const delegateEvents = await vault.queryFilter(delegateFilter, startBlock, currentBlock).catch(() => []);
         for (const event of delegateEvents) {
           const user = (event as any).args[0];
-          userAddresses.add(user);
+          if (user) userAddresses.add(user);
         }
         
         // 2. Fetch stats for each user address dynamically from the active contract
@@ -126,6 +137,17 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
             }
           })
         );
+
+        // Save active stakers (who have staked balance or accumulated credits) back to localStorage
+        const activeAddresses = managers
+          .filter((m) => m.staked > 0n || m.credits > 0n)
+          .map((m) => m.address);
+          
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(activeAddresses));
+        } catch (e) {
+          console.error("Failed to save stakers to localStorage", e);
+        }
 
         // Fallback: if totalStaked() returned 0 but users have balances, compute from sum
         if (totalVaultStaked === 0n) {
