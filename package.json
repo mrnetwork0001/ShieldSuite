@@ -24,6 +24,7 @@
     "check-env": "node -e \"const fs=require('fs'); const e=fs.readFileSync('.env','utf8'); ['OKX_API_KEY','OKX_SECRET_KEY','OKX_PASSPHRASE','AGENT_PRIVATE_KEY'].forEach(k=>console.log(k+': '+(e.includes(k+'=')?'✅':'❌')))\""
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.2",
     "typescript": "^5.7.3",
     "vite": "^6.2.4"
