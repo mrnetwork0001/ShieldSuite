@@ -28,8 +28,9 @@ const knownUsers = new Set<string>([
 let lastScannedBlock = 0;
 
 const PORT = process.env.PORT || "3402";
-const BACKEND_URL = `http://localhost:${PORT}/api/worldcup`;
-const SCAN_URL = `http://localhost:${PORT}/api/scan`;
+const SCANGUARD_BASE = process.env.SCANGUARD_URL || `http://localhost:${PORT}`;
+const BACKEND_URL = `${SCANGUARD_BASE}/api/worldcup`;
+const SCAN_URL = `${SCANGUARD_BASE}/api/scan`;
 
 async function postLog(message: string, type: "info" | "sentiment" | "security" | "trade" | "error") {
   const timestamp = new Date().toLocaleTimeString();
