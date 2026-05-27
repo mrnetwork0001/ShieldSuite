@@ -641,8 +641,6 @@ const App: React.FC = () => {
         }
         .pitchside-console-area {
           grid-area: console;
-          position: sticky;
-          top: 90px;
         }
         .pitchside-market-area {
           grid-area: market;
@@ -1095,10 +1093,6 @@ const App: React.FC = () => {
               "market"
               "leaderboard" !important;
             gap: 24px !important;
-          }
-          .pitchside-console-area {
-            position: relative !important;
-            top: 0 !important;
           }
           .scout-console {
             height: 580px;
