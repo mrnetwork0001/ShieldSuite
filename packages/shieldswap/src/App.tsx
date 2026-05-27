@@ -762,6 +762,7 @@ const App: React.FC = () => {
 
         .btn-panel {
           min-width: 120px;
+          white-space: nowrap;
         }
 
         .btn-faucet {

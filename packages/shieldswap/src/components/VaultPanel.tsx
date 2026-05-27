@@ -397,11 +397,11 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
               />
               {!isApproved ? (
                 <button className="btn btn-approve btn-panel" onClick={handleApprove} disabled={loading}>
-                  Approve USDT
+                  APPROVE
                 </button>
               ) : (
                 <button className="btn btn-primary btn-panel" onClick={handleDeposit} disabled={loading || !depositAmount}>
-                  Stake USDT
+                  STAKE
                 </button>
               )}
             </div>
@@ -416,7 +416,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
                 disabled={loading}
               />
               <button className="btn btn-panel" onClick={handleWithdraw} disabled={loading || !withdrawAmount}>
-                Unstake USDT
+                UNSTAKE
               </button>
             </div>
           </div>
