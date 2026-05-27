@@ -370,12 +370,16 @@ const App: React.FC = () => {
             )}
 
             <div className="pitchside-grid">
-              <div className="pitchside-left-column">
+              <div className="pitchside-vault-area">
                 <VaultPanel wallet={wallet} onActivityLog={handleActivityLog} />
+              </div>
+              <div className="pitchside-console-area">
                 <ScoutConsole wallet={wallet} onActivityLog={handleActivityLog} />
               </div>
-              <div className="pitchside-right-column">
+              <div className="pitchside-market-area">
                 <PlayerMarket wallet={wallet} onActivityLog={handleActivityLog} />
+              </div>
+              <div className="pitchside-leaderboard-area">
                 <Leaderboard wallet={wallet} />
               </div>
             </div>
@@ -625,19 +629,26 @@ const App: React.FC = () => {
         .pitchside-grid {
           display: grid;
           grid-template-columns: 1.2fr 1.1fr;
+          grid-template-areas: 
+            "vault console"
+            "market leaderboard";
           gap: 24px;
           align-items: start;
         }
 
-        .pitchside-left-column {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
+        .pitchside-vault-area {
+          grid-area: vault;
         }
-
-        .pitchside-right-column {
+        .pitchside-console-area {
+          grid-area: console;
           position: sticky;
           top: 90px;
+        }
+        .pitchside-market-area {
+          grid-area: market;
+        }
+        .pitchside-leaderboard-area {
+          grid-area: leaderboard;
         }
 
         .panel-header {
@@ -1076,14 +1087,18 @@ const App: React.FC = () => {
 
         @media (max-width: 1000px) {
           .pitchside-grid {
-            display: flex !important;
-            flex-direction: column !important;
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            grid-template-areas: 
+              "vault"
+              "console"
+              "market"
+              "leaderboard" !important;
             gap: 24px !important;
           }
-          .pitchside-right-column {
-            position: relative;
-            top: 0;
-            margin-bottom: 8px;
+          .pitchside-console-area {
+            position: relative !important;
+            top: 0 !important;
           }
           .scout-console {
             height: 580px;
