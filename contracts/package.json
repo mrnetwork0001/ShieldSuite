@@ -1,0 +1,21 @@
+{
+  "name": "pitchside-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for Pitchside AI",
+  "main": "index.js",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "deploy:local": "npx hardhat run scripts/deploy.ts --network localhost",
+    "deploy:xlayer": "npx hardhat run scripts/deploy.ts --network xlayerTestnet"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.3",
+    "typescript": "^5.4.5",
+    "dotenv": "^16.4.5"
+  }
+}
