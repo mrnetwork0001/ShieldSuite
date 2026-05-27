@@ -372,11 +372,11 @@ const App: React.FC = () => {
             <div className="pitchside-grid">
               <div className="pitchside-left-column">
                 <VaultPanel wallet={wallet} onActivityLog={handleActivityLog} />
-                <PlayerMarket wallet={wallet} onActivityLog={handleActivityLog} />
-                <Leaderboard wallet={wallet} />
+                <ScoutConsole wallet={wallet} onActivityLog={handleActivityLog} />
               </div>
               <div className="pitchside-right-column">
-                <ScoutConsole wallet={wallet} onActivityLog={handleActivityLog} />
+                <PlayerMarket wallet={wallet} onActivityLog={handleActivityLog} />
+                <Leaderboard wallet={wallet} />
               </div>
             </div>
           </div>
@@ -1077,7 +1077,7 @@ const App: React.FC = () => {
         @media (max-width: 1000px) {
           .pitchside-grid {
             display: flex !important;
-            flex-direction: column-reverse !important;
+            flex-direction: column !important;
             gap: 24px !important;
           }
           .pitchside-right-column {
