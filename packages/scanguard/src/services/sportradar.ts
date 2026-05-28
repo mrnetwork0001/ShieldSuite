@@ -153,10 +153,10 @@ export async function fetchDaySchedule(date?: string): Promise<SportradarMatch[]
   if (cached) return cached;
 
   try {
-    // Try results endpoint first (available on Soccer Base)
-    const url = `${BASE_URL}/schedules/${d}/results.json?api_key=${API_KEY}`;
+    // Use /summaries.json (available on trial plan; /results.json is NOT available on trial)
+    const url = `${BASE_URL}/schedules/${d}/summaries.json?api_key=${API_KEY}`;
     const data = await rateLimitedFetch(url);
-    const matches = (data.results || data.summaries || []).map(parseMatch);
+    const matches = (data.summaries || data.results || []).map(parseMatch);
     setCache(cacheKey, matches);
     logger.info(`[Sportradar] Fetched ${matches.length} matches for ${d}`);
     return matches;
