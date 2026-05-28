@@ -21,7 +21,7 @@
 
 ---
 
-## Why Pitchside AI Wins (Judge Checklist)
+## Why Pitchside AI Wins
 
 Pitchside AI goes far beyond a simple MVP prediction market. It implements state-of-the-art Web3 architectural paradigms:
 
@@ -223,7 +223,7 @@ To verify the completion and execution of the Pitchside AI World Cup loop:
 
 1.  **Claim Faucet & Stake:** Connect your wallet, claim 1,000 Mock USDT from the Faucet, and stake USDT in the **No-Loss Vault**.
 2.  **Delegate Agent:** Select the **Active TEE Scout Agent** and click **Confirm Delegation**.
-3.  **Verify Live Data Feed:** Click **📡 Verify Live Data Feed** in the Scout Console to verify real-time match data from Sportradar Soccer API v4. Live matches show with a pulsing red indicator.
+3.  **Verify Live Data Feed:** Click **Verify Live Data Feed** in the Scout Console to verify real-time match data from Sportradar Soccer API v4. Live matches show with a pulsing red indicator.
 4.  **Watch Agent React:** The Scout Console will immediately reflect the agent detecting new match events, scanning token bytecode via ScanGuard, and executing transactions on the `PlayerDex` contract.
 5.  **Verify Explorer:** Copy the generated transaction hash and search it on [X Layer Testnet Explorer](https://www.okx.com/explorer/xlayer-test) to verify the TEE Agent called the swap on your behalf.
 6.  **Check the Leaderboard:** The Global Scout Leaderboard shows your ranking, Scout Credits, staked amount, and pool share - all read directly from onchain contract events.
@@ -233,9 +233,9 @@ To verify the completion and execution of the Pitchside AI World Cup loop:
 ## Live Endpoints and Infrastructure
 
 *   **Network:** X Layer Mainnet (`Chain ID 196`)
-*   **ShieldSwap Application:** [https://shieldswap-main.vercel.app](https://shieldswap-main.vercel.app)
-*   **ScanGuard Dashboard:** [https://scanguard-dashboard-main.vercel.app](https://scanguard-dashboard-main.vercel.app)
-*   **Central API Node & MCP Host:** `http://38.49.216.120:3402`
+*   **ShieldSwap Application:** [https://shieldsuite.xyz/](https://shieldsuite.xyz/)
+*   **ScanGuard Dashboard:** [https://dashboard.shieldsuite.xyz/](https://dashboard.shieldsuite.xyz/)
+*   **Central API Node & MCP Host:** `railway`
 *   **TEE Agent Identity (X Layer):** `0xDAce8445a5bD576111cCC8e598B67965252023C2`
 
 ---
