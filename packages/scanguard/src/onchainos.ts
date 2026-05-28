@@ -136,18 +136,55 @@ async function okxRequest<T>(
   body?: Record<string, unknown>,
   queryParams?: Record<string, string>
 ): Promise<OkxApiResponse<T>> {
-  let url = `${OKX_BASE_URL}${path}`;
-
+  // Build query string
+  let queryString = "";
   if (queryParams) {
     const params = new URLSearchParams(queryParams);
-    url += `?${params.toString()}`;
+    queryString = `?${params.toString()}`;
     // For GET with query params, the signature path includes the query string
     if (method === "GET") {
-      path += `?${params.toString()}`;
+      path += queryString;
     }
   }
 
   const bodyStr = body ? JSON.stringify(body) : "";
+
+  // ── Route through proxy if OKX_PROXY_URL is set (bypasses geo-blocking) ──
+  const proxyUrl = process.env.OKX_PROXY_URL;
+  if (proxyUrl) {
+    // Proxy handles HMAC signing — we just forward the path
+    const url = `${proxyUrl.replace(/\/$/, "")}${path}`;
+
+    try {
+      logger.info(`[OKX] ${method} ${path.split("?")[0]} (via proxy)`);
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: method === "POST" ? bodyStr : undefined,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.error(`[OKX] Proxy HTTP ${response.status} — ${errorText.slice(0, 200)}`);
+        throw new Error(`OKX Proxy returned ${response.status}: ${errorText}`);
+      }
+
+      const data = (await response.json()) as OkxApiResponse<T>;
+
+      if (data.code !== "0") {
+        logger.warn(`[OKX] Proxy API code=${data.code} msg="${data.msg}" — data items: ${data.data?.length ?? 0}`);
+      }
+
+      return data;
+    } catch (error) {
+      logger.error(`[OKX] Proxy request failed: ${error}`);
+      throw error;
+    }
+  }
+
+  // ── Direct call to OKX (works on localhost with VPN) ──
+  const url = `${OKX_BASE_URL}${path}`;
   const headers = getSignedHeaders(method, path, method === "POST" ? bodyStr : "");
 
   try {
