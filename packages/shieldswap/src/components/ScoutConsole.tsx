@@ -127,7 +127,9 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
           eventType,
           player: p.name,
           tokenId: p.id,
-          description: desc
+          description: desc,
+          chainId: wallet.chainId,
+          userAddress: wallet.address,
         })
       });
       const data = await res.json();
@@ -139,8 +141,11 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
           message: `Simulated event triggered: ${desc}`
         });
         setNewsText("");
-        // Instantly reload logs
-        setTimeout(fetchLogs, 1000);
+        // Poll rapidly to pick up inline agent processing logs
+        // Agent processes on-chain txs which take ~3-15s total
+        for (let i = 1; i <= 15; i++) {
+          setTimeout(fetchLogs, i * 2000);
+        }
       }
     } catch (err) {
       console.error(err);
