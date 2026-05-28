@@ -120,12 +120,25 @@ async function runScoutLoop() {
     delegatedUsers.add(addresses.deployer);
   }
 
+  // Fetch candidate users registered via backend registry (bypasses XLayer RPC block query limits)
+  try {
+    const res = await fetch(`${BACKEND_URL}/users`);
+    const json = await res.json() as any;
+    if (json.success && Array.isArray(json.data)) {
+      for (const u of json.data) {
+        knownUsers.add(u);
+      }
+    }
+  } catch (err: any) {
+    console.error("⚠️ Failed to fetch candidate users from backend:", err.message);
+  }
+
   try {
     const filter = vault.filters.AgentDelegated(null, agentAddress);
     const currentBlock = await provider.getBlockNumber();
     
     if (lastScannedBlock === 0) {
-      lastScannedBlock = Math.max(0, currentBlock - 5000);
+      lastScannedBlock = Math.max(0, currentBlock - 90);
     }
 
     if (currentBlock > lastScannedBlock) {

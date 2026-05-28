@@ -88,6 +88,10 @@ let agentLogs: AgentLog[] = [
   },
 ];
 
+let registeredUsers = new Set<string>([
+  "0xCd0a2370F2dC12c1802707B7d9aB3fec891E3c02" // default test user
+]);
+
 // GET /api/worldcup/matches
 worldCupRouter.get("/matches", (_req: Request, res: Response) => {
   res.json({
@@ -128,6 +132,32 @@ worldCupRouter.post("/update", (req: Request, res: Response) => {
   res.json({
     success: true,
     data: match,
+  });
+});
+
+// POST /api/worldcup/register-user
+worldCupRouter.post("/register-user", (req: Request, res: Response) => {
+  const { address } = req.body;
+  if (!address || typeof address !== "string") {
+    res.status(400).json({ success: false, error: "Address is required" });
+    return;
+  }
+  
+  const normalized = address.toLowerCase();
+  registeredUsers.add(normalized);
+  logger.info(`[WorldCup] Registered candidate user address: ${normalized}`);
+  
+  res.json({
+    success: true,
+    data: Array.from(registeredUsers)
+  });
+});
+
+// GET /api/worldcup/users
+worldCupRouter.get("/users", (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    data: Array.from(registeredUsers)
   });
 });
 

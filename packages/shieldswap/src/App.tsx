@@ -181,6 +181,26 @@ const App: React.FC = () => {
     };
   }, [handleActivityLog]);
 
+  // Register connected wallet address to the backend for AI agent delegation discovery
+  useEffect(() => {
+    if (wallet.connected && wallet.address) {
+      const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "";
+      fetch(`${API_BASE}/api/worldcup/register-user`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: wallet.address }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.success) {
+            console.log("Successfully registered wallet address on backend:", wallet.address);
+          }
+        })
+        .catch((err) => console.error("Failed to register wallet on backend:", err));
+    }
+  }, [wallet.connected, wallet.address]);
+
+
   return (
     <div className="app-container">
       <Header
