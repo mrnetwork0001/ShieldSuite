@@ -253,7 +253,7 @@ app.get("/api/dex/approve-address", async (_req, res) => {
   }
 });
 
-/** GET /api/dex/quote — Proxy to OKX DEX Aggregator quote */
+/** GET /api/dex/quote — Proxy to OKX DEX Aggregator quote (with Uniswap V3 fallback) */
 app.get("/api/dex/quote", async (req, res) => {
   const { fromToken, toToken, amount, slippage, fromDecimals, toDecimals } = req.query;
 
@@ -265,6 +265,7 @@ app.get("/api/dex/quote", async (req, res) => {
     return;
   }
 
+  // ── Attempt 1: OKX DEX Aggregator ──
   try {
     const { getSwapQuote } = await import("./onchainos.js");
     const quote = await getSwapQuote({
@@ -275,24 +276,61 @@ app.get("/api/dex/quote", async (req, res) => {
       slippage: (slippage as string) || "0.5",
     });
 
-    logger.info(`[DEX] Quote response: ${JSON.stringify(quote)}`);
-
     if (quote && quote.toTokenAmount) {
+      logger.info(`[DEX] OKX quote OK: ${fromToken} → ${toToken} = ${quote.toTokenAmount}`);
       res.json({ success: true, data: quote, meta: { source: "okx-dex" } });
-    } else {
-      logger.warn(`[DEX] OKX quote returned no data for ${fromToken} → ${toToken}`);
-      res.json({
-        success: false,
-        error: { code: "NO_LIQUIDITY", message: "OKX DEX returned no quote for this pair. If you're not using a VPN, enable one — OKX blocks certain regions. Try USDC ↔ USDT as a test pair." },
-      });
+      return;
     }
+
+    logger.warn(`[DEX] OKX quote returned no data for ${fromToken} → ${toToken} (likely geo-blocked). Falling back to Uniswap V3...`);
   } catch (err: any) {
-    logger.error(`DEX quote error: ${err.message}`);
-    res.json({
-      success: false,
-      error: { code: "QUOTE_FAILED", message: "Failed to get quote — check VPN or try a different pair" },
-    });
+    logger.warn(`[DEX] OKX quote error: ${err.message}. Falling back to Uniswap V3...`);
   }
+
+  // ── Attempt 2: Uniswap V3 Fallback ──
+  try {
+    // Resolve native token address to WOKB for Uniswap (Uniswap uses wrapped tokens)
+    const NATIVE = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+    const WOKB = "0xe538905cf8410324e03a5a23c1c177a474d59b2b";
+    const uniFromToken = (fromToken as string).toLowerCase() === NATIVE ? WOKB : (fromToken as string);
+    const uniToToken = (toToken as string).toLowerCase() === NATIVE ? WOKB : (toToken as string);
+
+    const uniQuote = await getBestUniswapQuote({
+      tokenIn: uniFromToken,
+      tokenOut: uniToToken,
+      amountIn: amount as string,
+    });
+
+    if (uniQuote && BigInt(uniQuote.amountOut) > 0n) {
+      logger.info(`[DEX] Uniswap V3 fallback quote: ${uniQuote.amountOut} (fee tier: ${uniQuote.fee})`);
+      // Shape the response to match the OKX format so the frontend works seamlessly
+      res.json({
+        success: true,
+        data: {
+          toTokenAmount: uniQuote.amountOut,
+          fromTokenAmount: amount as string,
+          estimateGasFee: uniQuote.gasEstimate || "300000",
+          priceImpactPercent: "0.1",
+          dexRouterList: [{ dexProtocol: { dexName: "Uniswap V3", percent: "100" } }],
+        },
+        meta: { source: "uniswap-v3", fallback: true, reason: "OKX DEX geo-blocked from this server" },
+      });
+      return;
+    }
+
+    logger.warn(`[DEX] Uniswap V3 also returned no quote for ${fromToken} → ${toToken}`);
+  } catch (uniErr: any) {
+    logger.error(`[DEX] Uniswap V3 fallback also failed: ${uniErr.message}`);
+  }
+
+  // ── Both failed ──
+  res.json({
+    success: false,
+    error: {
+      code: "NO_LIQUIDITY",
+      message: "No quote available. OKX DEX is geo-blocked from this server and no Uniswap V3 pool was found for this pair.",
+    },
+  });
 });
 
 /** GET /api/dex/uniswap-quote — Get Uniswap V3 quote for comparison */
@@ -331,7 +369,7 @@ app.get("/api/dex/uniswap-quote", async (req, res) => {
   }
 });
 
-/** GET /api/dex/swap — Proxy to OKX DEX Aggregator swap data */
+/** GET /api/dex/swap — Proxy to OKX DEX Aggregator swap data (with Uniswap V3 Router fallback) */
 app.get("/api/dex/swap", async (req, res) => {
   const { fromToken, toToken, amount, wallet, slippage } = req.query;
 
@@ -343,6 +381,7 @@ app.get("/api/dex/swap", async (req, res) => {
     return;
   }
 
+  // ── Attempt 1: OKX DEX Aggregator ──
   try {
     const { getSwapData } = await import("./onchainos.js");
     const swapData = await getSwapData({
@@ -354,23 +393,45 @@ app.get("/api/dex/swap", async (req, res) => {
       userWalletAddress: wallet as string,
     });
 
-    logger.info(`[DEX] Swap data response: ${JSON.stringify(swapData)}`);
-
     if (swapData) {
-      res.json({ success: true, data: swapData });
-    } else {
-      res.status(503).json({
-        success: false,
-        error: { code: "SWAP_UNAVAILABLE", message: "OKX DEX API did not return swap transaction data. Please try again." },
-      });
+      logger.info(`[DEX] OKX swap data OK`);
+      res.json({ success: true, data: swapData, meta: { source: "okx-dex" } });
+      return;
     }
+
+    logger.warn(`[DEX] OKX swap returned no data (likely geo-blocked). Falling back to Uniswap V3 Router...`);
   } catch (err: any) {
-    logger.error(`DEX swap error: ${err.message}`);
-    res.status(500).json({
-      success: false,
-      error: { code: "SWAP_FAILED", message: err.message },
-    });
+    logger.warn(`[DEX] OKX swap error: ${err.message}. Falling back to Uniswap V3 Router...`);
   }
+
+  // ── Attempt 2: Build Uniswap V3 Router calldata ──
+  try {
+    const { buildUniswapSwapCalldata } = await import("./uniswap.js");
+    const uniSwap = await buildUniswapSwapCalldata({
+      tokenIn: fromToken as string,
+      tokenOut: toToken as string,
+      amountIn: amount as string,
+      recipient: wallet as string,
+      slippagePercent: parseFloat((slippage as string) || "0.5"),
+    });
+
+    if (uniSwap) {
+      logger.info(`[DEX] Uniswap V3 Router fallback swap data built successfully`);
+      res.json({ success: true, data: uniSwap, meta: { source: "uniswap-v3", fallback: true } });
+      return;
+    }
+  } catch (uniErr: any) {
+    logger.error(`[DEX] Uniswap V3 Router fallback also failed: ${uniErr.message}`);
+  }
+
+  // ── Both failed ──
+  res.status(503).json({
+    success: false,
+    error: {
+      code: "SWAP_UNAVAILABLE",
+      message: "Swap data unavailable. OKX DEX is geo-blocked from this server and Uniswap V3 Router fallback failed.",
+    },
+  });
 });
 
 // ─── MCP Routes ──────────────────────────────────────────────────────────────

@@ -270,3 +270,99 @@ export async function getBestUniswapQuote(params: {
   );
 }
 
+// ─── Uniswap V3 Swap Router Calldata Builder ────────────────────────────────
+// Used as fallback when OKX DEX is geo-blocked (e.g. deployed on Railway/US servers)
+
+// Canonical Uniswap V3 SwapRouter02 (universal across EVM chains)
+const UNISWAP_V3_SWAP_ROUTER = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
+
+const SWAP_ROUTER_ABI = [
+  "function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)) external payable returns (uint256 amountOut)",
+];
+
+export interface UniswapSwapCalldata {
+  tx: {
+    to: string;
+    data: string;
+    value: string;
+    gas: string;
+  };
+  routerResult: {
+    toTokenAmount: string;
+    fromTokenAmount: string;
+  };
+}
+
+/**
+ * Build unsigned Uniswap V3 SwapRouter02 calldata.
+ * Returns a transaction object the frontend can sign and send via the user's wallet.
+ */
+export async function buildUniswapSwapCalldata(params: {
+  tokenIn: string;
+  tokenOut: string;
+  amountIn: string;
+  recipient: string;
+  slippagePercent: number;
+}): Promise<UniswapSwapCalldata | null> {
+  // Resolve native token → WOKB for Uniswap
+  const NATIVE = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+  const WOKB = "0xe538905cf8410324e03a5a23c1c177a474d59b2b";
+  const isFromNative = params.tokenIn.toLowerCase() === NATIVE;
+  const isToNative = params.tokenOut.toLowerCase() === NATIVE;
+  const tokenIn = isFromNative ? WOKB : params.tokenIn;
+  const tokenOut = isToNative ? WOKB : params.tokenOut;
+
+  try {
+    // First get a quote to determine amountOutMinimum
+    const quote = await getBestUniswapQuote({
+      tokenIn,
+      tokenOut,
+      amountIn: params.amountIn,
+    });
+
+    if (!quote || BigInt(quote.amountOut) === 0n) {
+      logger.warn("[Uniswap] No quote available for swap calldata");
+      return null;
+    }
+
+    // Apply slippage tolerance
+    const slippageBps = BigInt(Math.floor(params.slippagePercent * 100)); // e.g. 0.5% → 50 bps
+    const amountOutMin = (BigInt(quote.amountOut) * (10000n - slippageBps)) / 10000n;
+
+    // Encode the exactInputSingle call
+    const iface = new ethers.Interface(SWAP_ROUTER_ABI);
+    const swapParams = {
+      tokenIn: ethers.getAddress(tokenIn),
+      tokenOut: ethers.getAddress(tokenOut),
+      fee: quote.fee,
+      recipient: ethers.getAddress(params.recipient),
+      amountIn: params.amountIn,
+      amountOutMinimum: amountOutMin.toString(),
+      sqrtPriceLimitX96: 0,
+    };
+
+    const calldata = iface.encodeFunctionData("exactInputSingle", [swapParams]);
+
+    // If sending native token (OKB), value = amountIn; otherwise value = 0
+    const txValue = isFromNative ? params.amountIn : "0";
+
+    logger.info(`[Uniswap] Built swap calldata: ${tokenIn.slice(0, 10)} → ${tokenOut.slice(0, 10)}, fee=${quote.fee}, amountOutMin=${amountOutMin}`);
+
+    return {
+      tx: {
+        to: UNISWAP_V3_SWAP_ROUTER,
+        data: calldata,
+        value: txValue,
+        gas: quote.gasEstimate || "350000",
+      },
+      routerResult: {
+        toTokenAmount: quote.amountOut,
+        fromTokenAmount: params.amountIn,
+      },
+    };
+  } catch (error: any) {
+    logger.error(`[Uniswap] Failed to build swap calldata: ${error.message}`);
+    return null;
+  }
+}
+

@@ -173,12 +173,17 @@ export function useSwap(): UseSwapReturn {
 
         const result: SwapQuote = {
           amountOut,
-          priceImpact: data.data.priceImpact || "0.01",
-          gasEstimate: data.data.estimatedGas || "50000",
+          priceImpact: data.data.priceImpactPercent || data.data.priceImpact || "0.01",
+          gasEstimate: data.data.estimateGasFee || data.data.estimatedGas || "50000",
           exchangeRate: amountIn > 0 ? (parseFloat(amountOut) / amountIn).toFixed(6) : "0",
           source,
           uniswapAmountOut,
         };
+
+        // Log if using fallback source
+        if (data.meta?.fallback) {
+          console.log(`[Swap] Using ${source} fallback (OKX DEX geo-blocked from server). Reason: ${data.meta.reason || "unknown"}`);
+        }
 
         setQuote(result);
         return result;

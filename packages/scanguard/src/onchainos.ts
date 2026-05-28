@@ -151,6 +151,8 @@ async function okxRequest<T>(
   const headers = getSignedHeaders(method, path, method === "POST" ? bodyStr : "");
 
   try {
+    logger.info(`[OKX] ${method} ${path.split("?")[0]} (${headers["OK-ACCESS-KEY"] ? "signed" : "unsigned"})`);
+
     const response = await fetch(url, {
       method,
       headers,
@@ -159,19 +161,19 @@ async function okxRequest<T>(
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.error(`OKX API error: ${response.status} - ${errorText}`);
+      logger.error(`[OKX] HTTP ${response.status} — ${errorText.slice(0, 200)}`);
       throw new Error(`OKX API returned ${response.status}: ${errorText}`);
     }
 
     const data = (await response.json()) as OkxApiResponse<T>;
 
     if (data.code !== "0") {
-      logger.warn(`OKX API warning: code=${data.code} msg=${data.msg}`);
+      logger.warn(`[OKX] API code=${data.code} msg="${data.msg}" — data items: ${data.data?.length ?? 0}`);
     }
 
     return data;
   } catch (error) {
-    logger.error(`OKX API request failed: ${error}`);
+    logger.error(`[OKX] Request failed: ${error}`);
     throw error;
   }
 }
