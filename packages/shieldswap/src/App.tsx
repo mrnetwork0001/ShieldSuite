@@ -204,7 +204,7 @@ const App: React.FC = () => {
 
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${activeTab === 'pitchside' ? 'pitchside-active' : ''}`}>
       <Header
         wallet={wallet}
         onConnect={handleConnect}
@@ -536,6 +536,15 @@ const App: React.FC = () => {
           .footer-right {
             display: none;
           }
+        }
+
+        .app-container.pitchside-active {
+          background-image: linear-gradient(rgba(10, 14, 23, 0.85), rgba(10, 14, 23, 0.94)), url("/worldcup-bg.jpg");
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+          background-attachment: fixed;
+          transition: background-image 0.5s ease-in-out;
         }
 
         /* Pitchside AI Styles */
