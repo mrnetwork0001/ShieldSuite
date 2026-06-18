@@ -729,9 +729,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         }
 
         .team-flag-img {
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
+          width: 54px;
+          height: 36px;
+          border-radius: 4px;
           object-fit: cover;
           border: 2px solid rgba(255, 255, 255, 0.15);
           box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
@@ -914,9 +914,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         }
 
         .live-flag-img {
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
+          width: 33px;
+          height: 22px;
+          border-radius: 2px;
           object-fit: cover;
           border: 1.5px solid rgba(255, 255, 255, 0.15);
         }
