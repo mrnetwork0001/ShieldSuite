@@ -351,15 +351,55 @@ const App: React.FC = () => {
 
       {/* Footer */}
       <footer className="app-footer">
-        <div className="footer-left">
-          Built for <strong>XLayer</strong> ·{" "}
-          Powered by <a href="https://scanguard-dashboard-main.vercel.app" target="_blank" rel="noopener noreferrer" className="text-blue" style={{ textDecoration: 'none' }}>ScanGuard MCP</a> +{" "}
-          <span className="text-purple">x402 Protocol</span>
+        <div className="footer-content">
+          {/* Left Column: Brand & Description */}
+          <div className="footer-brand-column">
+            <div className="footer-logo-row">
+              <img src="/logo.png" alt="ShieldSuite Logo" className="footer-brand-logo" />
+              <span className="footer-brand-name">ShieldSuite</span>
+            </div>
+            <p className="footer-brand-desc">
+              AI-shielded transaction security and autonomous sports speculation on X Layer.
+            </p>
+            <div className="footer-social-row">
+              <a href="https://x.com/ShieldSuite_" target="_blank" rel="noopener noreferrer" className="footer-social-link" title="Follow on X (Twitter)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+              </a>
+              <a href="https://github.com/shieldsuite" target="_blank" rel="noopener noreferrer" className="footer-social-link" title="GitHub Repository">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482C19.138 20.193 22 16.44 22 12.017 22 6.484 17.522 2 12 2z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          {/* Links Columns */}
+          <div className="footer-links-container">
+            <div className="footer-link-col">
+              <span className="footer-col-title">PROTOCOL</span>
+              <button onClick={() => setActiveTab("swap")} className="footer-link-btn">Features</button>
+              <button onClick={() => setActiveTab("swap")} className="footer-link-btn">AI-Shield</button>
+              <button onClick={() => setActiveTab("swap")} className="footer-link-btn">Launch App</button>
+            </div>
+
+            <div className="footer-link-col">
+              <span className="footer-col-title">ECOSYSTEM</span>
+              <a href="https://www.okx.com/explorer/xlayer" target="_blank" rel="noopener noreferrer" className="footer-link">X Layer Explorer</a>
+              <a href="https://www.okx.com/web3" target="_blank" rel="noopener noreferrer" className="footer-link">OKX Wallet</a>
+              <a href="https://scanguard-dashboard-main.vercel.app" target="_blank" rel="noopener noreferrer" className="footer-link">ScanGuard MCP</a>
+              <button onClick={() => setActiveTab("pitchside")} className="footer-link-btn">Pitchside AI</button>
+            </div>
+
+            <div className="footer-link-col">
+              <span className="footer-col-title">RESOURCES</span>
+              <button onClick={() => setActiveTab("docs")} className="footer-link-btn">Docs</button>
+              <button onClick={() => setActiveTab("docs")} className="footer-link-btn">Contracts</button>
+              <button onClick={() => setActiveTab("swap")} className="footer-link-btn">ShieldSwap</button>
+            </div>
+          </div>
         </div>
-        <div className="footer-center">
-          Built by <a href="https://x.com/encrypt_wizard" target="_blank" rel="noopener noreferrer">MrNetwork</a>
-        </div>
-        <div className="footer-right"></div>
       </footer>
 
       {/* Agent Chat */}
@@ -455,86 +495,132 @@ const App: React.FC = () => {
           flex-shrink: 0;
         }
 
-        .activity-message {
-          color: var(--text-secondary);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+        .app-footer {
+          width: 100%;
+          background: rgba(10, 14, 23, 0.95);
+          border-top: 1px solid var(--border-default);
+          padding: 60px 40px 40px;
+          margin-top: 80px;
         }
 
-        .app-footer {
+        .footer-content {
+          max-width: 1200px;
+          margin: 0 auto;
+          display: flex;
+          justify-content: space-between;
+          gap: 60px;
+          flex-wrap: wrap;
+          width: 100%;
+        }
+
+        .footer-brand-column {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 16px;
+          max-width: 320px;
+        }
+
+        .footer-logo-row {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          padding: 24px 32px;
-          font-size: 0.75rem;
-          color: var(--text-tertiary);
-          border-top: 1px solid var(--border-default);
-          margin-top: auto;
+          gap: 10px;
         }
 
-        .footer-left {
-          flex: 1;
-          text-align: left;
-          line-height: 1.5;
+        .footer-brand-logo {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          filter: drop-shadow(0 0 6px rgba(75, 123, 245, 0.4));
         }
 
-        .footer-center {
-          flex: 1;
-          text-align: center;
-        }
-
-        .footer-right {
-          flex: 1;
-        }
-
-        .app-footer a {
-          color: var(--text-secondary);
-          font-weight: 600;
-          text-decoration: none;
-          transition: color 0.2s ease;
-        }
-
-        .app-footer a:hover {
+        .footer-brand-name {
+          font-size: 1.15rem;
+          font-weight: 800;
+          letter-spacing: -0.01em;
           color: #fff;
-          text-decoration: underline;
         }
 
-        .app-footer strong {
+        .footer-brand-desc {
+          font-size: 0.85rem;
           color: var(--text-secondary);
+          line-height: 1.6;
+          margin: 0;
+          text-align: left;
         }
 
-        @media (max-width: 600px) {
-          .hero-title {
-            font-size: 1.2rem;
-          }
+        .footer-social-row {
+          display: flex;
+          gap: 16px;
+          margin-top: 8px;
+        }
 
-          .hero-subtitle {
-            font-size: 0.85rem;
-          }
+        .footer-social-link {
+          color: var(--text-secondary);
+          transition: color 0.2s ease, transform 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
 
-          .activity-entry {
-            font-size: 0.72rem;
-          }
+        .footer-social-link:hover {
+          color: #fff;
+          transform: translateY(-1px);
+        }
 
+        .footer-links-container {
+          display: flex;
+          gap: 64px;
+          flex-wrap: wrap;
+        }
+
+        .footer-link-col {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          min-width: 120px;
+          align-items: flex-start;
+        }
+
+        .footer-col-title {
+          font-size: 0.72rem;
+          font-weight: 700;
+          color: var(--text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          margin-bottom: 4px;
+        }
+
+        .footer-link, .footer-link-btn {
+          font-size: 0.82rem;
+          color: var(--text-secondary);
+          text-decoration: none;
+          text-align: left;
+          background: none;
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          transition: color 0.15s ease;
+          font-family: inherit;
+        }
+
+        .footer-link:hover, .footer-link-btn:hover {
+          color: #fff;
+        }
+
+        @media (max-width: 768px) {
           .app-footer {
+            padding: 40px 24px;
+            margin-top: 48px;
+          }
+          .footer-content {
             flex-direction: column;
-            gap: 12px;
-            padding: 20px 16px;
+            gap: 40px;
           }
-
-          .footer-left {
-            text-align: center;
-            font-size: 0.65rem;
-            white-space: nowrap;
-          }
-
-          .footer-center, .footer-right {
-            text-align: center;
-          }
-
-          .footer-right {
-            display: none;
+          .footer-links-container {
+            gap: 40px;
+            justify-content: space-between;
+            width: 100%;
           }
         }
 
