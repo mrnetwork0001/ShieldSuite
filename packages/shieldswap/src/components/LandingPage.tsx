@@ -11,7 +11,15 @@ const mockFixtures = [
   { id: "mock-f3", homeTeam: "Brazil", awayTeam: "Haiti", date: "June 19, 2026", time: "21:00 UTC", stadium: "Lincoln Financial Field, Philadelphia", group: "Group C" },
   { id: "mock-f4", homeTeam: "Turkey", awayTeam: "Paraguay", date: "June 19, 2026", time: "18:00 UTC", stadium: "Levi's Stadium, San Francisco", group: "Group D" },
   { id: "mock-f5", homeTeam: "Netherlands", awayTeam: "Sweden", date: "June 20, 2026", time: "20:00 UTC", stadium: "NRG Stadium, Houston", group: "Group F" },
-  { id: "mock-f6", homeTeam: "Germany", awayTeam: "Ivory Coast", date: "June 20, 2026", time: "17:00 UTC", stadium: "BMO Field, Toronto", group: "Group E" }
+  { id: "mock-f6", homeTeam: "Germany", awayTeam: "Ivory Coast", date: "June 20, 2026", time: "17:00 UTC", stadium: "BMO Field, Toronto", group: "Group E" },
+  { id: "mock-f7", homeTeam: "Spain", awayTeam: "Saudi Arabia", date: "June 21, 2026", time: "15:00 UTC", stadium: "MetLife Stadium, New York/New Jersey", group: "Group A" },
+  { id: "mock-f8", homeTeam: "Belgium", awayTeam: "Iran", date: "June 21, 2026", time: "18:00 UTC", stadium: "SoFi Stadium, Los Angeles", group: "Group B" },
+  { id: "mock-f9", homeTeam: "Norway", awayTeam: "Senegal", date: "June 22, 2026", time: "16:00 UTC", stadium: "Mercedes-Benz Stadium, Atlanta", group: "Group G" },
+  { id: "mock-f10", homeTeam: "Bosnia and Herzegovina", awayTeam: "Qatar", date: "June 24, 2026", time: "19:00 UTC", stadium: "Hard Rock Stadium, Miami", group: "Group H" },
+  { id: "mock-f11", homeTeam: "Ecuador", awayTeam: "Germany", date: "June 25, 2026", time: "20:00 UTC", stadium: "AT&T Stadium, Dallas", group: "Group E" },
+  { id: "mock-f12", homeTeam: "Panama", awayTeam: "England", date: "June 27, 2026", time: "17:00 UTC", stadium: "Arrowhead Stadium, Kansas City", group: "Group A" },
+  { id: "mock-f13", homeTeam: "Portugal", awayTeam: "Colombia", date: "June 27, 2026", time: "21:00 UTC", stadium: "BC Place, Vancouver", group: "Group F" },
+  { id: "mock-f14", homeTeam: "Round of 32 Match 1", awayTeam: "Round of 32 Match 2", date: "June 28, 2026", time: "18:00 UTC", stadium: "SoFi Stadium, Los Angeles", group: "Round of 32" }
 ];
 
 const mockLiveMatches = [
@@ -63,6 +71,11 @@ function getFlagUrl(teamName: string): string {
   else if (name.includes("haiti")) code = "ht";
   else if (name.includes("paraguay")) code = "py";
   else if (name.includes("ivory coast") || name.includes("côte d'ivoire") || name.includes("cote d'ivoire")) code = "ci";
+  else if (name.includes("norway")) code = "no";
+  else if (name.includes("panama")) code = "pa";
+  else if (name.includes("ecuador")) code = "ec";
+  else if (name.includes("saudi arabia")) code = "sa";
+  else if (name.includes("iran")) code = "ir";
 
   if (code === "un") {
     return "https://flagcdn.com/w80/un.png";
@@ -98,14 +111,36 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             league.matches.forEach((m: any) => {
               allMatches.push({
                 ...m,
-                leagueName: league.league
+                leagueName: league.league,
+                leagueId: league.leagueId
               });
             });
           });
 
+          const isWorldCupLeague = (leagueName?: string, leagueId?: string) => {
+            const name = (leagueName || "").toLowerCase();
+            const id = (leagueId || "").toLowerCase();
+            return name.includes("world cup") || name.includes("worldcup") || id.includes("fifa.world") || id.includes("world_cup") || id.includes("worldcup");
+          };
+
           // Separate live and scheduled
-          const live = allMatches.filter(m => m.status === "LIVE");
-          const scheduled = allMatches.filter(m => m.status === "SCHEDULED" || m.status === "FINISHED");
+          const live = allMatches.filter(m => {
+            return m.status === "LIVE" && isWorldCupLeague(m.leagueName, m.leagueId);
+          });
+          const scheduled = allMatches.filter(m => {
+            const isScheduledOrFinished = m.status === "SCHEDULED" || m.status === "FINISHED";
+            if (!isScheduledOrFinished) return false;
+
+            const isWC = isWorldCupLeague(m.leagueName, m.leagueId);
+            if (!isWC) return false;
+
+            if (m.date) {
+              const d = new Date(m.date);
+              const cutoff = new Date("2026-06-28T23:59:59.999Z");
+              return d <= cutoff;
+            }
+            return true;
+          });
 
           if (scheduled.length > 0) {
             const mappedScheduled = scheduled.map((m, idx) => ({
@@ -118,6 +153,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
               group: m.leagueName || "Group Stage"
             }));
             setFixtures(mappedScheduled);
+          } else {
+            setFixtures(mockFixtures);
           }
 
           if (live.length > 0) {
@@ -135,6 +172,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
               };
             });
             setLiveMatches(mappedLive);
+          } else {
+            setLiveMatches(mockLiveMatches);
           }
         }
       } catch (err) {
