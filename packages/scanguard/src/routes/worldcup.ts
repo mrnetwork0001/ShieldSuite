@@ -349,13 +349,6 @@ async function processEventInline(
   addAgentLog("🏁 Inline agent processing complete.", "info");
 }
 
-// GET /api/worldcup/matches
-worldCupRouter.get("/matches", (_req: Request, res: Response) => {
-  res.json({
-    success: true,
-    data: matches,
-  });
-});
 
 // POST /api/worldcup/update — Trigger a new event + inline agent trade execution
 worldCupRouter.post("/update", (req: Request, res: Response) => {
