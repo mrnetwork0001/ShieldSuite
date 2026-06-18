@@ -16,6 +16,8 @@ const DEX_ABI = [
 
 import STATIC_DEPLOYED_ADDRESSES from "../deployed-addresses.json";
 
+import { SearchIcon, CheckIcon, ShoeIcon } from "./Icons";
+
 const INITIAL_PLAYERS = [
   { id: 1, name: "Lionel Messi", country: "Argentina", rating: 90, goals: 2, assists: 1, price: "90", balance: "0" },
   { id: 2, name: "Kylian Mbappe", country: "France", rating: 91, goals: 1, assists: 0, price: "91", balance: "0" },
@@ -116,7 +118,7 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
       const dex = new ethers.Contract(DEPLOYED_ADDRESSES.PlayerDex, DEX_ABI, wallet.signer);
       const tx = await dex.buyShares(tokenId, ethers.parseEther("1"));
       await tx.wait();
-      addLog(`✅ Bought 1 share of ${playerName}! Tx: ${tx.hash.slice(0, 14)}...`);
+      addLog(`✓ Bought 1 share of ${playerName}! Tx: ${tx.hash.slice(0, 14)}...`);
       setRefreshKey((k) => k + 1);
       setTxModal({ visible: true, type: "Buy", playerName, txHash: tx.hash, amount: "1" });
     } catch (err: any) {
@@ -136,7 +138,7 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
       const dex = new ethers.Contract(DEPLOYED_ADDRESSES.PlayerDex, DEX_ABI, wallet.signer);
       const tx = await dex.sellShares(tokenId, ethers.parseEther(balance));
       await tx.wait();
-      addLog(`✅ Sold ${parseFloat(balance).toFixed(1)} shares of ${playerName}! Tx: ${tx.hash.slice(0, 14)}...`);
+      addLog(`✓ Sold ${parseFloat(balance).toFixed(1)} shares of ${playerName}! Tx: ${tx.hash.slice(0, 14)}...`);
       setRefreshKey((k) => k + 1);
       setTxModal({ visible: true, type: "Sell", playerName, txHash: tx.hash, amount: parseFloat(balance).toFixed(1) });
     } catch (err: any) {
@@ -152,7 +154,11 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
     ? ReactDOM.createPortal(
         <div className="tx-modal-overlay" onClick={() => setTxModal(m => ({ ...m, visible: false }))}>
           <div className="tx-modal" onClick={e => e.stopPropagation()}>
-            <div className="tx-modal-icon">✅</div>
+            <div className="tx-modal-icon" style={{ color: 'var(--accent-safe)', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
             <h3 className="tx-modal-title">
               {txModal.type === "Buy" && `Bought ${txModal.amount} Share of ${txModal.playerName}!`}
               {txModal.type === "Sell" && `Sold ${txModal.amount} Shares of ${txModal.playerName}!`}
@@ -166,7 +172,7 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
               rel="noopener noreferrer"
               className="tx-modal-link"
             >
-              🔍 View Transaction on Explorer ↗
+              <SearchIcon /> View Transaction on Explorer ↗
             </a>
             <button
               className="btn btn-primary tx-modal-close"
@@ -206,7 +212,7 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
                   <h4 className="player-name">{p.name}</h4>
                   <div className="player-stats">
                     <span>⚽ Goals: <strong>{p.goals}</strong></span>
-                    <span>👟 Assists: <strong>{p.assists}</strong></span>
+                    <span><ShoeIcon /> Assists: <strong>{p.assists}</strong></span>
                   </div>
                 </div>
 

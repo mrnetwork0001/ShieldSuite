@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { BookIcon, ShieldIcon, CardIcon, SwapIcon, AnchorIcon, CopyIcon, CheckIcon, TrophyIcon, IdeaIcon, GreenDotIcon, MessageIcon } from "./Icons";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface DocsPageProps {
@@ -20,12 +21,12 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
   };
 
   const sections = [
-    { id: "overview" as const, title: "📖 Overview", label: "Overview" },
-    { id: "scanguard" as const, title: "🛡️ ScanGuard Tech", label: "ScanGuard Core" },
-    { id: "x402" as const, title: "💳 x402 Economy", label: "x402 Protocol" },
-    { id: "shieldswap" as const, title: "🔄 ShieldSwap DEX", label: "DEX Aggregator" },
-    { id: "pitchside" as const, title: "⚽ Pitchside AI Loop", label: "Pitchside Speculation" },
-    { id: "contracts" as const, title: "⚓ Deployments", label: "Smart Contracts" },
+    { id: "overview" as const, title: <><BookIcon /> Overview</>, label: "Overview" },
+    { id: "scanguard" as const, title: <><ShieldIcon /> ScanGuard Tech</>, label: "ScanGuard Core" },
+    { id: "x402" as const, title: <><CardIcon /> x402 Economy</>, label: "x402 Protocol" },
+    { id: "shieldswap" as const, title: <><SwapIcon /> ShieldSwap DEX</>, label: "DEX Aggregator" },
+    { id: "pitchside" as const, title: <><span style={{ marginRight: "6px" }}>⚽</span> Pitchside AI Loop</>, label: "Pitchside Speculation" },
+    { id: "contracts" as const, title: <><AnchorIcon /> Deployments</>, label: "Smart Contracts" },
   ];
 
   const mainnetContracts = [
@@ -45,7 +46,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
         onClick={() => handleCopy(address)}
         className={`copy-btn font-mono ${isCopied ? "copied" : ""}`}
       >
-        {isCopied ? "✓ Copied" : "📋 Copy"}
+        {isCopied ? <><CheckIcon size={12} /> Copied</> : <><CopyIcon size={12} style={{ marginRight: "6px" }} /> Copy</>}
       </button>
     );
   };
@@ -76,10 +77,10 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
             <p>Ready to secure your trades or stake risk-free?</p>
             <div className="sidebar-cta-btns">
               <button className="btn btn-primary btn-sm" onClick={() => setActiveTab("pitchside")}>
-                🏆 Pitchside
+                <TrophyIcon /> Pitchside
               </button>
               <button className="btn btn-ghost btn-sm" onClick={() => setActiveTab("swap")}>
-                🔄 Swap
+                <SwapIcon /> Swap
               </button>
             </div>
           </div>
@@ -104,7 +105,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
 
                   <div className="features-grid">
                     <div className="glass-card feature-box-card">
-                      <div className="feature-box-icon">🛡️</div>
+                      <div className="feature-box-icon"><ShieldIcon size={24} style={{ marginRight: 0 }} /></div>
                       <h3>DEX Aggregator Security Gates</h3>
                       <p>
                         Token transactions are scanned on-chain at bytecode level in real-time, blocking malicious interactions (honeypots, blacklists, tax modifications) before they hit the ledger.
@@ -121,7 +122,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
                   </div>
 
                   <div className="glass-card docs-info-box">
-                    <h4>💡 Evolving for World Cup 2026</h4>
+                    <h4><IdeaIcon /> Evolving for World Cup 2026</h4>
                     <p>
                       With the upcoming FIFA World Cup 2026, Pitchside AI shifts prediction markets from high-risk betting where users lose their principal to a 100% capital-protected speculation network powered by Aave V3 yield loops and Trusted Execution Environments (TEEs).
                     </p>
@@ -131,7 +132,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
 
               {activeSection === "scanguard" && (
                 <>
-                  <h1 className="docs-section-title">🛡️ ScanGuard: Bytecode Analysis & Heuristics</h1>
+                  <h1 className="docs-section-title"><ShieldIcon size={28} /> ScanGuard: Bytecode Analysis & Heuristics</h1>
                   <p className="docs-para">
                     ScanGuard acts as the backend intelligence engine. Running as a REST API and Model Context Protocol (MCP) server, it performs deep on-chain bytecode scanning of smart contracts.
                   </p>
@@ -194,12 +195,12 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
 
               {activeSection === "x402" && (
                 <>
-                  <h1 className="docs-section-title">💳 x402 Pay-Per-Scan Agent Economy</h1>
+                  <h1 className="docs-section-title"><CardIcon size={28} /> x402 Pay-Per-Scan Agent Economy</h1>
                   <p className="docs-para">
                     ScanGuard implements the <strong>x402 Protocol</strong> to establish a monetized, decentralized API pipeline. In an environment where AI trading agents require automated security checks, they make stablecoin micro-payments on-chain to access ScanGuard intelligence.
                   </p>
                   <div className="glass-card docs-info-box border-purple">
-                    <h4>💡 Why x402 is Revolutionary</h4>
+                    <h4><IdeaIcon /> Why x402 is Revolutionary</h4>
                     <p>
                       Rather than relying on legacy SaaS API keys, credit cards, or centralized subscriptions, the x402 protocol allows TEE enclaves and autonomous bots to transact natively in stablecoins directly with the security nodes.
                     </p>
@@ -226,7 +227,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
 
               {activeSection === "shieldswap" && (
                 <>
-                  <h1 className="docs-section-title">🔄 ShieldSwap: Security-Gated Aggregator</h1>
+                  <h1 className="docs-section-title"><SwapIcon size={28} /> ShieldSwap: Security-Gated Aggregator</h1>
                   <p className="docs-para">
                     ShieldSwap is the frontend gateway. Integrating the <strong>OKX DEX Aggregator API</strong>, it searches over 500+ decentralized liquidity pools on X Layer to route swaps at the lowest slippage and gas rates.
                   </p>
@@ -236,7 +237,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
                     If a honeypot code pattern or malicious blacklist logic is found, the transaction is <strong>force-blocked</strong>, and an interactive threat report displays the exact warning flags.
                   </p>
                   <div className="glass-card docs-info-box">
-                    <h4>💬 Conversational AI Assistant</h4>
+                    <h4><MessageIcon /> Conversational AI Assistant</h4>
                     <p>
                       ShieldSwap features an inline AI chat panel that wraps `okx-dex-token` and `okx-security`. Users can command the agent: <em>"Scan contract 0x779d... and buy 10 WOKB if safe."</em> The chatbot scans, reports threat diagnostics, and populates the swap card dynamically.
                     </p>
@@ -289,14 +290,14 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
 
               {activeSection === "contracts" && (
                 <>
-                  <h1 className="docs-section-title">⚓ Smart Contract Deployments</h1>
+                  <h1 className="docs-section-title"><AnchorIcon size={28} /> Smart Contract Deployments</h1>
                   <p className="docs-para">
                     ShieldSuite is actively deployed on X Layer Mainnet:
                   </p>
 
                   <div className="contracts-grid" style={{ gridTemplateColumns: '1fr' }}>
                     <div className="contracts-card glass-card">
-                      <h3>🟢 X Layer Mainnet (Chain ID 196)</h3>
+                      <h3><GreenDotIcon /> X Layer Mainnet (Chain ID 196)</h3>
                       <div className="contracts-list">
                         {mainnetContracts.map((c) => (
                           <div key={c.name} className="contract-item">

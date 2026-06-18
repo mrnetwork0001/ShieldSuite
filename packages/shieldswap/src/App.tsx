@@ -16,6 +16,7 @@ import { ScoutConsole } from "./components/ScoutConsole";
 import { Leaderboard } from "./components/Leaderboard";
 import { LandingPage } from "./components/LandingPage";
 import { DocsPage } from "./components/DocsPage";
+import { GreenDotIcon, SearchIcon, SwapIcon, WarningIcon, InfoIcon } from "./components/Icons";
 
 const INITIAL_WALLET: WalletState = {
   connected: false,
@@ -278,7 +279,7 @@ const App: React.FC = () => {
                   }}
                   style={{ padding: '12px 20px', fontWeight: 'bold', flex: 1 }}
                 >
-                  🟢 Explore X Layer Mainnet
+                  <GreenDotIcon /> Explore X Layer Mainnet
                 </button>
               </div>
             </div>
@@ -338,7 +339,7 @@ const App: React.FC = () => {
                         {new Date(entry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                       </span>
                       <span className={`activity-icon activity-icon-${entry.type}`}>
-                        {entry.type === "scan" ? "🔍" : entry.type === "swap" ? "🔄" : entry.type === "warning" ? "⚠️" : "ℹ️"}
+                        {entry.type === "scan" ? <SearchIcon size={12} style={{ marginRight: 0 }} /> : entry.type === "swap" ? <SwapIcon size={12} style={{ marginRight: 0 }} /> : entry.type === "warning" ? <WarningIcon size={12} style={{ marginRight: 0 }} /> : <InfoIcon size={12} style={{ marginRight: 0 }} />}
                       </span>
                       <span className="activity-message">{entry.message}</span>
                     </motion.div>

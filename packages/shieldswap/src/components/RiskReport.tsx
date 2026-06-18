@@ -3,6 +3,7 @@
 // Slides in from the right after a scan completes.
 
 import React, { useEffect, useState } from "react";
+import { CrossIcon, CheckIcon, WarningIcon, RobotIcon, WarningOctagonIcon, QuestionIcon } from "./Icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { ScanResult, RiskFlag } from "../hooks/useScanGuard";
 
@@ -64,7 +65,7 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
                 Scan #{result.scanId.slice(0, 8)} · {result.scanDurationMs}ms
               </p>
             </div>
-            <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+            <button className="btn btn-ghost btn-sm" onClick={onClose}><CrossIcon size={14} /></button>
           </div>
 
           {/* Risk Score Circle */}
@@ -96,7 +97,7 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
               animate={{ scale: 1 }}
               transition={{ delay: 0.5, type: "spring", stiffness: 500, damping: 25 }}
             >
-              {getRiskEmoji(result.riskLevel)} {result.riskLevel}
+              {getRiskIcon(result.riskLevel)} {result.riskLevel}
             </motion.div>
           </div>
 
@@ -122,7 +123,7 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
               <span className="risk-info-label">Owner</span>
               <span className="risk-info-value font-mono" style={{ fontSize: "0.8rem" }}>
                 {result.ownershipRenounced ? (
-                  <span className="text-safe">✓ Renounced</span>
+                  <span className="text-safe"><CheckIcon size={12} /> Renounced</span>
                 ) : (
                   <span className="text-warning">{result.ownerAddress ? `${result.ownerAddress.slice(0, 8)}...` : "Unknown"}</span>
                 )}
@@ -131,7 +132,7 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
             <div className="risk-info-row">
               <span className="risk-info-label">Proxy</span>
               <span className={`risk-info-value ${result.hasProxyPattern ? "text-warning" : "text-safe"}`}>
-                {result.hasProxyPattern ? "⚠ Upgradeable" : "✓ Not Upgradeable"}
+                {result.hasProxyPattern ? <><WarningIcon size={12} /> Upgradeable</> : <><CheckIcon size={12} /> Not Upgradeable</>}
               </span>
             </div>
             <div className="risk-info-row">
@@ -140,7 +141,7 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
               </span>
               <span className={`risk-info-value ${result.uniswapHasPool ? "text-safe" : "text-tertiary"}`}>
                 {result.uniswapHasPool
-                  ? `✓ ${result.uniswapPoolCount} Pool${(result.uniswapPoolCount || 0) !== 1 ? 's' : ''}`
+                  ? <><CheckIcon size={12} /> {result.uniswapPoolCount} Pool{(result.uniswapPoolCount || 0) !== 1 ? 's' : ''}</>
                   : "No pools found"
                 }
               </span>
@@ -156,8 +157,8 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
                   : "var(--accent-danger)"
               }}>
                 {result.riskLevel === "SAFE" || result.riskLevel === "LOW"
-                  ? `✅ ${result.flags.length} Finding${result.flags.length !== 1 ? "s" : ""}`
-                  : `⚠ ${result.flags.length} Threat${result.flags.length !== 1 ? "s" : ""} Detected`}
+                  ? <><CheckIcon size={12} /> {result.flags.length} Finding{result.flags.length !== 1 ? "s" : ""}</>
+                  : <><WarningIcon size={12} /> {result.flags.length} Threat{result.flags.length !== 1 ? "s" : ""} Detected</>}
               </h3>
               <div className="risk-flags-list">
                 {result.flags.map((flag, index) => (
@@ -193,7 +194,7 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.5, type: "spring" }}
             >
-              <span style={{ fontSize: "2rem" }}>✅</span>
+              <CheckIcon size={32} style={{ color: "var(--accent-safe)", marginBottom: "8px" }} />
               <p>No threats detected. Token appears safe for trading.</p>
             </motion.div>
           )}
@@ -206,7 +207,7 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
             transition={{ delay: 0.8, duration: 0.4 }}
           >
             <div className="agent-rec-header">
-              <span style={{ fontSize: '1rem' }}>🤖</span>
+              <RobotIcon size={18} style={{ color: "var(--accent-safe)" }} />
               <span className="font-mono" style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--accent-safe)' }}>AGENT RECOMMENDATION</span>
             </div>
             <p className="agent-rec-text">
@@ -463,14 +464,14 @@ function getRiskGlow(level: string): string {
   }
 }
 
-function getRiskEmoji(level: string): string {
+function getRiskIcon(level: string): React.ReactNode {
   switch (level) {
-    case "SAFE": return "✅";
-    case "LOW": return "🟡";
-    case "MEDIUM": return "🟠";
-    case "HIGH": return "🔴";
-    case "CRITICAL": return "🚨";
-    default: return "❓";
+    case "SAFE": return <CheckIcon size={14} style={{ marginRight: "4px" }} />;
+    case "LOW": return <WarningIcon size={14} style={{ marginRight: "4px", color: "#33ff00" }} />;
+    case "MEDIUM": return <WarningIcon size={14} style={{ marginRight: "4px", color: "#ffb000" }} />;
+    case "HIGH": return <WarningOctagonIcon size={14} style={{ marginRight: "4px", color: "#FF3B5C" }} />;
+    case "CRITICAL": return <WarningOctagonIcon size={14} style={{ marginRight: "4px", color: "#FF1744" }} />;
+    default: return <QuestionIcon size={14} style={{ marginRight: "4px" }} />;
   }
 }
 

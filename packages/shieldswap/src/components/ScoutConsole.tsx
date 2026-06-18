@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { TerminalIcon, ShoeIcon, NewsIcon, WarningOctagonIcon, TrophyIcon, SignalIcon, CrossIcon, CheckIcon, CalendarIcon } from "./Icons";
 import { motion } from "framer-motion";
 import { WalletState } from "../lib/wallet";
 
@@ -190,7 +191,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
   return (
     <div className="scout-console glass-card">
       <div className="panel-header">
-        <span className="panel-icon">💻</span>
+        <span className="panel-icon"><TerminalIcon /></span>
         <h3 className="panel-title">AI Scout Autonomous Console</h3>
       </div>
 
@@ -261,9 +262,9 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
                 disabled={isTriggering}
               >
                 <option value="GOAL">⚽ Goal (Bullish)</option>
-                <option value="ASSIST">👟 Assist (Bullish)</option>
-                <option value="NEWS">📰 News (Bullish)</option>
-                <option value="CARD">🚨 Injury/Card (Bearish)</option>
+                <option value="ASSIST">[ASSIST] Assist (Bullish)</option>
+                <option value="NEWS">[NEWS] News (Bullish)</option>
+                <option value="CARD">[ALERT] Injury/Card (Bearish)</option>
               </select>
             </div>
           </div>
@@ -291,7 +292,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
       ) : (
         <div className="simulator-box glass-card" style={{ border: '1px solid rgba(255, 215, 0, 0.3)', background: 'rgba(255, 215, 0, 0.02)' }}>
           <div className="simulator-header" style={{ color: '#FFD700', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>🏆</span> FIFA World Cup 2026 Kickoff
+            <span><TrophyIcon /></span> FIFA World Cup 2026 Kickoff
           </div>
           
           {/* Countdown Clock */}
@@ -352,7 +353,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
             disabled={liveDataFeed.loading}
             style={{ background: 'linear-gradient(135deg, #4B7BF5 0%, #A855F7 100%)', borderColor: '#4B7BF5', color: '#fff' }}
           >
-            {liveDataFeed.loading ? "Fetching live match data..." : "📡 Verify Live Data Feed"}
+            {liveDataFeed.loading ? "Fetching live match data..." : <><SignalIcon /> Verify Live Data Feed</>}
           </button>
         </div>
       )}
@@ -386,7 +387,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700', color: '#fff' }}>
-                  📡 Live Match Data Feed
+                  <SignalIcon /> Live Match Data Feed
                 </h3>
                 <p style={{ margin: '4px 0 0', fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
                   Verified at {safeFormatTime(liveDataFeed.timestamp)}
@@ -412,7 +413,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
               display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', marginBottom: '16px',
               background: 'rgba(0,255,136,0.06)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: '10px',
             }}>
-              <span style={{ fontSize: '1.1rem' }}>✅</span>
+              <CheckIcon size={18} style={{ color: "var(--accent-safe)" }} />
               <span style={{ fontSize: '0.78rem', color: '#fff' }}>
                 <strong style={{ color: '#00ff88' }}>{liveDataFeed.totalMatches} matches</strong> fetched across <strong>{liveDataFeed.results.length} leagues</strong>
               </span>
@@ -509,7 +510,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
                           color: m.status === 'FINISHED' ? '#aaa' : 'var(--accent-blue)',
                           fontWeight: '500',
                         }}>
-                          {m.status === 'FINISHED' ? `✅ ${m.score} FT` : `📅 ${safeFormatShortDate(m.date)}`}
+                          {m.status === 'FINISHED' ? `✓ ${m.score} FT` : `${safeFormatShortDate(m.date)}`}
                         </span>
                       )}
                     </div>

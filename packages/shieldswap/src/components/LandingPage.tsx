@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ShieldIcon, CalendarIcon, TrophyIcon, ScienceIcon, CardIcon, RobotIcon, SignalIcon, WarningIcon, CrossIcon, LockIcon, SwapIcon, ArrowRightIcon } from "./Icons";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface LandingPageProps {
@@ -240,12 +241,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
               <span className="step-num">1</span>
               <span className="step-label">Scan & Verify</span>
             </div>
-            <div className="pathway-arrow">➔</div>
+            <div className="pathway-arrow"><ArrowRightIcon /></div>
             <div className="pathway-step active-glow">
               <span className="step-num">2</span>
               <span className="step-label">Stake USDT</span>
             </div>
-            <div className="pathway-arrow">➔</div>
+            <div className="pathway-arrow"><ArrowRightIcon /></div>
             <div className="pathway-step active-purple">
               <span className="step-num">3</span>
               <span className="step-label">Speculate Risk-Free</span>
@@ -269,7 +270,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
               className="btn btn-ghost btn-lg-cta"
               onClick={() => setActiveTab("swap")}
             >
-              🛡️ Enter ShieldSwap DEX
+              <ShieldIcon /> Enter ShieldSwap DEX
             </button>
           </motion.div>
         </div>
@@ -289,7 +290,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
                   className="fixture-slide-content"
                 >
                   <div className="fixtures-header">
-                    <span className="fixture-tag font-mono">📅 UPCOMING FIXTURE</span>
+                    <span className="fixture-tag font-mono" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><CalendarIcon size={12} style={{ marginRight: 0 }} /> UPCOMING FIXTURE</span>
                     <span className="group-badge font-mono">{activeFixture.group}</span>
                   </div>
 
@@ -327,7 +328,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
               className="speculate-card-btn font-mono"
               onClick={() => setActiveTab("pitchside")}
             >
-              🏆 Speculate on Match
+              <TrophyIcon /> Speculate on Match
             </button>
           </div>
         </div>
@@ -419,14 +420,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
       {/* ScanGuard & Security Core Section */}
       <section className="landing-section layout-split">
         <div className="split-text">
-          <h2 className="section-title text-center">🛡️ ScanGuard & ShieldSwap DEX Aggregator</h2>
+          <h2 className="section-title text-center" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}><ShieldIcon size={28} style={{ marginRight: 0 }} /> ScanGuard & ShieldSwap DEX Aggregator</h2>
           <p className="section-desc-para">
             Traditional DEX routers execute swaps blindly. ShieldSuite intercepts transactions with a native security guard before they can harm your wallet.
           </p>
 
           <div className="security-features">
             <div className="sec-feature">
-              <span className="sec-icon">🔬</span>
+              <span className="sec-icon"><ScienceIcon size={24} style={{ marginRight: 0 }} /></span>
               <div>
                 <h4>Dual-Layer Bytecode Scanning</h4>
                 <p>Combines OKX Security scanning with a custom heuristics engine to check for hidden taxes, proxy upgrades, blacklist functions, and honeypots.</p>
@@ -434,7 +435,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             </div>
 
             <div className="sec-feature">
-              <span className="sec-icon">💳</span>
+              <span className="sec-icon"><CardIcon size={24} style={{ marginRight: 0 }} /></span>
               <div>
                 <h4>x402 Pay-Per-Scan Protocol</h4>
                 <p>A standard monetization loop where automated client agents stream micro-payments in stablecoins to access ScanGuard security reports in real-time.</p>
@@ -442,7 +443,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             </div>
 
             <div className="sec-feature">
-              <span className="sec-icon">🤖</span>
+              <span className="sec-icon"><RobotIcon size={24} style={{ marginRight: 0 }} /></span>
               <div>
                 <h4>Conversational AI Chatbot</h4>
                 <p>Scan and stage swaps using natural language directly inside the swap terminal. Your personal agent parses the intent, scans safety, and populates the slip.</p>
@@ -466,11 +467,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           </div>
           <div className="terminal-content font-mono">
             <div className="term-line prompt">&gt; scan --address 0x779d...3736</div>
-            <div className="term-line success">📡 Resolving token metadata... Done. (WOKB/USDT)</div>
-            <div className="term-line success">🤖 Checking bytecode hashes against ScanGuard Core...</div>
-            <div className="term-line warning">⚠️ Warning: Honeypot code snippet detected in proxy contract.</div>
-            <div className="term-line danger">❌ RISK LEVEL: HIGH (89/100) - Blocked swap.</div>
-            <div className="term-line success">🔒 User principal protected. Scan complete in 42ms.</div>
+            <div className="term-line success" style={{ display: "flex", alignItems: "center", gap: "6px" }}><SignalIcon size={12} style={{ marginRight: 0 }} /> Resolving token metadata... Done. (WOKB/USDT)</div>
+            <div className="term-line success" style={{ display: "flex", alignItems: "center", gap: "6px" }}><RobotIcon size={12} style={{ marginRight: 0 }} /> Checking bytecode hashes against ScanGuard Core...</div>
+            <div className="term-line warning" style={{ display: "flex", alignItems: "center", gap: "6px" }}><WarningIcon size={12} style={{ marginRight: 0 }} /> Warning: Honeypot code snippet detected in proxy contract.</div>
+            <div className="term-line danger" style={{ display: "flex", alignItems: "center", gap: "6px" }}><CrossIcon size={12} style={{ marginRight: 0 }} /> RISK LEVEL: HIGH (89/100) - Blocked swap.</div>
+            <div className="term-line success" style={{ display: "flex", alignItems: "center", gap: "6px" }}><LockIcon size={12} style={{ marginRight: 0 }} /> User principal protected. Scan complete in 42ms.</div>
           </div>
         </motion.div>
       </section>
@@ -484,10 +485,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           <p>Join the next generation of security-gated DeFi. Stake stablecoins risk-free, earn credits, and delegate them to autonomous agents.</p>
           <div className="cta-buttons">
             <button className="btn btn-primary hover-glow" onClick={() => setActiveTab("pitchside")}>
-              🏆 Open Pitchside AI
+              <TrophyIcon /> Open Pitchside AI
             </button>
             <button className="btn btn-ghost" onClick={() => setActiveTab("swap")}>
-              🔄 Swap Tokens Safely
+              <SwapIcon /> Swap Tokens Safely
             </button>
           </div>
         </div>

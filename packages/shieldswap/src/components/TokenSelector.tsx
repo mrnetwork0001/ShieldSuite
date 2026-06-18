@@ -2,6 +2,7 @@
 // Modal dropdown for selecting tokens with search, icons, custom address import.
 
 import React, { useState, useMemo, useCallback } from "react";
+import { CrossIcon } from "./Icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { TOKEN_LIST, TokenInfo, resolveCustomToken } from "../lib/xlayer";
 import { ethers } from "ethers";
@@ -118,7 +119,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
           >
             <div className="token-selector-header">
               <h3>Select Token</h3>
-              <button className="token-selector-close" onClick={onClose}>✕</button>
+              <button className="token-selector-close" onClick={onClose}><CrossIcon size={14} /></button>
             </div>
 
             <input

@@ -28,6 +28,8 @@ const VAULT_ABI = [
 
 import STATIC_DEPLOYED_ADDRESSES from "../deployed-addresses.json";
 
+import { VaultIcon, SearchIcon, InfoIcon, RobotIcon, CheckIcon, CrossIcon } from "./Icons";
+
 interface VaultPanelProps {
   wallet: WalletState;
   onActivityLog: (entry: { id: string; timestamp: number; type: "info" | "warning"; message: string }) => void;
@@ -77,7 +79,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
 
   // Only the real Active TEE Scout Agent - no fake placeholder agents
   const dynamicAgentsList = activeAgentAddress 
-    ? [{ name: `🤖 Active TEE Scout Agent (${activeAgentAddress.slice(0, 6)}...${activeAgentAddress.slice(-4)})`, address: activeAgentAddress }]
+    ? [{ name: `Active TEE Scout Agent (${activeAgentAddress.slice(0, 6)}...${activeAgentAddress.slice(-4)})`, address: activeAgentAddress }]
     : [{ name: "Loading agent...", address: "" }];
 
   useEffect(() => {
@@ -195,10 +197,10 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
       console.log("[Faucet] TX confirmed, status:", receipt?.status);
       if (receipt?.status === 1) {
         setFaucetStatus("success");
-        addLog("✅ 1000 Mock USDT minted successfully!");
+        addLog("✓ 1000 Mock USDT minted successfully!");
       } else {
         setFaucetStatus("error");
-        addLog("❌ Faucet transaction reverted onchain.", "warning");
+        addLog("✕ Faucet transaction reverted onchain.", "warning");
       }
       setRefreshKey((k) => k + 1);
       // Reset status after 3 seconds
@@ -223,7 +225,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
       const tx = await usdt.approve(DEPLOYED_ADDRESSES.NoLossVault, ethers.MaxUint256);
       await tx.wait();
       setAllowance(ethers.MaxUint256);
-      addLog("✅ NoLossVault approved successfully!");
+      addLog("✓ NoLossVault approved successfully!");
     } catch (err: any) {
       addLog(`Approval error: ${err.message}`, "warning");
     } finally {
@@ -240,7 +242,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
       const vault = new ethers.Contract(DEPLOYED_ADDRESSES.NoLossVault, VAULT_ABI, wallet.signer);
       const tx = await vault.deposit(ethers.parseUnits(depositAmount, usdtDecimals));
       await tx.wait();
-      addLog(`✅ Staked ${depositAmount} USDT successfully! Tx: ${tx.hash.slice(0, 14)}...`);
+      addLog(`✓ Staked ${depositAmount} USDT successfully! Tx: ${tx.hash.slice(0, 14)}...`);
       setDepositAmount("");
       setRefreshKey((k) => k + 1);
       setTxModal({ visible: true, type: "Stake", txHash: tx.hash, amount: depositAmount });
@@ -271,7 +273,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
 
       const tx = await vault.withdraw(rawAmount);
       const receipt = await tx.wait();
-      addLog(`✅ Unstaked ${ethers.formatUnits(rawAmount, usdtDecimals)} USDT successfully! Tx: ${tx.hash.slice(0, 14)}...`);
+      addLog(`✓ Unstaked ${ethers.formatUnits(rawAmount, usdtDecimals)} USDT successfully! Tx: ${tx.hash.slice(0, 14)}...`);
       setWithdrawAmount("");
       setRefreshKey((k) => k + 1);
       setTxModal({ visible: true, type: "Unstake", txHash: tx.hash, amount: ethers.formatUnits(rawAmount, usdtDecimals) });
@@ -291,7 +293,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
       const vault = new ethers.Contract(DEPLOYED_ADDRESSES.NoLossVault, VAULT_ABI, wallet.signer);
       const tx = await vault.delegateAgent(selectedAgent);
       await tx.wait();
-      addLog(`✅ Agent delegation completed! Tx: ${tx.hash.slice(0, 14)}...`);
+      addLog(`✓ Agent delegation completed! Tx: ${tx.hash.slice(0, 14)}...`);
       setRefreshKey((k) => k + 1);
       setTxModal({ visible: true, type: "Delegation", txHash: tx.hash });
     } catch (err: any) {
@@ -313,7 +315,11 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
     ? ReactDOM.createPortal(
         <div className="tx-modal-overlay" onClick={() => setTxModal(m => ({ ...m, visible: false }))}>
           <div className="tx-modal" onClick={e => e.stopPropagation()}>
-            <div className="tx-modal-icon">✅</div>
+            <div className="tx-modal-icon" style={{ color: 'var(--accent-safe)', display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
             <h3 className="tx-modal-title">
               {txModal.type === "Stake" && `${txModal.amount} USDT Staked!`}
               {txModal.type === "Unstake" && `${txModal.amount} USDT Unstaked!`}
@@ -328,7 +334,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
               rel="noopener noreferrer"
               className="tx-modal-link"
             >
-              🔍 View Transaction on Explorer ↗
+              <SearchIcon /> View Transaction on Explorer ↗
             </a>
             <button
               className="btn btn-primary tx-modal-close"
@@ -347,7 +353,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
       {modalContent}
       <div className="vault-panel glass-card">
       <div className="panel-header">
-        <span className="panel-icon">🏦</span>
+        <span className="panel-icon"><VaultIcon /></span>
         <h3 className="panel-title">No-Loss Scouting Vault</h3>
       </div>
 
@@ -378,8 +384,9 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
             </div>
           </div>
 
-          <div style={{ fontSize: "0.75rem", color: "var(--fg-dim)", marginBottom: "16px", lineHeight: "1.4", padding: "0 4px" }}>
-            ℹ️ Staked USDT is securely supplied to <strong>Aave V3</strong> yield pools under the hood to generate risk-free interest while you accumulate Scout Credits.
+          <div style={{ fontSize: "0.75rem", color: "var(--fg-dim)", marginBottom: "16px", lineHeight: "1.4", padding: "0 4px", display: "flex", alignItems: "flex-start", gap: "6px" }}>
+            <span style={{ flexShrink: 0, marginTop: "2px" }}><InfoIcon /></span>
+            <span>Staked USDT is securely supplied to <strong>Aave V3</strong> yield pools under the hood to generate risk-free interest while you accumulate Scout Credits.</span>
           </div>
 
           {/* Staking Actions */}
@@ -423,8 +430,8 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
 
           {/* Delegation Section */}
           <div className="delegation-box glass-card">
-            <div className="delegation-header">
-              <span>🤖</span>
+            <div className="delegation-header" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <RobotIcon />
               <strong>Delegate Scout Agent</strong>
             </div>
             <p className="delegation-desc">

@@ -3,6 +3,7 @@
 // and ScanGuard security scanning before every swap.
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
+import { CheckIcon, SettingsIcon, SwapIcon, WarningOctagonIcon, WarningIcon, BlockedIcon, UnlockIcon, ShieldIcon } from "./Icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { ethers } from "ethers";
 import TokenSelector, { TokenLogo } from "./TokenSelector";
@@ -266,7 +267,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
       // If already has MaxUint256-level approval, skip
       if (currentAllowance >= MAX_THRESHOLD) {
         setNeedsApproval(false);
-        addLog("info", `✅ ${fromToken.symbol} already approved!`);
+        addLog("info", `✓ ${fromToken.symbol} already approved!`);
         return;
       }
 
@@ -286,7 +287,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
       await approveTx.wait();
 
       setNeedsApproval(false);
-      addLog("info", `✅ ${fromToken.symbol} approved!`);
+      addLog("info", `✓ ${fromToken.symbol} approved!`);
     } catch (err: any) {
       addLog("warning", `Approval failed: ${err.message || "Unknown error"}`);
     } finally {
@@ -348,7 +349,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
 
     if (result) {
       setStage("complete");
-      addLog("swap", `✅ Swap confirmed! TX: ${result.txHash.slice(0, 14)}...`);
+      addLog("swap", `✓ Swap confirmed! TX: ${result.txHash.slice(0, 14)}...`);
       // Refresh balances immediately after swap
       setBalanceRefreshKey((k) => k + 1);
     } else {
@@ -379,7 +380,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
               className="slippage-btn"
               onClick={() => setShowSlippage(!showSlippage)}
             >
-              ⚙️ {slippage}% slippage
+              <SettingsIcon size={12} /> {slippage}% slippage
             </button>
             <AnimatePresence>
               {showSlippage && (
@@ -498,7 +499,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
                   onClick={() => setBalanceRefreshKey(k => k + 1)}
                   title="Refresh balance"
                 >
-                  🔄
+                  <SwapIcon />
                 </button>
               </div>
             </div>
@@ -533,7 +534,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <span className="font-mono" style={{ fontSize: '0.8rem' }}>OKX Aggregator</span>
                     {(!quote.uniswapAmountOut || parseFloat(quote.amountOut) >= parseFloat(quote.uniswapAmountOut)) && (
-                      <span className="best-route-badge">✓ Best</span>
+                      <span className="best-route-badge"><CheckIcon size={12} /> Best</span>
                     )}
                   </div>
                   <span className="font-mono" style={{ fontSize: '0.8rem' }}>{quote.amountOut} {toToken.symbol}</span>
@@ -542,7 +543,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <span className="font-mono" style={{ fontSize: '0.8rem', opacity: quote.uniswapAmountOut ? 1 : 0.5 }}>Uniswap V3</span>
                     {quote.uniswapAmountOut && parseFloat(quote.uniswapAmountOut) > parseFloat(quote.amountOut) && (
-                      <span className="best-route-badge">✓ Best</span>
+                      <span className="best-route-badge"><CheckIcon size={12} /> Best</span>
                     )}
                   </div>
                   <span className="font-mono" style={{ fontSize: '0.8rem', opacity: quote.uniswapAmountOut ? 1 : 0.5 }}>
@@ -563,7 +564,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
             >
-              <span className="danger-icon">🚨</span>
+              <span className="danger-icon"><WarningOctagonIcon size={24} style={{ color: "var(--accent-danger)" }} /></span>
               <div>
                 <strong>High Risk Token Detected</strong>
                 <p>This token has {scanResult!.flags.length} security threat(s). Swapping is blocked for your protection.</p>
@@ -580,7 +581,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
             >
-              <span style={{ fontSize: "1.5rem" }}>✅</span>
+              <CheckIcon size={24} style={{ color: "var(--accent-safe)" }} />
               <div>
                 <strong>Swap Confirmed!</strong>
                 <a className="font-mono risk-link" href={swapResult.explorerUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.8rem", display: "block", marginTop: "4px" }}>
@@ -595,7 +596,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
         <AnimatePresence>
           {(scanError || swapError) && (
             <motion.div className="swap-error" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
-              ⚠️ {scanError || swapError}
+              <WarningIcon /> {scanError || swapError}
             </motion.div>
           )}
         </AnimatePresence>
@@ -612,7 +613,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
             </button>
           ) : isDangerous ? (
             <button className="btn btn-danger swap-btn" disabled>
-              🚫 Swap Blocked - High Risk
+              <BlockedIcon /> Swap Blocked - High Risk
             </button>
           ) : stage === "complete" ? (
             <button
@@ -638,11 +639,11 @@ const SwapCard: React.FC<SwapCardProps> = ({
                 {isApproving ? (
                   <><span className="scan-spinner" /> Approving {fromToken.symbol}...</>
                 ) : (
-                  <>🔓 Approve {fromToken.symbol}</>
+                  <><UnlockIcon /> Approve {fromToken.symbol}</>
                 )}
               </button>
               <button className="btn btn-primary swap-btn" disabled>
-                🔄 Swap {fromToken.symbol} → {toToken.symbol}
+                <SwapIcon /> Swap {fromToken.symbol} → {toToken.symbol}
               </button>
             </div>
           ) : isSwapping ? (
@@ -651,7 +652,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
             </button>
           ) : canSwap ? (
             <button className="btn btn-safe swap-btn" onClick={handleSwap}>
-              🔄 Swap {fromToken.symbol} → {toToken.symbol}
+              <SwapIcon /> Swap {fromToken.symbol} → {toToken.symbol}
             </button>
           ) : isMedium ? (
             <button
@@ -660,7 +661,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
               disabled={!quote || !parseFloat(amount)}
               style={{ background: "linear-gradient(135deg, #FFB020, #FF8C00)" }}
             >
-              ⚠️ Swap with Caution
+              <><WarningIcon /> Swap with Caution</>
             </button>
           ) : (
             <button className="btn btn-primary swap-btn" disabled={!amount || !parseFloat(amount)}>
@@ -671,7 +672,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
 
         {/* Powered by */}
         <div className="swap-powered-by">
-          <span>🛡️ Protected by</span>
+          <span><ShieldIcon /> Protected by</span>
           <a href="https://scanguard-dashboard-main.vercel.app" target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: '#33ff00', textShadow: '0 0 8px rgba(51,255,0,0.3)', fontFamily: 'var(--font-mono)', textDecoration: 'none' }}>ScanGuard</a>
           <span className="badge badge-safe" style={{ marginLeft: "4px", fontFamily: 'var(--font-mono)' }}>MCP</span>
           <span style={{ margin: "0 4px", color: "var(--text-tertiary)" }}>·</span>

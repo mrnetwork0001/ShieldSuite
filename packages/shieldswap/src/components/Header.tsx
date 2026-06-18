@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { WalletState, shortenAddress, formatBalance } from "../lib/wallet";
 import { XLAYER_CHAIN, XLAYER_TESTNET, getExplorerUrl, switchToChain } from "../lib/xlayer";
 import { ethers } from "ethers";
+import { DocsIcon, ShieldIcon, CopyIcon, HistoryIcon, DisconnectIcon, NetworkDot } from "./Icons";
 
 interface HeaderProps {
   wallet: WalletState;
@@ -105,7 +106,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
               className={`tab-btn ${activeTab === "docs" ? "active" : ""}`}
               onClick={() => setActiveTab("docs")}
             >
-              📄 Docs
+              <DocsIcon /> Docs
             </button>
           ) : (
             <>
@@ -113,7 +114,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                 className={`tab-btn ${activeTab === "swap" ? "active" : ""}`}
                 onClick={() => setActiveTab("swap")}
               >
-                🛡️ ShieldSwap
+                <ShieldIcon /> ShieldSwap
               </button>
               <button
                 className={`tab-btn ${activeTab === "pitchside" ? "active" : ""}`}
@@ -130,7 +131,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
           <div className="header-actions desktop-only">
             {/* Chain switcher */}
             <div className="chain-switcher-select font-mono" style={{ pointerEvents: 'none', background: 'rgba(75, 123, 245, 0.06)', border: '1px solid rgba(75, 123, 245, 0.2)' }}>
-              🔵 XLayer Mainnet
+              <NetworkDot /> XLayer Mainnet
             </div>
 
             {/* Wallet button / dropdown */}
@@ -169,11 +170,11 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                           }}
                           title="Copy address"
                         >
-                          📋
+                          <CopyIcon />
                         </button>
                       </div>
                       <div className="wd-divider" />
-                      <div className="wd-section-title">📜 Recent Transactions</div>
+                      <div className="wd-section-title"><HistoryIcon /> Recent Transactions</div>
                       {loadingTx ? (
                         <div className="wd-loading">Loading...</div>
                       ) : txHistory.length > 0 ? (
@@ -214,7 +215,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                           setDropdownOpen(false);
                         }}
                       >
-                        🔌 Disconnect Wallet
+                        <DisconnectIcon /> Disconnect Wallet
                       </button>
                     </motion.div>
                   )}
@@ -286,7 +287,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                     {activeTab !== "home" && (
                       <>
                         <div className="chain-switcher-select font-mono" style={{ width: "100%", pointerEvents: 'none', textAlign: 'center', background: 'rgba(75, 123, 245, 0.06)', border: '1px solid rgba(75, 123, 245, 0.2)' }}>
-                          🔵 XLayer Mainnet
+                          <NetworkDot /> XLayer Mainnet
                         </div>
 
                         {wallet.connected ? (
@@ -302,7 +303,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                                 setMobileMenuOpen(false);
                               }}
                             >
-                              🔌 Disconnect
+                              <DisconnectIcon /> Disconnect
                             </button>
                           </div>
                         ) : (
@@ -326,14 +327,14 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                           className={`nav-link-item ${activeTab === 'docs' ? 'active' : ''}`}
                           onClick={() => { setActiveTab('docs'); setMobileMenuOpen(false); }}
                           style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
-                        >📄 Docs</button>
+                        ><DocsIcon /> Docs</button>
                       ) : (
                         <>
                           <button 
                             className={`nav-link-item ${activeTab === 'swap' ? 'active' : ''}`}
                             onClick={() => { setActiveTab('swap'); setMobileMenuOpen(false); }}
                             style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
-                          >🛡️ ShieldSwap</button>
+                          ><ShieldIcon /> ShieldSwap</button>
                           <button 
                             className={`nav-link-item ${activeTab === 'pitchside' ? 'active' : ''}`}
                             onClick={() => { setActiveTab('pitchside'); setMobileMenuOpen(false); }}

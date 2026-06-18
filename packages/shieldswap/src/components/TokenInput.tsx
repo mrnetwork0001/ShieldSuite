@@ -2,6 +2,7 @@
 // Token address input with search, validation, and quick-select buttons.
 
 import React, { useState, useCallback } from "react";
+import { CopyIcon, CheckIcon } from "./Icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { XLAYER_TOKENS } from "../lib/xlayer";
 
@@ -85,7 +86,7 @@ const TokenInput: React.FC<TokenInputProps> = ({
             onClick={handlePaste}
             title="Paste from clipboard"
           >
-            📋
+            <CopyIcon />
           </button>
         </div>
 
@@ -100,7 +101,7 @@ const TokenInput: React.FC<TokenInputProps> = ({
               transition={{ duration: 0.2 }}
             >
               <span className="token-fullname">{tokenName}</span>
-              {isValidAddress && <span className="text-safe" style={{ fontSize: "0.75rem" }}>✓ Valid</span>}
+              {isValidAddress && <span className="text-safe" style={{ fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "3px" }}><CheckIcon size={10} style={{ marginRight: 0 }} /> Valid</span>}
             </motion.div>
           )}
         </AnimatePresence>

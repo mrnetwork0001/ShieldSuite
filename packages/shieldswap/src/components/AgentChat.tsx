@@ -7,6 +7,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ShieldIcon, CrossIcon, RobotIcon } from "./Icons";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -127,7 +128,7 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
     {
       id: "welcome",
       role: "agent",
-      text: "🛡️ ScanGuard Agent ready. Try: \"Is USDT safe?\" or \"Scan 0x...\" or type **help**.",
+      text: "✦ ScanGuard Agent ready. Try: \"Is USDT safe?\" or \"Scan 0x...\" or type **help**.",
       timestamp: Date.now(),
     },
   ]);
@@ -172,14 +173,14 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
         case "help":
           addMessage(
             "agent",
-            `📋 **Available commands:**\n\n• **Scan a token:** "Is USDT safe?" or "Scan 0x..."\n• **Swap tokens:** "Swap 10 USDC to OKB"\n• **Check status:** "status"\n• **Supported tokens:** USDT, USDC, WETH, OKB, DAI\n\nYou can also paste any contract address to scan it.`
+            `✦ **Available commands:**\n\n• **Scan a token:** "Is USDT safe?" or "Scan 0x..."\n• **Swap tokens:** "Swap 10 USDC to OKB"\n• **Check status:** "status"\n• **Supported tokens:** USDT, USDC, WETH, OKB, DAI\n\nYou can also paste any contract address to scan it.`
           );
           break;
 
         case "scan":
           if (intent.tokenAddress) {
             const label = intent.tokenName || `${intent.tokenAddress.slice(0, 10)}...`;
-            addMessage("agent", `🔍 Initiating security scan for **${label}**...\n\n_Querying OKX Security API + bytecode analysis + Uniswap V3 liquidity..._`);
+            addMessage("agent", `✦ Initiating security scan for **${label}**...\n\n_Querying OKX Security API + bytecode analysis + Uniswap V3 liquidity..._`);
             
             // Also notify the parent (App -> SwapCard) so it updates the main UI
             if (onScanToken) onScanToken(intent.tokenAddress);
@@ -195,17 +196,17 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
               const data = await res.json();
               if (data.success && data.data) {
                 const sr = data.data;
-                const emoji = sr.riskLevel === "SAFE" ? "🟩" : sr.riskLevel === "HIGH" || sr.riskLevel === "CRITICAL" ? "🟥" : "🟨";
-                const reply = `✅ **Scan Complete: ${label}**\n\n${emoji} **Risk Level:** ${sr.riskLevel} (${sr.riskScore}/100)\n\n**Flags:** ${sr.flags.length}\n**Uniswap V3:** ${sr.uniswapHasPool ? "Active Pool" : "No Liquidity"}\n\n_${sr.flags.length > 0 ? "Check the main Risk Report panel for full alert details." : "Token looks clean. Safe to swap!"}_`;
+                const riskBadge = sr.riskLevel === "SAFE" ? "[SAFE]" : sr.riskLevel === "HIGH" || sr.riskLevel === "CRITICAL" ? "[CRITICAL]" : "[WARNING]";
+                const reply = `✓ **Scan Complete: ${label}**\n\n**Status:** ${riskBadge}\n**Risk Level:** ${sr.riskLevel} (${sr.riskScore}/100)\n\n**Flags:** ${sr.flags.length}\n**Uniswap V3:** ${sr.uniswapHasPool ? "Active Pool" : "No Liquidity"}\n\n_${sr.flags.length > 0 ? "Check the main Risk Report panel for full alert details." : "Token looks clean. Safe to swap!"}_`;
                 addMessage("agent", reply);
               } else {
-                addMessage("agent", "⚠️ Scan failed to retrieve risk metadata.");
+                addMessage("agent", "✕ Scan failed to retrieve risk metadata.");
               }
             } catch (e) {
-              addMessage("agent", "⚠️ Scan timed out or encountered an error.");
+              addMessage("agent", "✕ Scan timed out or encountered an error.");
             }
           } else {
-            addMessage("agent", "⚠️ Couldn't identify the token. Try: \"Scan USDT\" or paste a contract address.");
+            addMessage("agent", "✕ Couldn't identify the token. Try: \"Scan USDT\" or paste a contract address.");
           }
           break;
 
@@ -213,18 +214,18 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
           if (intent.fromToken && intent.toToken && intent.amount && onSwapCommand) {
             addMessage(
               "agent",
-              `🔄 Setting up swap: **${intent.amount} ${intent.fromToken} → ${intent.toToken}**\n\n_Fetching quotes from OKX DEX + Uniswap V3..._`
+              `✦ Setting up swap: **${intent.amount} ${intent.fromToken} → ${intent.toToken}**\n\n_Fetching quotes from OKX DEX + Uniswap V3..._`
             );
             onSwapCommand(intent.fromToken, intent.toToken, intent.amount);
           } else {
-            addMessage("agent", "⚠️ Try: \"Swap 10 USDC to OKB\"");
+            addMessage("agent", "✦ Try: \"Swap 10 USDC to OKB\"");
           }
           break;
 
         case "status":
           addMessage(
             "agent",
-            `✅ **ScanGuard Status:**\n• Agent: Online\n• Chain: XLayer Mainnet (#196)\n• Skills: OKX Security, OKX DEX, Uniswap V3, x402\n• MCP: Ready\n• Scans: Free (demo mode)`
+            `✓ **ScanGuard Status:**\n• Agent: Online\n• Chain: XLayer Mainnet (#196)\n• Skills: OKX Security, OKX DEX, Uniswap V3, x402\n• MCP: Ready\n• Scans: Free (demo mode)`
           );
           break;
 
@@ -233,8 +234,8 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
           addMessage(
             "agent",
             hasPartialAddr
-              ? `⚠️ That address looks incomplete - I need the full 42-character address (0x + 40 hex chars).\n\nPaste the complete address or try:\n• "Scan USDT"\n• "Is USDC safe?"`
-              : `🤔 I didn't understand that. Try:\n• "Is USDT safe?"\n• "Scan USDC"\n• "Swap 10 USDC to OKB"\n• "help"`
+              ? `That address looks incomplete - I need the full 42-character address (0x + 40 hex chars).\n\nPaste the complete address or try:\n• "Scan USDT"\n• "Is USDC safe?"`
+              : `I didn't understand that. Try:\n• "Is USDT safe?"\n• "Scan USDC"\n• "Swap 10 USDC to OKB"\n• "help"`
           );
         }
       }
@@ -254,7 +255,7 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
         whileTap={{ scale: 0.95 }}
         title="ScanGuard Agent Chat"
       >
-        {isOpen ? "✕" : "🤖"}
+        {isOpen ? <CrossIcon size={20} style={{ marginRight: 0 }} /> : <RobotIcon size={24} style={{ marginRight: 0 }} />}
       </motion.button>
 
       {/* Chat Panel */}
