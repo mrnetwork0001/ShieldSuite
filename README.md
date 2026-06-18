@@ -30,7 +30,7 @@ Pitchside AI goes far beyond a simple MVP prediction market. It implements state
 *   **Hardware-Grade Agent Security (TEE):** The autonomous scout runs inside a secure **Trusted Execution Environment (TEE)** using the `okx-agentic-wallet` SDK. Private keys are securely sealed inside hardware enclaves and can never be extracted by the host application.
 *   **OKX NFT Marketplace Indexing:** Dynamic Player Shares are minted as standardized ERC-1155 tokens onchain using [PlayerShares.sol](contracts/contracts/PlayerShares.sol). Standardized metadata is served dynamically via our API endpoint so that player index shares can be indexed, bought, and sold instantly on the **OKX NFT Marketplace**.
 *   **Decentralized, Block-Derived Leaderboard:** Unlike centralized databases, our leaderboard inside [Leaderboard.tsx](packages/shieldswap/src/components/Leaderboard.tsx) queries the X Layer blockchain in real-time. It scans `Deposited` and `AgentDelegated` event logs to fetch active participants, calculate their pool share, and pull TVL and credits directly from the smart contract.
-*   **Professional Live Data Pipeline:** Integrates **Sportradar Soccer API v4** for professional-grade live match data on Mainnet, with ESPN public scoreboard as a fallback. Live scores, match status, and player events feed directly into the TEE Scout Agent for autonomous trading.
+*   **Professional Live Data Pipeline:** Integrates **Sportmonks Football API v3** for professional-grade live World Cup match data on Mainnet. Live scores, match status, and player events feed directly into the TEE Scout Agent for autonomous trading.
 *   **Security-First Aggregator:** ShieldSwap integrates `okx-dex-swap` to search 500+ DEX pools, but intercepts all swaps with ScanGuard MCP to warn users and block toxic token interactions before they hit the blockchain.
 
 ---
@@ -185,14 +185,14 @@ timeline
     title Pitchside AI Road to World Cup 2026
     Q2 2026 : X Cup Hackathon Launch : Stable Testnet Sandbox & Scout Agent
     Q3-Q4 2026 : Mainnet Integration & Auditing : Deploying Production Vaults on X Layer Mainnet with Aave V3 integrations
-    Q1 2027 : Live-Data Pipeline Scaling : Enhancing Sportradar API live event pipelines for multi-language feeds and high-concurrency event parsing
+    Q1 2027 : Live-Data Pipeline Scaling : Enhancing Sportmonks Football API live event pipelines for multi-language feeds and high-concurrency event parsing
     Q2 2027 : World Cup Kickoff Tournament : Official Campaign Launch with real USDT rewards and global marketing
 ```
 
 ### Key Areas of Active Development:
 1. **Production-Grade Audit Readiness:** Auditing the AMM logic in [PlayerDex.sol](contracts/contracts/PlayerDex.sol) and the Aave-integrating No-Loss Vault to support large TVL pools.
 2. **Multi-Agent Staking Systems:** Supporting multi-agent selection where users can delegate to custom AI personalities (e.g., Aggressive Scout, Defensive/Yield-Focused Scout) that run different sentiment analysis logic in independent secure TEE enclaves.
-3. **Sportradar Core Live Pipeline:** Transitioning from the current ESPN public feed fallback to a fully redundant, enterprise-grade Sportradar socket integration to handle up to 64 live tournament matches simultaneously without rate-limit constraints.
+3. **Sportmonks Core Live Pipeline:** Expanding the Sportmonks integration to support real-time web sockets for live matches and high-frequency sentiment tracking.
 4. **Enhanced Security Verification:** Integrating ScanGuard deep bytecode heuristics with active on-chain simulation checks so that agents evaluate risk based on current block-state before routing funds.
 
 ---
@@ -247,7 +247,7 @@ To verify the completion and execution of the Pitchside AI World Cup loop:
 
 1.  **Claim Faucet & Stake:** Connect your wallet, claim 1,000 Mock USDT from the Faucet, and stake USDT in the **No-Loss Vault**.
 2.  **Delegate Agent:** Select the **Active TEE Scout Agent** and click **Confirm Delegation**.
-3.  **Verify Live Data Feed:** Click **Verify Live Data Feed** in the Scout Console to verify real-time match data from Sportradar Soccer API v4. Live matches show with a pulsing red indicator.
+3.  **Verify Live Data Feed:** Click **Verify Live Data Feed** in the Scout Console to verify real-time match data from Sportmonks Football API v3. Live matches show with a pulsing red indicator.
 4.  **Watch Agent React:** The Scout Console will immediately reflect the agent detecting new match events, scanning token bytecode via ScanGuard, and executing transactions on the `PlayerDex` contract.
 5.  **Verify Explorer:** Copy the generated transaction hash and search it on [X Layer Testnet Explorer](https://www.okx.com/explorer/xlayer-test) to verify the TEE Agent called the swap on your behalf.
 6.  **Check the Leaderboard:** The Global Scout Leaderboard shows your ranking, Scout Credits, staked amount, and pool share - all read directly from onchain contract events.

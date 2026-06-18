@@ -29,8 +29,8 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
   const [newsText, setNewsText] = useState("");
   const [isTriggering, setIsTriggering] = useState(false);
   const [agentAddress, setAgentAddress] = useState("");
-  const [espnDemo, setEspnDemo] = useState<{ loading: boolean; results: any[] | null; timestamp: string | null; totalMatches: number; source: string }>({
-    loading: false, results: null, timestamp: null, totalMatches: 0, source: 'espn'
+  const [liveDataFeed, setLiveDataFeed] = useState<{ loading: boolean; results: any[] | null; timestamp: string | null; totalMatches: number; source: string }>({
+    loading: false, results: null, timestamp: null, totalMatches: 0, source: 'sportmonks'
   });
   const consoleLogsRef = useRef<HTMLDivElement>(null);
   const prevLogsLengthRef = useRef(0);
@@ -280,7 +280,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
           </div>
 
           <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.4', margin: '0 0 8px 0' }}>
-            On mainnet, match data auto-syncs from ESPN every 60 seconds during live World Cup matches. Verify the ESPN integration below with currently active leagues.
+            On mainnet, match data auto-syncs every 60 seconds during live World Cup matches. Verify the Live Data integration below.
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', fontSize: '0.72rem' }}>
@@ -288,46 +288,46 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
             <span style={{ color: 'var(--text-secondary)' }}>Auto-Sync: <strong style={{ color: '#00ff88' }}>Active</strong> (every 60s on Mainnet)</span>
           </div>
 
-          {/* ESPN Live Feed Button */}
+          {/* Live Feed Button */}
           <button
             className="btn btn-primary btn-trigger"
             onClick={async () => {
-              setEspnDemo(prev => ({ ...prev, loading: true }));
+              setLiveDataFeed(prev => ({ ...prev, loading: true }));
               try {
-                const res = await fetch(`${API_BASE}/api/worldcup/espn-demo`);
+                const res = await fetch(`${API_BASE}/api/worldcup/matches`);
                 const data = await res.json();
                 if (data.success) {
-                  setEspnDemo({
+                  setLiveDataFeed({
                     loading: false,
                     results: data.data,
                     timestamp: data.timestamp,
                     totalMatches: data.data.reduce((sum: number, r: any) => sum + r.matchCount, 0),
-                    source: data.source || 'espn',
+                    source: data.source || 'live',
                   });
                   onActivityLog({
-                    id: `espn-demo-${Date.now()}`,
+                    id: `live-feed-${Date.now()}`,
                     timestamp: Date.now(),
                     type: "info",
                     message: data.message
                   });
                 }
               } catch (err: any) {
-                console.error("ESPN demo failed:", err);
-                setEspnDemo(prev => ({ ...prev, loading: false }));
+                console.error("Live feed verification failed:", err);
+                setLiveDataFeed(prev => ({ ...prev, loading: false }));
               }
             }}
-            disabled={espnDemo.loading}
+            disabled={liveDataFeed.loading}
             style={{ background: 'linear-gradient(135deg, #4B7BF5 0%, #A855F7 100%)', borderColor: '#4B7BF5', color: '#fff' }}
           >
-            {espnDemo.loading ? "Fetching live match data..." : "📡 Verify Live Data Feed"}
+            {liveDataFeed.loading ? "Fetching live match data..." : "📡 Verify Live Data Feed"}
           </button>
         </div>
       )}
 
-      {/* ESPN Results Modal */}
-      {espnDemo.results && (
+      {/* Sportmonks Results Modal */}
+      {liveDataFeed.results && (
         <div
-          onClick={() => setEspnDemo(prev => ({ ...prev, results: null }))}
+          onClick={() => setLiveDataFeed(prev => ({ ...prev, results: null }))}
           style={{
             position: 'fixed', inset: 0, zIndex: 9999,
             background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
@@ -336,7 +336,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="espn-modal-inner"
+            className="live-data-modal-inner"
             style={{
               background: 'linear-gradient(135deg, rgba(15,20,35,0.98), rgba(20,28,50,0.98))',
               border: '1px solid rgba(75,123,245,0.3)',
@@ -353,14 +353,14 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700', color: '#fff' }}>
-                  {espnDemo.source === 'sportradar' ? '📡 Sportradar Live Data' : '📡 ESPN Live Data Pipeline'}
+                  📡 Live Match Data Feed
                 </h3>
                 <p style={{ margin: '4px 0 0', fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
-                  {espnDemo.source === 'sportradar' ? 'Powered by Sportradar Soccer API v4' : 'ESPN Public API'} · Verified at {new Date(espnDemo.timestamp!).toLocaleTimeString()}
+                  Verified at {new Date(liveDataFeed.timestamp!).toLocaleTimeString()}
                 </p>
               </div>
               <button
-                onClick={() => setEspnDemo(prev => ({ ...prev, results: null }))}
+                onClick={() => setLiveDataFeed(prev => ({ ...prev, results: null }))}
                 style={{
                   background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-default)',
                   borderRadius: '8px', color: '#fff', fontSize: '1.2rem', cursor: 'pointer',
@@ -381,13 +381,13 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
             }}>
               <span style={{ fontSize: '1.1rem' }}>✅</span>
               <span style={{ fontSize: '0.78rem', color: '#fff' }}>
-                <strong style={{ color: '#00ff88' }}>{espnDemo.totalMatches} matches</strong> fetched across <strong>{espnDemo.results.length} leagues</strong>
+                <strong style={{ color: '#00ff88' }}>{liveDataFeed.totalMatches} matches</strong> fetched across <strong>{liveDataFeed.results.length} leagues</strong>
               </span>
             </div>
 
             {/* League Cards */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {espnDemo.results.map((league: any) => (
+              {liveDataFeed.results.map((league: any) => (
                 <div key={league.leagueId} style={{
                   padding: '12px 14px', borderRadius: '10px', overflow: 'hidden',
                   background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-default)',
@@ -487,10 +487,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
 
             {/* Footer */}
             <div style={{ marginTop: '16px', padding: '10px 12px', background: 'rgba(75,123,245,0.05)', borderRadius: '8px', border: '1px solid rgba(75,123,245,0.1)', textAlign: 'center', fontSize: '0.68rem', color: 'var(--text-tertiary)', lineHeight: '1.5' }}>
-              {espnDemo.source === 'sportradar'
-                ? <><strong style={{ color: 'var(--accent-blue)' }}>Sportradar Soccer API v4</strong> - professional-grade live match data.<br />Real-time player events auto-trigger onchain trades via the AI Scout Agent.</>
-                : <>📡 Live data from ESPN Public API - shows the most recent matchday results.<br />During World Cup, live scores auto-sync every 60s and trigger onchain trades.</>
-              }
+              <strong style={{ color: 'var(--accent-blue)' }}>Real-time Live Data Pipeline</strong> - professional-grade live World Cup 2026 match data.<br />During World Cup, live scores auto-sync every 60s and trigger onchain trades.
             </div>
           </div>
         </div>

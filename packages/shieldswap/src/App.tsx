@@ -1155,8 +1155,8 @@ const App: React.FC = () => {
             gap: 10px !important;
           }
 
-          /* Responsive ESPN Modal */
-          .espn-modal-inner {
+          /* Responsive Live Data Modal */
+          .live-data-modal-inner {
             padding: 16px !important;
             border-radius: 12px !important;
             max-width: 95% !important;

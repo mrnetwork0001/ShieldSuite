@@ -102,7 +102,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
     const fetchMatches = async () => {
       try {
         const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "";
-        const res = await fetch(`${API_BASE}/api/worldcup/espn-demo`);
+        const res = await fetch(`${API_BASE}/api/worldcup/matches`);
         const json = await res.json();
         
         if (json.success && json.data) {
@@ -402,7 +402,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             <div className="step-num font-mono">03</div>
             <h3>Delegate & Speculate</h3>
             <p>
-              Delegate your Scout Credits to our **TEE-isolated AI Scout Agent**. The agent reads ESPN & Sportradar live scores, parses sports sentiment, scans token bytecode, and trades player index shares on your behalf.
+              Delegate your Scout Credits to our **TEE-isolated AI Scout Agent**. The agent reads real-time live match scores, parses sports sentiment, scans token bytecode, and trades player index shares on your behalf.
             </p>
           </motion.div>
         </div>
