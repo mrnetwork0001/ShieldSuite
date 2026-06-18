@@ -5,32 +5,140 @@ interface LandingPageProps {
   setActiveTab: (tab: "home" | "swap" | "pitchside") => void;
 }
 
-const fixturesData = [
-  { id: 1, homeTeam: "United States", homeFlag: "🇺🇸", awayTeam: "England", awayFlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", date: "June 22, 2026", time: "20:00 UTC", stadium: "MetLife Stadium, NY/NJ", group: "Group B" },
-  { id: 2, homeTeam: "Mexico", homeFlag: "🇲🇽", awayTeam: "Argentina", awayFlag: "🇦🇷", date: "June 23, 2026", time: "18:00 UTC", stadium: "Estadio Azteca, Mexico City", group: "Group A" },
-  { id: 3, homeTeam: "Canada", homeFlag: "🇨🇦", awayTeam: "Germany", awayFlag: "🇩🇪", date: "June 24, 2026", time: "16:00 UTC", stadium: "BC Place, Vancouver", group: "Group F" },
-  { id: 4, homeTeam: "Brazil", homeFlag: "🇧🇷", awayTeam: "France", awayFlag: "🇫🇷", date: "June 25, 2026", time: "21:00 UTC", stadium: "SoFi Stadium, Los Angeles", group: "Group C" },
-  { id: 5, homeTeam: "Spain", homeFlag: "🇪🇸", awayTeam: "Japan", awayFlag: "🇯🇵", date: "June 26, 2026", time: "19:00 UTC", stadium: "Hard Rock Stadium, Miami", group: "Group E" }
+const mockFixtures = [
+  { id: "mock-f1", homeTeam: "United States", awayTeam: "England", date: "June 22, 2026", time: "20:00 UTC", stadium: "MetLife Stadium, NY/NJ", group: "Group B" },
+  { id: "mock-f2", homeTeam: "Mexico", awayTeam: "Argentina", date: "June 23, 2026", time: "18:00 UTC", stadium: "Estadio Azteca, Mexico City", group: "Group A" },
+  { id: "mock-f3", homeTeam: "Canada", awayTeam: "Germany", date: "June 24, 2026", time: "16:00 UTC", stadium: "BC Place, Vancouver", group: "Group F" },
+  { id: "mock-f4", homeTeam: "Brazil", awayTeam: "France", date: "June 25, 2026", time: "21:00 UTC", stadium: "SoFi Stadium, Los Angeles", group: "Group C" },
+  { id: "mock-f5", homeTeam: "Spain", awayTeam: "Japan", date: "June 26, 2026", time: "19:00 UTC", stadium: "Hard Rock Stadium, Miami", group: "Group E" }
 ];
 
-const liveMatchesData = [
-  { id: 101, homeTeam: "Spain", homeFlag: "🇪🇸", awayTeam: "Italy", awayFlag: "🇮🇹", homeScore: 2, awayScore: 1, minute: "78'", status: "LIVE", event: "Goal by Pedri 72'" },
-  { id: 102, homeTeam: "England", homeFlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", awayTeam: "Netherlands", awayFlag: "🇳🇱", homeScore: 1, awayScore: 1, minute: "42'", status: "LIVE", event: "Penalty shootout setup pending" },
-  { id: 103, homeTeam: "Portugal", homeFlag: "🇵🇹", awayTeam: "Croatia", awayFlag: "🇭🇷", homeScore: 0, awayScore: 0, minute: "15'", status: "LIVE", event: "Yellow card to Modric 12'" },
-  { id: 104, homeTeam: "Argentina", homeFlag: "🇦🇷", awayTeam: "Uruguay", awayFlag: "🇺🇾", homeScore: 3, awayScore: 2, minute: "90+2'", status: "LIVE", event: "Stoppage time drama!" },
+const mockLiveMatches = [
+  { id: "mock-l1", homeTeam: "Spain", awayTeam: "Italy", homeScore: 2, awayScore: 1, minute: "78'", status: "LIVE", event: "Goal by Pedri 72'" },
+  { id: "mock-l2", homeTeam: "England", awayTeam: "Netherlands", homeScore: 1, awayScore: 1, minute: "42'", status: "LIVE", event: "Penalty shootout setup pending" },
+  { id: "mock-l3", homeTeam: "Portugal", awayTeam: "Croatia", homeScore: 0, awayScore: 0, minute: "15'", status: "LIVE", event: "Yellow card to Modric 12'" },
+  { id: "mock-l4", homeTeam: "Argentina", awayTeam: "Uruguay", homeScore: 3, awayScore: 2, minute: "90+2'", status: "LIVE", event: "Stoppage time drama!" },
 ];
+
+function getFlagUrl(teamName: string): string {
+  const name = teamName.toLowerCase();
+  let code = "un"; // default United Nations globe
+
+  if (name.includes("united states") || name.includes("usa") || name.includes("la galaxy")) code = "us";
+  else if (name.includes("england") || name.includes("chelsea") || name.includes("arsenal") || name.includes("manchester")) code = "gb-eng";
+  else if (name.includes("mexico") || name.includes("america") || name.includes("chivas")) code = "mx";
+  else if (name.includes("argentina") || name.includes("boca") || name.includes("river")) code = "ar";
+  else if (name.includes("canada") || name.includes("vancouver") || name.includes("toronto")) code = "ca";
+  else if (name.includes("germany") || name.includes("bayern") || name.includes("dortmund")) code = "de";
+  else if (name.includes("brazil") || name.includes("flamengo") || name.includes("santos")) code = "br";
+  else if (name.includes("france") || name.includes("psg") || name.includes("marseille")) code = "fr";
+  else if (name.includes("spain") || name.includes("barcelona") || name.includes("madrid")) code = "es";
+  else if (name.includes("japan") || name.includes("tokyo")) code = "jp";
+  else if (name.includes("italy") || name.includes("juventus") || name.includes("milan") || name.includes("inter")) code = "it";
+  else if (name.includes("croatia") || name.includes("zagreb")) code = "hr";
+  else if (name.includes("uruguay") || name.includes("penarol")) code = "uy";
+  else if (name.includes("netherlands") || name.includes("ajax") || name.includes("psv")) code = "nl";
+  else if (name.includes("portugal") || name.includes("benfica") || name.includes("porto")) code = "pt";
+  else if (name.includes("senegal")) code = "sn";
+  else if (name.includes("china")) code = "cn";
+  else if (name.includes("korea")) code = "kr";
+  else if (name.includes("morocco")) code = "ma";
+  else if (name.includes("colombia")) code = "co";
+  else if (name.includes("belgium")) code = "be";
+  else if (name.includes("switzerland")) code = "ch";
+  else if (name.includes("denmark")) code = "dk";
+  else if (name.includes("sweden")) code = "se";
+  else if (name.includes("poland")) code = "pl";
+  else if (name.includes("ukraine")) code = "ua";
+  else if (name.includes("austria")) code = "at";
+  else if (name.includes("wales")) code = "gb-wls";
+  else if (name.includes("scotland")) code = "gb-sct";
+  else if (name.includes("turkey")) code = "tr";
+
+  if (code === "un") {
+    return "https://flagcdn.com/w80/un.png";
+  }
+  return `https://flagcdn.com/w80/${code}.png`;
+}
 
 export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
+  const [fixtures, setFixtures] = useState<any[]>(mockFixtures);
+  const [liveMatches, setLiveMatches] = useState<any[]>(mockLiveMatches);
   const [currentFixtureIndex, setCurrentFixtureIndex] = useState(0);
 
+  // ── Auto-slide Timer ────────────────────────────────────────────────
   useEffect(() => {
+    if (fixtures.length === 0) return;
     const timer = setInterval(() => {
-      setCurrentFixtureIndex((prev) => (prev + 1) % fixturesData.length);
+      setCurrentFixtureIndex((prev) => (prev + 1) % fixtures.length);
     }, 3000);
     return () => clearInterval(timer);
+  }, [fixtures.length]);
+
+  // ── Fetch Matches API ────────────────────────────────────────────────
+  useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "";
+        const res = await fetch(`${API_BASE}/api/worldcup/espn-demo`);
+        const json = await res.json();
+        
+        if (json.success && json.data) {
+          const allMatches: any[] = [];
+          json.data.forEach((league: any) => {
+            league.matches.forEach((m: any) => {
+              allMatches.push({
+                ...m,
+                leagueName: league.league
+              });
+            });
+          });
+
+          // Separate live and scheduled
+          const live = allMatches.filter(m => m.status === "LIVE");
+          const scheduled = allMatches.filter(m => m.status === "SCHEDULED" || m.status === "FINISHED");
+
+          if (scheduled.length > 0) {
+            const mappedScheduled = scheduled.map((m, idx) => ({
+              id: `api-sched-${idx}`,
+              homeTeam: m.home,
+              awayTeam: m.away,
+              date: m.date ? new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "TBD Date",
+              time: m.date ? new Date(m.date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }) + " UTC" : "TBD Time",
+              stadium: m.venue || "Global Stadium",
+              group: m.leagueName || "Group Stage"
+            }));
+            setFixtures(mappedScheduled);
+          }
+
+          if (live.length > 0) {
+            const mappedLive = live.map((m, idx) => {
+              const scores = m.score ? m.score.split("-") : ["0", "0"];
+              return {
+                id: `api-live-${idx}`,
+                homeTeam: m.home,
+                awayTeam: m.away,
+                homeScore: parseInt(scores[0]) || 0,
+                awayScore: parseInt(scores[1]) || 0,
+                minute: m.minute ? `${m.minute}'` : "LIVE",
+                status: "LIVE",
+                event: `Match in progress at ${m.venue || 'Stadium'}`
+              };
+            });
+            setLiveMatches(mappedLive);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch live matches:", err);
+      }
+    };
+
+    fetchMatches();
+    const interval = setInterval(fetchMatches, 30000); // poll every 30s
+    return () => clearInterval(interval);
   }, []);
 
-  const activeFixture = fixturesData[currentFixtureIndex];
+  const activeFixture = fixtures[currentFixtureIndex] || mockFixtures[0];
 
   return (
     <div className="landing-container">
@@ -114,48 +222,50 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         <div className="hero-right">
           <div className="fixtures-card glass-card">
             <div className="fixtures-card-glow" />
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentFixtureIndex}
-                initial={{ opacity: 0, x: 15 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -15 }}
-                transition={{ duration: 0.3 }}
-                className="fixture-slide-content"
-              >
-                <div className="fixtures-header">
-                  <span className="fixture-tag font-mono">📅 UPCOMING FIXTURE</span>
-                  <span className="group-badge font-mono">{activeFixture.group}</span>
-                </div>
+            {fixtures.length > 0 && (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentFixtureIndex}
+                  initial={{ opacity: 0, x: 15 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -15 }}
+                  transition={{ duration: 0.3 }}
+                  className="fixture-slide-content"
+                >
+                  <div className="fixtures-header">
+                    <span className="fixture-tag font-mono">📅 UPCOMING FIXTURE</span>
+                    <span className="group-badge font-mono">{activeFixture.group}</span>
+                  </div>
 
-                <div className="matchup-container">
-                  <div className="team-display">
-                    <span className="team-flag">{activeFixture.homeFlag}</span>
-                    <span className="team-name">{activeFixture.homeTeam}</span>
+                  <div className="matchup-container">
+                    <div className="team-display">
+                      <img src={getFlagUrl(activeFixture.homeTeam)} alt={activeFixture.homeTeam} className="team-flag-img" />
+                      <span className="team-name">{activeFixture.homeTeam}</span>
+                    </div>
+                    <div className="vs-badge font-mono">VS</div>
+                    <div className="team-display">
+                      <img src={getFlagUrl(activeFixture.awayTeam)} alt={activeFixture.awayTeam} className="team-flag-img" />
+                      <span className="team-name">{activeFixture.awayTeam}</span>
+                    </div>
                   </div>
-                  <div className="vs-badge font-mono">VS</div>
-                  <div className="team-display">
-                    <span className="team-flag">{activeFixture.awayFlag}</span>
-                    <span className="team-name">{activeFixture.awayTeam}</span>
-                  </div>
-                </div>
 
-                <div className="fixture-details">
-                  <div className="detail-row">
-                    <span className="detail-label">Stadium:</span>
-                    <span className="detail-value">{activeFixture.stadium}</span>
+                  <div className="fixture-details">
+                    <div className="detail-row">
+                      <span className="detail-label">Stadium:</span>
+                      <span className="detail-value">{activeFixture.stadium}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">Date:</span>
+                      <span className="detail-value">{activeFixture.date}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">Time:</span>
+                      <span className="detail-value">{activeFixture.time}</span>
+                    </div>
                   </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Date:</span>
-                    <span className="detail-value">{activeFixture.date}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Time:</span>
-                    <span className="detail-value">{activeFixture.time}</span>
-                  </div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
+                </motion.div>
+              </AnimatePresence>
+            )}
 
             <button 
               className="speculate-card-btn font-mono"
@@ -175,19 +285,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         </div>
         <div className="live-ticker-scroll-container">
           <div className="live-ticker-wrapper">
-            {liveMatchesData.map((match) => (
+            {liveMatches.map((match) => (
               <div key={match.id} className="live-match-card" onClick={() => setActiveTab("pitchside")}>
                 <div className="live-match-meta">
                   <span className="live-badge font-mono">LIVE {match.minute}</span>
                 </div>
                 <div className="live-matchup-row">
                   <div className="live-team">
-                    <span className="live-flag">{match.homeFlag}</span>
+                    <img src={getFlagUrl(match.homeTeam)} alt={match.homeTeam} className="live-flag-img" />
                     <span className="live-team-name">{match.homeTeam}</span>
                   </div>
                   <div className="live-score font-mono">{match.homeScore} - {match.awayScore}</div>
                   <div className="live-team">
-                    <span className="live-flag">{match.awayFlag}</span>
+                    <img src={getFlagUrl(match.awayTeam)} alt={match.awayTeam} className="live-flag-img" />
                     <span className="live-team-name">{match.awayTeam}</span>
                   </div>
                 </div>
@@ -197,7 +307,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           </div>
         </div>
       </section>
-
 
       {/* The Ecosystem Loop Section */}
       <section className="landing-section">
@@ -619,9 +728,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           flex: 1;
         }
 
-        .team-flag {
-          font-size: 2.2rem;
-          line-height: 1;
+        .team-flag-img {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 2px solid rgba(255, 255, 255, 0.15);
+          box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
         }
 
         .team-name {
@@ -792,7 +905,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         .live-team {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
           flex: 1;
         }
 
@@ -800,8 +913,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           justify-content: flex-end;
         }
 
-        .live-flag {
-          font-size: 1.25rem;
+        .live-flag-img {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 1.5px solid rgba(255, 255, 255, 0.15);
         }
 
         .live-team-name {
