@@ -15,6 +15,7 @@ import { PlayerMarket } from "./components/PlayerMarket";
 import { ScoutConsole } from "./components/ScoutConsole";
 import { Leaderboard } from "./components/Leaderboard";
 import { LandingPage } from "./components/LandingPage";
+import { DocsPage } from "./components/DocsPage";
 
 const INITIAL_WALLET: WalletState = {
   connected: false,
@@ -30,7 +31,7 @@ const App: React.FC = () => {
   const [wallet, setWallet] = useState<WalletState>(INITIAL_WALLET);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [showReport, setShowReport] = useState(false);
-  const [activeTab, setActiveTab] = useState<"home" | "swap" | "pitchside">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "docs" | "swap" | "pitchside">("home");
   const [instructionsExpanded, setInstructionsExpanded] = useState(false);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([
     {
@@ -215,6 +216,8 @@ const App: React.FC = () => {
       <main className="main-content">
         {activeTab === "home" ? (
           <LandingPage setActiveTab={setActiveTab} />
+        ) : activeTab === "docs" ? (
+          <DocsPage setActiveTab={setActiveTab} />
         ) : activeTab === "swap" ? (
           <>
             {/* Hero text */}
@@ -424,7 +427,7 @@ const App: React.FC = () => {
         )}
 
         {/* Agent Activity Log */}
-        {activeTab !== "home" && (
+        {activeTab !== "home" && activeTab !== "docs" && (
           <motion.div
             className={`activity-log glass-card ${activeTab === 'pitchside' ? 'hide-on-mobile-pitchside' : ''}`}
             initial={{ opacity: 0, y: 20 }}

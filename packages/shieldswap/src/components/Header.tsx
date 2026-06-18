@@ -12,8 +12,8 @@ interface HeaderProps {
   wallet: WalletState;
   onConnect: () => void;
   onDisconnect: () => void;
-  activeTab: "home" | "swap" | "pitchside";
-  setActiveTab: (tab: "home" | "swap" | "pitchside") => void;
+  activeTab: "home" | "docs" | "swap" | "pitchside";
+  setActiveTab: (tab: "home" | "docs" | "swap" | "pitchside") => void;
 }
 
 interface TxHistoryItem {
@@ -106,17 +106,29 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
           >
             🏠 Home
           </button>
+          
+          {(activeTab === "swap" || activeTab === "pitchside") && (
+            <>
+              <button
+                className={`tab-btn ${activeTab === "swap" ? "active" : ""}`}
+                onClick={() => setActiveTab("swap")}
+              >
+                🛡️ ShieldSwap
+              </button>
+              <button
+                className={`tab-btn ${activeTab === "pitchside" ? "active" : ""}`}
+                onClick={() => setActiveTab("pitchside")}
+              >
+                ⚽ Pitchside AI
+              </button>
+            </>
+          )}
+
           <button
-            className={`tab-btn ${activeTab === "swap" ? "active" : ""}`}
-            onClick={() => setActiveTab("swap")}
+            className={`tab-btn ${activeTab === "docs" ? "active" : ""}`}
+            onClick={() => setActiveTab("docs")}
           >
-            🛡️ ShieldSwap
-          </button>
-          <button
-            className={`tab-btn ${activeTab === "pitchside" ? "active" : ""}`}
-            onClick={() => setActiveTab("pitchside")}
-          >
-            ⚽ Pitchside AI
+            📄 Docs
           </button>
         </div>
 
@@ -348,16 +360,27 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                         onClick={() => { setActiveTab('home'); setMobileMenuOpen(false); }}
                         style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
                       >🏠 Home</button>
+
+                      {(activeTab === "swap" || activeTab === "pitchside") && (
+                        <>
+                          <button 
+                            className={`nav-link-item ${activeTab === 'swap' ? 'active' : ''}`}
+                            onClick={() => { setActiveTab('swap'); setMobileMenuOpen(false); }}
+                            style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                          >🛡️ ShieldSwap</button>
+                          <button 
+                            className={`nav-link-item ${activeTab === 'pitchside' ? 'active' : ''}`}
+                            onClick={() => { setActiveTab('pitchside'); setMobileMenuOpen(false); }}
+                            style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                          >⚽ Pitchside AI</button>
+                        </>
+                      )}
+
                       <button 
-                        className={`nav-link-item ${activeTab === 'swap' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('swap'); setMobileMenuOpen(false); }}
+                        className={`nav-link-item ${activeTab === 'docs' ? 'active' : ''}`}
+                        onClick={() => { setActiveTab('docs'); setMobileMenuOpen(false); }}
                         style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
-                      >🛡️ ShieldSwap</button>
-                      <button 
-                        className={`nav-link-item ${activeTab === 'pitchside' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('pitchside'); setMobileMenuOpen(false); }}
-                        style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
-                      >⚽ Pitchside AI</button>
+                      >📄 Docs</button>
                       <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
                       <a href="https://x.com/encrypt_wizard" target="_blank" className="nav-link-item">Twitter / X</a>
                     </div>
