@@ -198,34 +198,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         </div>
       </section>
 
-      {/* Metrics Section */}
-      <section className="landing-metrics">
-        <div className="metrics-grid">
-          {[
-            { label: "NO-LOSS VAULT TVL", value: "$1,482,900", icon: "🏦", color: "var(--accent-safe)" },
-            { label: "LIFETIME TOKENS SCANNED", value: "2,223", icon: "🔍", color: "var(--accent-blue)" },
-            { label: "TEE ENCLAVE UPTIME", value: "99.98%", icon: "⚡", color: "var(--accent-purple)" },
-            { label: "ACTIVE AI AGENTS", value: "11/11", icon: "🤖", color: "#FFB020" },
-          ].map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              className="glass-card metric-card"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 * i }}
-              whileHover={{ y: -5, borderColor: stat.color }}
-            >
-              <div className="metric-header">
-                <span className="metric-icon">{stat.icon}</span>
-                <span className="metric-label">{stat.label}</span>
-              </div>
-              <div className="metric-value font-mono" style={{ color: stat.color }}>
-                {stat.value}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
 
       {/* The Ecosystem Loop Section */}
       <section className="landing-section">
