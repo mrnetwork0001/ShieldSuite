@@ -366,8 +366,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
 
       {/* The Ecosystem Loop Section */}
       <section className="landing-section">
-        <h2 className="section-title">⚽ Pitchside AI: No-Loss Speculation Loop</h2>
-        <p className="section-subtitle">
+        <h2 className="section-title text-center">⚽ Pitchside AI: No-Loss Speculation Loop</h2>
+        <p className="section-subtitle text-center">
           How it works: Speculate on the World Cup 2026 risk-free using principal-protected staking.
         </p>
 
@@ -382,7 +382,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             <div className="step-num font-mono">01</div>
             <h3>Principal-Protected Staking</h3>
             <p>
-              Deposit stablecoins (USDT/USDC) into our **No-Loss Vault**. On mainnet, funds are securely supplied directly into **Aave V3 Pools** to generate interest. Your principal remains 100% safe and withdrawable at any moment.
+              Deposit stablecoins (USDT/USDC) into our <strong>No-Loss Vault</strong>. On mainnet, funds are securely supplied directly into <strong>Aave V3 Pools</strong> to generate interest. Your principal remains 100% safe and withdrawable at any moment.
             </p>
           </motion.div>
 
@@ -396,7 +396,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             <div className="step-num font-mono">02</div>
             <h3>Earn Virtual Scout Credits</h3>
             <p>
-              Your staked stablecoins continuously earn virtual interest in the form of **Scout Credits**. These credits tick upward in real-time on your dashboard and represent your delegation and speculation power.
+              Your staked stablecoins continuously earn virtual interest in the form of <strong>Scout Credits</strong>. These credits tick upward in real-time on your dashboard and represent your delegation and speculation power.
             </p>
           </motion.div>
 
@@ -410,7 +410,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             <div className="step-num font-mono">03</div>
             <h3>Delegate & Speculate</h3>
             <p>
-              Delegate your Scout Credits to our **TEE-isolated AI Scout Agent**. The agent reads real-time live match scores, parses sports sentiment, scans token bytecode, and trades player index shares on your behalf.
+              Delegate your Scout Credits to our <strong>TEE-isolated AI Scout Agent</strong>. The agent reads real-time live match scores, parses sports sentiment, scans token bytecode, and trades player index shares on your behalf.
             </p>
           </motion.div>
         </div>
@@ -419,7 +419,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
       {/* ScanGuard & Security Core Section */}
       <section className="landing-section layout-split">
         <div className="split-text">
-          <h2 className="section-title">🛡️ ScanGuard & ShieldSwap DEX Aggregator</h2>
+          <h2 className="section-title text-center">🛡️ ScanGuard & ShieldSwap DEX Aggregator</h2>
           <p className="section-desc-para">
             Traditional DEX routers execute swaps blindly. ShieldSuite intercepts transactions with a native security guard before they can harm your wallet.
           </p>
@@ -475,34 +475,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         </motion.div>
       </section>
 
-      {/* Diagram Section */}
-      <section className="landing-section diagram-section text-center">
-        <h2 className="section-title">⛓️ Core Architecture Flow</h2>
-        <div className="glass-card diagram-wrapper">
-          <div className="diagram-node user">
-            <div className="node-icon">👤</div>
-            <div>User Wallet</div>
-          </div>
-          <div className="diagram-arrow">➔</div>
-          <div className="diagram-node vault">
-            <div className="node-icon">🏦</div>
-            <div>No-Loss Vault</div>
-            <small>Aave V3 Staking</small>
-          </div>
-          <div className="diagram-arrow">➔</div>
-          <div className="diagram-node agent">
-            <div className="node-icon">🤖</div>
-            <div>Scout Agent (TEE)</div>
-            <small>okx-agentic-wallet</small>
-          </div>
-          <div className="diagram-arrow">➔</div>
-          <div className="diagram-node mcp">
-            <div className="node-icon">🛡️</div>
-            <div>ScanGuard MCP</div>
-            <small>x402 Pay-Per-Scan</small>
-          </div>
-        </div>
-      </section>
+
 
       {/* Call to Action Footer */}
       <section className="landing-cta-bottom text-center">
@@ -1078,6 +1051,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           padding: 32px 28px;
           display: flex;
           flex-direction: column;
+          align-items: center;
+          text-align: center;
           gap: 12px;
         }
 
@@ -1208,47 +1183,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         .term-line.warning { color: #FFB020; }
         .term-line.danger { color: #FF3B5C; }
 
-        /* Diagram style */
-        .diagram-wrapper {
-          display: flex;
-          align-items: center;
-          justify-content: space-around;
-          padding: 40px 20px;
-          flex-wrap: wrap;
-          gap: 20px;
-        }
 
-        .diagram-node {
-          background: rgba(255, 255, 255, 0.01);
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-md);
-          padding: 16px 20px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 6px;
-          min-width: 160px;
-        }
-
-        .node-icon {
-          font-size: 1.8rem;
-        }
-
-        .diagram-node div {
-          font-size: 0.9rem;
-          font-weight: 700;
-          color: #fff;
-        }
-
-        .diagram-node small {
-          font-size: 0.7rem;
-          color: var(--text-tertiary);
-        }
-
-        .diagram-arrow {
-          font-size: 1.5rem;
-          color: var(--text-tertiary);
-        }
 
         /* Bottom CTA */
         .cta-card {
