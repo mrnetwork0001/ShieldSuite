@@ -9,15 +9,16 @@
 1. [🏆 Why Pitchside AI Wins (Judge Checklist)](#-why-pitchside-ai-wins-judge-checklist)
 2. [🚨 The Problem & Our Solution](#-the-problem--our-solution)
 3. [🏗️ Ecosystem Components](#-ecosystem-components)
-4. [⚽ Pitchside AI - Autonomous World Cup Speculation (New Feature)](#-pitchside-ai--autonomous-world-cup-speculation-new-feature)
+4. [⚽ Pitchside AI - Autonomous World Cup Speculation](#-pitchside-ai--autonomous-world-cup-speculation)
 5. [🤖 Autonomous AI Agent (TEE)](#-autonomous-ai-agent-tee)
 6. [🔌 OnchainOS Integration Deep-Dive](#-onchainos-integration-deep-dive)
 7. [💳 x402 Agent Economy](#-x402-agent-economy)
 8. [🔧 Model Context Protocol (MCP)](#-model-context-protocol-mcp)
-9. [⚓ Smart Contract Deployments](#-smart-contract-deployments)
-10. [⚙️ Local Setup & Testing](#-local-setup--testing)
-11. [🧐 Onchain Verification for Judges](#-onchain-verification-for-judges)
-12. [🌐 Live Endpoints & Infrastructure](#-live-endpoints-and-infrastructure)
+9. [🚀 Active Development & Road to World Cup 2026](#-active-development--road-to-world-cup-2026)
+10. [⚓ Smart Contract Deployments](#-smart-contract-deployments)
+11. [⚙️ Local Setup & Testing](#-local-setup--testing)
+12. [🧐 Onchain Verification for Judges](#-onchain-verification-for-judges)
+13. [🌐 Live Endpoints & Infrastructure](#-live-endpoints-and-infrastructure)
 
 ---
 
@@ -76,7 +77,7 @@ A TEE-isolated Node.js loop running the autonomous agent scripts.
 
 ---
 
-## ⚽ Pitchside AI - Autonomous World Cup Speculation (New Feature)
+## ⚽ Pitchside AI - Autonomous World Cup Speculation
 
 **Pitchside AI** is a World Cup-themed expansion developed specifically for the **X Layer X Cup Hackathon**. It builds on top of Shield Suite's core security layers, adding no-loss staking and dynamic index token speculation:
 
@@ -170,6 +171,29 @@ curl -X POST http://38.49.216.120:3402/mcp/tools/call \
   }
 }
 ```
+
+---
+
+## 🚀 Active Development & Road to World Cup 2026
+
+ShieldSuite and Pitchside AI are not just hackathon submissions—they are actively maintained projects on a direct roadmap to mainnet deployment ahead of the **FIFA World Cup 2026**.
+
+### 🗓️ Development Roadmap
+
+```mermaid
+timeline
+    title Pitchside AI Road to World Cup 2026
+    Q2 2026 : X Cup Hackathon Launch : Stable Testnet Sandbox & Scout Agent
+    Q3-Q4 2026 : Mainnet Integration & Auditing : Deploying Production Vaults on X Layer Mainnet with Aave V3 integrations
+    Q1 2027 : Live-Data Pipeline Scaling : Enhancing Sportradar API live event pipelines for multi-language feeds and high-concurrency event parsing
+    Q2 2027 : World Cup Kickoff Tournament : Official Campaign Launch with real USDT rewards and global marketing
+```
+
+### Key Areas of Active Development:
+1. **Production-Grade Audit Readiness:** Auditing the AMM logic in [PlayerDex.sol](contracts/contracts/PlayerDex.sol) and the Aave-integrating No-Loss Vault to support large TVL pools.
+2. **Multi-Agent Staking Systems:** Supporting multi-agent selection where users can delegate to custom AI personalities (e.g., Aggressive Scout, Defensive/Yield-Focused Scout) that run different sentiment analysis logic in independent secure TEE enclaves.
+3. **Sportradar Core Live Pipeline:** Transitioning from the current ESPN public feed fallback to a fully redundant, enterprise-grade Sportradar socket integration to handle up to 64 live tournament matches simultaneously without rate-limit constraints.
+4. **Enhanced Security Verification:** Integrating ScanGuard deep bytecode heuristics with active on-chain simulation checks so that agents evaluate risk based on current block-state before routing funds.
 
 ---
 

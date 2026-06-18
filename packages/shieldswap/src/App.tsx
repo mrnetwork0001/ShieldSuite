@@ -14,6 +14,7 @@ import { VaultPanel } from "./components/VaultPanel";
 import { PlayerMarket } from "./components/PlayerMarket";
 import { ScoutConsole } from "./components/ScoutConsole";
 import { Leaderboard } from "./components/Leaderboard";
+import { LandingPage } from "./components/LandingPage";
 
 const INITIAL_WALLET: WalletState = {
   connected: false,
@@ -29,7 +30,7 @@ const App: React.FC = () => {
   const [wallet, setWallet] = useState<WalletState>(INITIAL_WALLET);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [showReport, setShowReport] = useState(false);
-  const [activeTab, setActiveTab] = useState<"swap" | "pitchside">("swap");
+  const [activeTab, setActiveTab] = useState<"home" | "swap" | "pitchside">("home");
   const [instructionsExpanded, setInstructionsExpanded] = useState(false);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([
     {
@@ -212,7 +213,9 @@ const App: React.FC = () => {
       />
 
       <main className="main-content">
-        {activeTab === "swap" ? (
+        {activeTab === "home" ? (
+          <LandingPage setActiveTab={setActiveTab} />
+        ) : activeTab === "swap" ? (
           <>
             {/* Hero text */}
             <motion.div
@@ -421,46 +424,48 @@ const App: React.FC = () => {
         )}
 
         {/* Agent Activity Log */}
-        <motion.div
-          className={`activity-log glass-card ${activeTab === 'pitchside' ? 'hide-on-mobile-pitchside' : ''}`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <div className="activity-log-header">
-            <div className="activity-log-title">
-              <span className="activity-dot" />
-              Agent Activity Log
+        {activeTab !== "home" && (
+          <motion.div
+            className={`activity-log glass-card ${activeTab === 'pitchside' ? 'hide-on-mobile-pitchside' : ''}`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <div className="activity-log-header">
+              <div className="activity-log-title">
+                <span className="activity-dot" />
+                Agent Activity Log
+              </div>
+              <span className="badge badge-purple">Live</span>
             </div>
-            <span className="badge badge-purple">Live</span>
-          </div>
-          <div className="activity-log-entries">
-            <AnimatePresence initial={false}>
-              {activityLog
-                .slice()
-                .reverse()
-                .slice(0, 8)
-                .map((entry) => (
-                  <motion.div
-                    key={entry.id}
-                    className={`activity-entry activity-${entry.type}`}
-                    initial={{ x: -20, opacity: 0, height: 0 }}
-                    animate={{ x: 0, opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    <span className="activity-time font-mono">
-                      {new Date(entry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                    </span>
-                    <span className={`activity-icon activity-icon-${entry.type}`}>
-                      {entry.type === "scan" ? "🔍" : entry.type === "swap" ? "🔄" : entry.type === "warning" ? "⚠️" : "ℹ️"}
-                    </span>
-                    <span className="activity-message">{entry.message}</span>
-                  </motion.div>
-                ))}
-            </AnimatePresence>
-          </div>
-        </motion.div>
+            <div className="activity-log-entries">
+              <AnimatePresence initial={false}>
+                {activityLog
+                  .slice()
+                  .reverse()
+                  .slice(0, 8)
+                  .map((entry) => (
+                    <motion.div
+                      key={entry.id}
+                      className={`activity-entry activity-${entry.type}`}
+                      initial={{ x: -20, opacity: 0, height: 0 }}
+                      animate={{ x: 0, opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      <span className="activity-time font-mono">
+                        {new Date(entry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                      </span>
+                      <span className={`activity-icon activity-icon-${entry.type}`}>
+                        {entry.type === "scan" ? "🔍" : entry.type === "swap" ? "🔄" : entry.type === "warning" ? "⚠️" : "ℹ️"}
+                      </span>
+                      <span className="activity-message">{entry.message}</span>
+                    </motion.div>
+                  ))}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
       </main>
 
       {/* Footer */}

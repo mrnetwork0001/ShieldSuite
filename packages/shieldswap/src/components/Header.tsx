@@ -12,8 +12,8 @@ interface HeaderProps {
   wallet: WalletState;
   onConnect: () => void;
   onDisconnect: () => void;
-  activeTab: "swap" | "pitchside";
-  setActiveTab: (tab: "swap" | "pitchside") => void;
+  activeTab: "home" | "swap" | "pitchside";
+  setActiveTab: (tab: "home" | "swap" | "pitchside") => void;
 }
 
 interface TxHistoryItem {
@@ -88,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
     >
       <div className="header-inner">
         {/* Logo */}
-        <div className="header-brand" onClick={() => setActiveTab("swap")} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => setActiveTab("home")} style={{ cursor: 'pointer' }}>
           <div className="header-logo">
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
               <defs>
@@ -121,6 +121,12 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
         {/* Navigation Tabs */}
         <div className="header-tabs">
           <button
+            className={`tab-btn ${activeTab === "home" ? "active" : ""}`}
+            onClick={() => setActiveTab("home")}
+          >
+            🏠 Home
+          </button>
+          <button
             className={`tab-btn ${activeTab === "swap" ? "active" : ""}`}
             onClick={() => setActiveTab("swap")}
           >
@@ -135,121 +141,123 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
         </div>
 
         {/* Desktop Actions */}
-        <div className="header-actions desktop-only">
-          {/* Chain switcher */}
-          <select
-            className="chain-switcher-select font-mono"
-            value={wallet.chainId === 196 ? "196" : wallet.chainId === 1952 ? "1952" : wallet.chainId === 31337 ? "31337" : "196"}
-            onChange={async (e) => {
-              const targetChain = Number(e.target.value);
-              try {
-                await switchToChain(targetChain);
-              } catch (err) {
-                console.error("Failed to switch network:", err);
-              }
-            }}
-          >
-            <option value="196">🔵 XLayer Mainnet</option>
-            <option value="1952">🟢 XLayer Testnet</option>
-            <option value="31337">⚙️ Localhost</option>
-          </select>
+        {activeTab !== "home" && (
+          <div className="header-actions desktop-only">
+            {/* Chain switcher */}
+            <select
+              className="chain-switcher-select font-mono"
+              value={wallet.chainId === 196 ? "196" : wallet.chainId === 1952 ? "1952" : wallet.chainId === 31337 ? "31337" : "196"}
+              onChange={async (e) => {
+                const targetChain = Number(e.target.value);
+                try {
+                  await switchToChain(targetChain);
+                } catch (err) {
+                  console.error("Failed to switch network:", err);
+                }
+              }}
+            >
+              <option value="196">🔵 XLayer Mainnet</option>
+              <option value="1952">🟢 XLayer Testnet</option>
+              <option value="31337">⚙️ Localhost</option>
+            </select>
 
-          {/* Wallet button / dropdown */}
-          {wallet.connected ? (
-            <div className="wallet-dropdown-wrapper" ref={dropdownRef}>
-              <button
-                className="wallet-connected"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-              >
-                <div className="wallet-info">
-                  <span className="wallet-balance font-mono">
-                    {formatBalance(wallet.balance || "0")} OKB
-                  </span>
-                  <span className="wallet-address font-mono">
-                    {shortenAddress(wallet.address || "")}
-                  </span>
-                </div>
-                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>▾</span>
-              </button>
+            {/* Wallet button / dropdown */}
+            {wallet.connected ? (
+              <div className="wallet-dropdown-wrapper" ref={dropdownRef}>
+                <button
+                  className="wallet-connected"
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                >
+                  <div className="wallet-info">
+                    <span className="wallet-balance font-mono">
+                      {formatBalance(wallet.balance || "0")} OKB
+                    </span>
+                    <span className="wallet-address font-mono">
+                      {shortenAddress(wallet.address || "")}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>▾</span>
+                </button>
 
-              <AnimatePresence>
-                {dropdownOpen && (
-                  <motion.div
-                    className="wallet-dropdown glass-card"
-                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <div className="wd-address">
-                      <span className="font-mono">{wallet.address}</span>
-                      <button
-                        className="wd-copy"
-                        onClick={() => {
-                          navigator.clipboard.writeText(wallet.address || "");
-                        }}
-                        title="Copy address"
+                <AnimatePresence>
+                  {dropdownOpen && (
+                    <motion.div
+                      className="wallet-dropdown glass-card"
+                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <div className="wd-address">
+                        <span className="font-mono">{wallet.address}</span>
+                        <button
+                          className="wd-copy"
+                          onClick={() => {
+                            navigator.clipboard.writeText(wallet.address || "");
+                          }}
+                          title="Copy address"
+                        >
+                          📋
+                        </button>
+                      </div>
+                      <div className="wd-divider" />
+                      <div className="wd-section-title">📜 Recent Transactions</div>
+                      {loadingTx ? (
+                        <div className="wd-loading">Loading...</div>
+                      ) : txHistory.length > 0 ? (
+                        <div className="wd-tx-list">
+                          {txHistory.map((tx) => (
+                            <a
+                              key={tx.hash}
+                              href={getExplorerUrl("tx", tx.hash, wallet.chainId || 196)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="wd-tx-item"
+                            >
+                              <span className="font-mono">
+                                {tx.hash.slice(0, 8)}...{tx.hash.slice(-6)}
+                              </span>
+                              <span className="wd-tx-block">Block {tx.blockNumber}</span>
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="wd-loading" style={{ color: 'var(--text-tertiary)' }}>
+                          No recent transactions found
+                        </div>
+                      )}
+                      <a
+                        href={getExplorerUrl("address", wallet.address || "", wallet.chainId || 196)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="wd-view-all"
                       >
-                        📋
+                        View all on Explorer →
+                      </a>
+                      <div className="wd-divider" />
+                      <button
+                        className="wd-disconnect"
+                        onClick={() => {
+                          onDisconnect();
+                          setDropdownOpen(false);
+                        }}
+                      >
+                        🔌 Disconnect Wallet
                       </button>
-                    </div>
-                    <div className="wd-divider" />
-                    <div className="wd-section-title">📜 Recent Transactions</div>
-                    {loadingTx ? (
-                      <div className="wd-loading">Loading...</div>
-                    ) : txHistory.length > 0 ? (
-                      <div className="wd-tx-list">
-                        {txHistory.map((tx) => (
-                          <a
-                            key={tx.hash}
-                            href={getExplorerUrl("tx", tx.hash, wallet.chainId || 196)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="wd-tx-item"
-                          >
-                            <span className="font-mono">
-                              {tx.hash.slice(0, 8)}...{tx.hash.slice(-6)}
-                            </span>
-                            <span className="wd-tx-block">Block {tx.blockNumber}</span>
-                          </a>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="wd-loading" style={{ color: 'var(--text-tertiary)' }}>
-                        No recent transactions found
-                      </div>
-                    )}
-                    <a
-                      href={getExplorerUrl("address", wallet.address || "", wallet.chainId || 196)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="wd-view-all"
-                    >
-                      View all on Explorer →
-                    </a>
-                    <div className="wd-divider" />
-                    <button
-                      className="wd-disconnect"
-                      onClick={() => {
-                        onDisconnect();
-                        setDropdownOpen(false);
-                      }}
-                    >
-                      🔌 Disconnect Wallet
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (
-            <button className="btn btn-primary" onClick={onConnect}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M14 3H2a1 1 0 00-1 1v8a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1zm-2 7a1 1 0 110-2 1 1 0 010 2z" />
-              </svg>
-              Connect Wallet
-            </button>
-          )}
-        </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <button className="btn btn-primary" onClick={onConnect}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M14 3H2a1 1 0 00-1 1v8a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1zm-2 7a1 1 0 110-2 1 1 0 010 2z" />
+                </svg>
+                Connect Wallet
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Mobile Hamburger Button */}
         <button 
@@ -303,54 +311,63 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                   </div>
 
                   <div className="mobile-menu-actions">
-                    <select
-                      className="chain-switcher-select font-mono"
-                      style={{ width: "100%" }}
-                      value={wallet.chainId === 196 ? "196" : wallet.chainId === 1952 ? "1952" : wallet.chainId === 31337 ? "31337" : "196"}
-                      onChange={async (e) => {
-                        const targetChain = Number(e.target.value);
-                        try {
-                          await switchToChain(targetChain);
-                        } catch (err) {
-                          console.error("Failed to switch network:", err);
-                        }
-                      }}
-                    >
-                      <option value="196">🔵 XLayer Mainnet</option>
-                      <option value="1952">🟢 XLayer Testnet</option>
-                      <option value="31337">⚙️ Localhost</option>
-                    </select>
-
-                    {wallet.connected ? (
-                      <div className="mobile-wallet-card glass-card">
-                        <div className="mw-label">Connected Wallet</div>
-                        <div className="mw-address font-mono">{shortenAddress(wallet.address || "")}</div>
-                        <div className="mw-balance font-mono">{formatBalance(wallet.balance || "0")} OKB</div>
-                        <button 
-                          className="wd-disconnect"
-                          style={{ marginTop: '12px', width: '100%' }}
-                          onClick={() => {
-                            onDisconnect();
-                            setMobileMenuOpen(false);
+                    {activeTab !== "home" && (
+                      <>
+                        <select
+                          className="chain-switcher-select font-mono"
+                          style={{ width: "100%" }}
+                          value={wallet.chainId === 196 ? "196" : wallet.chainId === 1952 ? "1952" : wallet.chainId === 31337 ? "31337" : "196"}
+                          onChange={async (e) => {
+                            const targetChain = Number(e.target.value);
+                            try {
+                              await switchToChain(targetChain);
+                            } catch (err) {
+                              console.error("Failed to switch network:", err);
+                            }
                           }}
                         >
-                          🔌 Disconnect
-                        </button>
-                      </div>
-                    ) : (
-                      <button 
-                        className="btn btn-primary" 
-                        style={{ width: '100%', padding: '16px' }}
-                        onClick={() => {
-                          onConnect();
-                          setMobileMenuOpen(false);
-                        }}
-                      >
-                        Connect Wallet
-                      </button>
+                          <option value="196">🔵 XLayer Mainnet</option>
+                          <option value="1952">🟢 XLayer Testnet</option>
+                          <option value="31337">⚙️ Localhost</option>
+                        </select>
+
+                        {wallet.connected ? (
+                          <div className="mobile-wallet-card glass-card">
+                            <div className="mw-label">Connected Wallet</div>
+                            <div className="mw-address font-mono">{shortenAddress(wallet.address || "")}</div>
+                            <div className="mw-balance font-mono">{formatBalance(wallet.balance || "0")} OKB</div>
+                            <button 
+                              className="wd-disconnect"
+                              style={{ marginTop: '12px', width: '100%' }}
+                              onClick={() => {
+                                onDisconnect();
+                                setMobileMenuOpen(false);
+                              }}
+                            >
+                              🔌 Disconnect
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            className="btn btn-primary" 
+                            style={{ width: '100%', padding: '16px' }}
+                            onClick={() => {
+                              onConnect();
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            Connect Wallet
+                          </button>
+                        )}
+                      </>
                     )}
 
                     <div className="mobile-nav-links">
+                      <button 
+                        className={`nav-link-item ${activeTab === 'home' ? 'active' : ''}`}
+                        onClick={() => { setActiveTab('home'); setMobileMenuOpen(false); }}
+                        style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                      >🏠 Home</button>
                       <button 
                         className={`nav-link-item ${activeTab === 'swap' ? 'active' : ''}`}
                         onClick={() => { setActiveTab('swap'); setMobileMenuOpen(false); }}
