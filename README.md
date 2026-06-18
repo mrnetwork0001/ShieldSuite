@@ -1,4 +1,4 @@
-# 🛡️ Shield Suite & Pitchside AI - X Layer Security Infrastructure & Autonomous Speculation
+# Shield Suite & Pitchside AI - X Layer Security Infrastructure & Autonomous Speculation
 
 > **The ultimate security-first DeFi infrastructure layer and no-loss World Cup speculation network on X Layer.**  
 > Built for the **X Layer Build X Season 2 AI Hackathon** (Winner of 3rd Place) and expanded with **Pitchside AI (Autonomous World Cup Speculation Network)** for the **X Layer X Cup Hackathon (May 19 - May 28, 2026)**.
@@ -22,7 +22,7 @@
 
 ---
 
-## 🏆 Why Pitchside AI Wins (Judge Checklist)
+## Why Pitchside AI Wins
 
 Pitchside AI goes far beyond a simple MVP prediction market. It implements state-of-the-art Web3 architectural paradigms:
 
@@ -35,7 +35,7 @@ Pitchside AI goes far beyond a simple MVP prediction market. It implements state
 
 ---
 
-## 🚨 The Problem & Our Solution
+## The Problem & Our Solution
 
 ### The Problem
 With the proliferation of L2 tokens and AI-driven trading, malicious actors deploy honeypots, hidden taxes, and toxic bytecode to drain liquidity. Centralized DEX routers execute swaps blindly, and AI agents lack a standard, machine-readable protocol to verify token safety natively before engaging. 
@@ -50,7 +50,7 @@ We built a dual-layer security and speculation ecosystem:
 
 ---
 
-## 🏗️ Ecosystem Components
+## Ecosystem Components
 
 The Shield Suite monorepo is divided into four highly integrated packages:
 
@@ -112,7 +112,7 @@ A TEE-isolated Node.js loop running the autonomous agent scripts.
 
 ---
 
-## 🤖 Autonomous AI Agent (TEE)
+## Autonomous AI Agent (TEE)
 
 We have deployed an autonomous Node.js agent running 24/7. It continuously invokes the ScanGuard API to monitor the top 11 X Layer core tokens (WOKB, USDC, USDT, USDe, etc.) for emerging threats.
 
@@ -121,7 +121,7 @@ We have deployed an autonomous Node.js agent running 24/7. It continuously invok
 
 ---
 
-## 🔌 OnchainOS Integration Deep-Dive
+## OnchainOS Integration Deep-Dive
 
 Our application deeply leverages the OKX OnchainOS ecosystem to provide routing, analytics, and wallet controls:
 
@@ -135,7 +135,7 @@ Our application deeply leverages the OKX OnchainOS ecosystem to provide routing,
 
 ---
 
-## 💳 x402 Agent Economy
+## x402 Agent Economy
 
 ScanGuard pioneers a monetized API standard for AI agents via [x402 Payment Required](https://www.x402.org):
 
@@ -149,7 +149,7 @@ ScanGuard pioneers a monetized API standard for AI agents via [x402 Payment Requ
 
 ---
 
-## 🔧 Model Context Protocol (MCP)
+## Model Context Protocol (MCP)
 
 ScanGuard exposes an HTTP MCP server that any standard AI client can query natively to give them "X Layer vision".
 
@@ -215,7 +215,7 @@ timeline
 
 ---
 
-## ⚙️ Local Setup & Testing
+## Local Setup & Testing
 
 ### 1. Installation
 ```bash
@@ -241,31 +241,31 @@ This single command orchestrates:
 
 ---
 
-## 🧐 Onchain Verification for Judges
+## Onchain Verification for Judges
 
 To verify the completion and execution of the Pitchside AI World Cup loop:
 
 1.  **Claim Faucet & Stake:** Connect your wallet, claim 1,000 Mock USDT from the Faucet, and stake USDT in the **No-Loss Vault**.
 2.  **Delegate Agent:** Select the **Active TEE Scout Agent** and click **Confirm Delegation**.
-3.  **Verify Live Data Feed:** Click **📡 Verify Live Data Feed** in the Scout Console to verify real-time match data from Sportradar Soccer API v4. Live matches show with a pulsing red indicator.
+3.  **Verify Live Data Feed:** Click **Verify Live Data Feed** in the Scout Console to verify real-time match data from Sportradar Soccer API v4. Live matches show with a pulsing red indicator.
 4.  **Watch Agent React:** The Scout Console will immediately reflect the agent detecting new match events, scanning token bytecode via ScanGuard, and executing transactions on the `PlayerDex` contract.
 5.  **Verify Explorer:** Copy the generated transaction hash and search it on [X Layer Testnet Explorer](https://www.okx.com/explorer/xlayer-test) to verify the TEE Agent called the swap on your behalf.
 6.  **Check the Leaderboard:** The Global Scout Leaderboard shows your ranking, Scout Credits, staked amount, and pool share - all read directly from onchain contract events.
 
 ---
 
-## 🌐 Live Endpoints and Infrastructure
+## Live Endpoints and Infrastructure
 
 *   **Network:** X Layer Mainnet (`Chain ID 196`)
-*   **ShieldSwap Application:** [https://shieldswap-main.vercel.app](https://shieldswap-main.vercel.app)
-*   **ScanGuard Dashboard:** [https://scanguard-dashboard-main.vercel.app](https://scanguard-dashboard-main.vercel.app)
-*   **Central API Node & MCP Host:** `http://38.49.216.120:3402`
+*   **ShieldSwap Application:** [https://shieldsuite.xyz/](https://shieldsuite.xyz/)
+*   **ScanGuard Dashboard:** [https://dashboard.shieldsuite.xyz/](https://dashboard.shieldsuite.xyz/)
+*   **Central API Node & MCP Host:** `railway`
 *   **TEE Agent Identity (X Layer):** `0xDAce8445a5bD576111cCC8e598B67965252023C2`
 
 ---
 
-## ✉️ Contact & Socials
+## Contact & Socials
 
-*   **Developer:** mrnetwork0001
-*   **Email:** emma40mike@gmail.com
+*   **Developer:** MrNetwork
+*   **Email:** mrnetwork0001@gmail.com
 *   **X (Twitter):** [@encrypt_wizard](https://x.com/encrypt_wizard)
