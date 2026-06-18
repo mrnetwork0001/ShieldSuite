@@ -36,13 +36,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
     { name: "TEE Agent Wallet", address: "0xDAce8445a5bD576111cCC8e598B67965252023C2" },
   ];
 
-  const testnetContracts = [
-    { name: "MockUSDT", address: "0xe5E0795a8A61502409f304f391B615220d720fE9" },
-    { name: "NoLossVault", address: "0x9E1A49480C1c1762A4B465F50c5cAAb86Aa3B046" },
-    { name: "PlayerShares ERC-1155", address: "0xE8a63B4a905d9C1C2262F261dee90478d6fFD3De" },
-    { name: "PlayerDex AMM", address: "0xF2338b4Ba18373070cDfD9F53DA321fA12Aa591b" },
-    { name: "TEE Agent Wallet", address: "0xDAce8445a5bD576111cCC8e598B67965252023C2" },
-  ];
+
 
   const renderCopyButton = (address: string) => {
     const isCopied = copiedText === address;
@@ -297,29 +291,14 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
                 <>
                   <h1 className="docs-section-title">⚓ Smart Contract Deployments</h1>
                   <p className="docs-para">
-                    ShieldSuite is actively deployed on both X Layer Mainnet and X Layer Testnet Sandbox:
+                    ShieldSuite is actively deployed on X Layer Mainnet:
                   </p>
 
-                  <div className="contracts-grid">
+                  <div className="contracts-grid" style={{ gridTemplateColumns: '1fr' }}>
                     <div className="contracts-card glass-card">
                       <h3>🟢 X Layer Mainnet (Chain ID 196)</h3>
                       <div className="contracts-list">
                         {mainnetContracts.map((c) => (
-                          <div key={c.name} className="contract-item">
-                            <div className="contract-label">{c.name}</div>
-                            <div className="contract-address-row">
-                              <span className="contract-address font-mono">{c.address}</span>
-                              {renderCopyButton(c.address)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="contracts-card glass-card">
-                      <h3>🧪 X Layer Testnet Sandbox (Chain ID 1952)</h3>
-                      <div className="contracts-list">
-                        {testnetContracts.map((c) => (
                           <div key={c.name} className="contract-item">
                             <div className="contract-label">{c.name}</div>
                             <div className="contract-address-row">

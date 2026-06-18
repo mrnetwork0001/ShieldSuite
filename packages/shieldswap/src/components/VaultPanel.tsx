@@ -34,11 +34,9 @@ interface VaultPanelProps {
 }
 
 export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog }) => {
-  const DEPLOYED_ADDRESSES = wallet.chainId === 196
-    ? ((STATIC_DEPLOYED_ADDRESSES as any).xlayerMainnet || (STATIC_DEPLOYED_ADDRESSES as any).xlayerTestnet || STATIC_DEPLOYED_ADDRESSES)
-    : ((STATIC_DEPLOYED_ADDRESSES as any).xlayerTestnet || STATIC_DEPLOYED_ADDRESSES);
+  const DEPLOYED_ADDRESSES = (STATIC_DEPLOYED_ADDRESSES as any).xlayerMainnet || STATIC_DEPLOYED_ADDRESSES;
 
-  const isMainnet = wallet.chainId === 196;
+  const isMainnet = true;
   const explorerBase = isMainnet
     ? "https://www.okx.com/explorer/xlayer/tx/"
     : "https://www.okx.com/explorer/xlayer-test/tx/";

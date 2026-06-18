@@ -20,10 +20,8 @@ interface LeaderboardProps {
 }
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
-  const isMainnet = wallet.chainId === 196;
-  const DEPLOYED_ADDRESSES = isMainnet
-    ? ((STATIC_DEPLOYED_ADDRESSES as any).xlayerMainnet || STATIC_DEPLOYED_ADDRESSES)
-    : ((STATIC_DEPLOYED_ADDRESSES as any).xlayerTestnet || STATIC_DEPLOYED_ADDRESSES);
+  const isMainnet = true;
+  const DEPLOYED_ADDRESSES = (STATIC_DEPLOYED_ADDRESSES as any).xlayerMainnet || STATIC_DEPLOYED_ADDRESSES;
 
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);

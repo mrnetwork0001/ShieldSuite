@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { XLAYER_CHAIN, XLAYER_TESTNET, switchToChain } from "./xlayer";
+import { XLAYER_CHAIN, switchToChain } from "./xlayer";
 
 export interface WalletState {
   connected: boolean;
@@ -41,12 +41,12 @@ export async function connectWallet(): Promise<WalletState> {
     const chainId = Number(network.chainId);
     const balance = ethers.formatEther(await provider.getBalance(address));
     
-    // Check if the current chain is supported
-    const isSupported = chainId === XLAYER_CHAIN.chainId || chainId === XLAYER_TESTNET.chainId || chainId === 31337 || chainId === 1337;
+    // Check if the current chain is supported (Mainnet only)
+    const isSupported = chainId === XLAYER_CHAIN.chainId;
 
     if (!isSupported) {
-      // By default, switch to XLayer Testnet (195)
-      await switchToChain(XLAYER_TESTNET.chainId);
+      // By default, switch to XLayer Mainnet (196)
+      await switchToChain(XLAYER_CHAIN.chainId);
       // Re-check after switch
       const updatedNetwork = await provider.getNetwork();
       const updatedChainId = Number(updatedNetwork.chainId);
@@ -55,7 +55,7 @@ export async function connectWallet(): Promise<WalletState> {
         address,
         chainId: updatedChainId,
         balance,
-        isXLayer: updatedChainId === XLAYER_CHAIN.chainId || updatedChainId === XLAYER_TESTNET.chainId,
+        isXLayer: updatedChainId === XLAYER_CHAIN.chainId,
         provider,
         signer,
       };
@@ -66,7 +66,7 @@ export async function connectWallet(): Promise<WalletState> {
       address,
       chainId,
       balance,
-      isXLayer: chainId === XLAYER_CHAIN.chainId || chainId === XLAYER_TESTNET.chainId,
+      isXLayer: chainId === XLAYER_CHAIN.chainId,
       provider,
       signer,
     };
