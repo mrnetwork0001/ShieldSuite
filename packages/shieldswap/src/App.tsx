@@ -255,7 +255,7 @@ const App: React.FC = () => {
         ) : !wallet.isXLayer ? (
           <div className="pitchside-portal animate-fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
             <div className="glass-card text-center" style={{ maxWidth: '550px', padding: '45px 30px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', margin: '0 auto' }}>
-              <span style={{ fontSize: '3rem' }}>⚽</span>
+              <span className="spin-continuous" style={{ fontSize: '3rem' }}>⚽</span>
               <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Explore Pitchside AI</h3>
               <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0 }}>
                 The Pitchside AI Autonomous Scouting & Trading Network is deployed on X Layer Mainnet. 

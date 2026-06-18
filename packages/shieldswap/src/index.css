@@ -647,3 +647,15 @@ body::after {
   padding: 12px;
   font-size: 0.95rem;
 }
+
+
+/* ─── Continuous Rotation ────────────────────────────────────────────────── */
+.spin-continuous {
+  display: inline-block;
+  animation: spinContinuous 6s linear infinite;
+}
+
+@keyframes spinContinuous {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
