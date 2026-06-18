@@ -90,30 +90,10 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
         {/* Logo */}
         <div className="header-brand" onClick={() => setActiveTab("home")} style={{ cursor: 'pointer' }}>
           <div className="header-logo">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <defs>
-                <linearGradient id="shield-grad" x1="0" y1="0" x2="32" y2="32">
-                  <stop offset="0%" stopColor="#4B7BF5" />
-                  <stop offset="100%" stopColor="#A855F7" />
-                </linearGradient>
-              </defs>
-              <path
-                d="M16 2L4 8v8c0 7.73 5.12 14.96 12 16.74C22.88 30.96 28 23.73 28 16V8L16 2z"
-                fill="url(#shield-grad)"
-                opacity="0.9"
-              />
-              <path
-                d="M13 16l2.5 2.5L20 13"
-                stroke="white"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-            </svg>
+            <img src="/logo.png" alt="ShieldSuite Logo" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
           </div>
           <div>
-            <h1 className="header-title">ShieldSwap</h1>
+            <h1 className="header-title">ShieldSuite</h1>
             <span className="header-tagline">Scan. Verify. Swap Safely.</span>
           </div>
         </div>
