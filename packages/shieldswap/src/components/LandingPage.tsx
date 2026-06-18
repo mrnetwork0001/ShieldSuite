@@ -819,7 +819,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           width: 100%;
           background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
           border: none;
-          color: #fff;
+          color: var(--bg-primary);
           padding: 12px;
           font-size: 0.85rem;
           font-weight: 700;
