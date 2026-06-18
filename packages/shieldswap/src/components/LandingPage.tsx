@@ -6,18 +6,19 @@ interface LandingPageProps {
 }
 
 const mockFixtures = [
-  { id: "mock-f1", homeTeam: "United States", awayTeam: "England", date: "June 22, 2026", time: "20:00 UTC", stadium: "MetLife Stadium, NY/NJ", group: "Group B" },
-  { id: "mock-f2", homeTeam: "Mexico", awayTeam: "Argentina", date: "June 23, 2026", time: "18:00 UTC", stadium: "Estadio Azteca, Mexico City", group: "Group A" },
-  { id: "mock-f3", homeTeam: "Canada", awayTeam: "Germany", date: "June 24, 2026", time: "16:00 UTC", stadium: "BC Place, Vancouver", group: "Group F" },
-  { id: "mock-f4", homeTeam: "Brazil", awayTeam: "France", date: "June 25, 2026", time: "21:00 UTC", stadium: "SoFi Stadium, Los Angeles", group: "Group C" },
-  { id: "mock-f5", homeTeam: "Spain", awayTeam: "Japan", date: "June 26, 2026", time: "19:00 UTC", stadium: "Hard Rock Stadium, Miami", group: "Group E" }
+  { id: "mock-f1", homeTeam: "United States", awayTeam: "Australia", date: "June 19, 2026", time: "19:00 UTC", stadium: "Lumen Field, Seattle", group: "Group D" },
+  { id: "mock-f2", homeTeam: "Scotland", awayTeam: "Morocco", date: "June 19, 2026", time: "16:00 UTC", stadium: "Gillette Stadium, Boston", group: "Group C" },
+  { id: "mock-f3", homeTeam: "Brazil", awayTeam: "Haiti", date: "June 19, 2026", time: "21:00 UTC", stadium: "Lincoln Financial Field, Philadelphia", group: "Group C" },
+  { id: "mock-f4", homeTeam: "Turkey", awayTeam: "Paraguay", date: "June 19, 2026", time: "18:00 UTC", stadium: "Levi's Stadium, San Francisco", group: "Group D" },
+  { id: "mock-f5", homeTeam: "Netherlands", awayTeam: "Sweden", date: "June 20, 2026", time: "20:00 UTC", stadium: "NRG Stadium, Houston", group: "Group F" },
+  { id: "mock-f6", homeTeam: "Germany", awayTeam: "Ivory Coast", date: "June 20, 2026", time: "17:00 UTC", stadium: "BMO Field, Toronto", group: "Group E" }
 ];
 
 const mockLiveMatches = [
-  { id: "mock-l1", homeTeam: "Spain", awayTeam: "Italy", homeScore: 2, awayScore: 1, minute: "78'", status: "LIVE", event: "Goal by Pedri 72'" },
-  { id: "mock-l2", homeTeam: "England", awayTeam: "Netherlands", homeScore: 1, awayScore: 1, minute: "42'", status: "LIVE", event: "Penalty shootout setup pending" },
-  { id: "mock-l3", homeTeam: "Portugal", awayTeam: "Croatia", homeScore: 0, awayScore: 0, minute: "15'", status: "LIVE", event: "Yellow card to Modric 12'" },
-  { id: "mock-l4", homeTeam: "Argentina", awayTeam: "Uruguay", homeScore: 3, awayScore: 2, minute: "90+2'", status: "LIVE", event: "Stoppage time drama!" },
+  { id: "mock-l1", homeTeam: "Mexico", awayTeam: "South Korea", homeScore: 2, awayScore: 1, minute: "78'", status: "LIVE", event: "Goal by Alexis Vega 64'" },
+  { id: "mock-l2", homeTeam: "Canada", awayTeam: "Qatar", homeScore: 1, awayScore: 0, minute: "42'", status: "LIVE", event: "Jonathan David scores clinical finish 31'" },
+  { id: "mock-l3", homeTeam: "Switzerland", awayTeam: "Bosnia and Herzegovina", homeScore: 1, awayScore: 1, minute: "15'", status: "LIVE", event: "Equalizer by Edin Dzeko 12'" },
+  { id: "mock-l4", homeTeam: "Czechia", awayTeam: "South Africa", homeScore: 0, awayScore: 0, minute: "8'", status: "LIVE", event: "Dynamic midfield battle underway" }
 ];
 
 function getFlagUrl(teamName: string): string {
@@ -54,6 +55,14 @@ function getFlagUrl(teamName: string): string {
   else if (name.includes("wales")) code = "gb-wls";
   else if (name.includes("scotland")) code = "gb-sct";
   else if (name.includes("turkey")) code = "tr";
+  else if (name.includes("czech") || name.includes("cz")) code = "cz";
+  else if (name.includes("south africa")) code = "za";
+  else if (name.includes("bosnia")) code = "ba";
+  else if (name.includes("qatar")) code = "qa";
+  else if (name.includes("australia")) code = "au";
+  else if (name.includes("haiti")) code = "ht";
+  else if (name.includes("paraguay")) code = "py";
+  else if (name.includes("ivory coast") || name.includes("côte d'ivoire") || name.includes("cote d'ivoire")) code = "ci";
 
   if (code === "un") {
     return "https://flagcdn.com/w80/un.png";
@@ -71,7 +80,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
     if (fixtures.length === 0) return;
     const timer = setInterval(() => {
       setCurrentFixtureIndex((prev) => (prev + 1) % fixtures.length);
-    }, 3000);
+    }, 5000);
     return () => clearInterval(timer);
   }, [fixtures.length]);
 
