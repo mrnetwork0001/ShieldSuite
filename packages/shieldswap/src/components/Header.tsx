@@ -129,22 +129,9 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
         {activeTab !== "home" && (
           <div className="header-actions desktop-only">
             {/* Chain switcher */}
-            <select
-              className="chain-switcher-select font-mono"
-              value={wallet.chainId === 196 ? "196" : wallet.chainId === 1952 ? "1952" : wallet.chainId === 31337 ? "31337" : "196"}
-              onChange={async (e) => {
-                const targetChain = Number(e.target.value);
-                try {
-                  await switchToChain(targetChain);
-                } catch (err) {
-                  console.error("Failed to switch network:", err);
-                }
-              }}
-            >
-              <option value="196">🔵 XLayer Mainnet</option>
-              <option value="1952">🟢 XLayer Testnet</option>
-              <option value="31337">⚙️ Localhost</option>
-            </select>
+            <div className="chain-switcher-select font-mono" style={{ pointerEvents: 'none', background: 'rgba(75, 123, 245, 0.06)', border: '1px solid rgba(75, 123, 245, 0.2)' }}>
+              🔵 XLayer Mainnet
+            </div>
 
             {/* Wallet button / dropdown */}
             {wallet.connected ? (
@@ -298,23 +285,9 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                   <div className="mobile-menu-actions">
                     {activeTab !== "home" && (
                       <>
-                        <select
-                          className="chain-switcher-select font-mono"
-                          style={{ width: "100%" }}
-                          value={wallet.chainId === 196 ? "196" : wallet.chainId === 1952 ? "1952" : wallet.chainId === 31337 ? "31337" : "196"}
-                          onChange={async (e) => {
-                            const targetChain = Number(e.target.value);
-                            try {
-                              await switchToChain(targetChain);
-                            } catch (err) {
-                              console.error("Failed to switch network:", err);
-                            }
-                          }}
-                        >
-                          <option value="196">🔵 XLayer Mainnet</option>
-                          <option value="1952">🟢 XLayer Testnet</option>
-                          <option value="31337">⚙️ Localhost</option>
-                        </select>
+                        <div className="chain-switcher-select font-mono" style={{ width: "100%", pointerEvents: 'none', textAlign: 'center', background: 'rgba(75, 123, 245, 0.06)', border: '1px solid rgba(75, 123, 245, 0.2)' }}>
+                          🔵 XLayer Mainnet
+                        </div>
 
                         {wallet.connected ? (
                           <div className="mobile-wallet-card glass-card">

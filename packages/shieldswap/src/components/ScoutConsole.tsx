@@ -198,7 +198,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
       </div>
 
       {/* Match Simulator Trigger Form - Hidden on Mainnet */}
-      {wallet.chainId !== 196 ? (
+      {false ? (
         <div className="simulator-box glass-card">
           <div className="simulator-header">⚽ Live Match Event Simulator</div>
           

@@ -122,7 +122,7 @@ const App: React.FC = () => {
         const signer = await provider.getSigner();
         const address = await signer.getAddress();
         const balance = ethers.formatEther(await provider.getBalance(address));
-        const isXLayer = chainId === 196 || chainId === 1952;
+        const isXLayer = chainId === 196;
         setWallet({
           connected: true,
           address,
@@ -160,7 +160,7 @@ const App: React.FC = () => {
           const network = await provider.getNetwork();
           const chainId = Number(network.chainId);
           const balance = ethers.formatEther(await provider.getBalance(address));
-          const isXLayer = chainId === 196 || chainId === 1952;
+          const isXLayer = chainId === 196;
           setWallet({
             connected: true,
             address,
@@ -257,8 +257,8 @@ const App: React.FC = () => {
               <span style={{ fontSize: '3rem' }}>⚽</span>
               <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Explore Pitchside AI</h3>
               <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0 }}>
-                The Pitchside AI Autonomous Scouting & Trading Network is deployed on X Layer. 
-                Choose a network to explore — connect your wallet later to stake and trade.
+                The Pitchside AI Autonomous Scouting & Trading Network is deployed on X Layer Mainnet. 
+                Explore the vault and player markets live.
               </p>
               <div style={{ display: 'flex', gap: '12px', width: '100%', justifyContent: 'center' }}>
                 <button 
@@ -278,136 +278,14 @@ const App: React.FC = () => {
                   }}
                   style={{ padding: '12px 20px', fontWeight: 'bold', flex: 1 }}
                 >
-                  🟢 X Layer Mainnet
-                </button>
-                <button 
-                  className="btn btn-panel"
-                  onClick={() => {
-                    // Create read-only provider for testnet exploration
-                    const readOnlyProvider = new ethers.JsonRpcProvider("https://testrpc.xlayer.tech");
-                    setWallet(prev => ({
-                      ...prev,
-                      chainId: 1952,
-                      isXLayer: true,
-                      provider: readOnlyProvider,
-                      connected: false,
-                      address: null,
-                      signer: null,
-                    }));
-                  }}
-                  style={{ padding: '12px 20px', fontWeight: 'bold', flex: 1 }}
-                >
-                  🧪 X Layer Testnet
+                  🟢 Explore X Layer Mainnet
                 </button>
               </div>
             </div>
           </div>
         ) : (
           <div className="pitchside-portal animate-fade-in">
-            {/* Mainnet Warning & Testnet Sandbox Redirect Banner */}
-            {wallet.chainId === 196 && (
-              <motion.div 
-                className="glass-card mainnet-warning-banner"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  padding: '16px 24px', 
-                  marginBottom: '24px', 
-                  border: '1px solid rgba(255, 176, 32, 0.3)',
-                  background: 'rgba(255, 176, 32, 0.03)',
-                  borderRadius: '12px',
-                  gap: '20px',
-                  flexWrap: 'wrap'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '1.4rem' }}>⚠️</span>
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontWeight: 'bold', color: '#FFB020', fontSize: '0.9rem' }}>You are on X Layer Mainnet (Real Funds)</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                      Staking and index trades here require real USDT. To try the app risk-free with simulated goals and free testnet tokens, switch to the Sandbox.
-                    </div>
-                  </div>
-                </div>
-                <button
-                  className="btn btn-panel"
-                  onClick={async () => {
-                    try {
-                      const { switchToChain } = await import("./lib/xlayer");
-                      await switchToChain(1952);
-                    } catch (err) {}
-                  }}
-                  style={{ 
-                    padding: '8px 16px', 
-                    fontSize: '0.8rem', 
-                    borderColor: '#FFB020', 
-                    color: '#FFB020', 
-                    background: 'rgba(255, 176, 32, 0.05)',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  🧪 Switch to Testnet Sandbox
-                </button>
-              </motion.div>
-            )}
 
-            {/* Testnet Onboarding / How-To Banner */}
-            {wallet.chainId === 1952 && (
-              <motion.div 
-                className="glass-card testnet-onboarding-banner"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{ 
-                  padding: '20px 24px', 
-                  marginBottom: '24px', 
-                  border: '1px solid rgba(75, 123, 245, 0.3)',
-                  background: 'rgba(75, 123, 245, 0.03)',
-                  borderRadius: '12px',
-                  textAlign: 'left'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '1.4rem' }}>🧪</span>
-                    <h4 style={{ fontSize: '1.05rem', fontWeight: 'bold', margin: 0, color: 'var(--accent-blue)' }}>Welcome to the Pitchside AI Testnet Sandbox!</h4>
-                  </div>
-                  <button 
-                    className="btn btn-sm btn-ghost mobile-instructions-toggle"
-                    onClick={() => setInstructionsExpanded(!instructionsExpanded)}
-                    style={{ fontSize: '0.75rem', padding: '4px 10px', height: 'auto', minHeight: 'auto', display: 'none' }}
-                  >
-                    {instructionsExpanded ? "Read Less ▴" : "Read More ▾"}
-                  </button>
-                </div>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 16px 0' }}>
-                  Pitchside AI is an autonomous, no-loss World Cup speculation network. You deposit stablecoins risk-free, earn virtual yield (Scout Credits) in real-time, and delegate them to a secure TEE AI Scout Agent to speculate on player performance index tokens.
-                </p>
-                <div 
-                  className={`instructions-grid ${instructionsExpanded ? 'expanded' : 'collapsed'}`}
-                  style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', fontSize: '0.78rem', color: 'var(--text-secondary)', borderTop: '1px solid var(--border-default)', paddingTop: '16px' }}
-                >
-                  <div>
-                    <strong style={{ color: '#fff', display: 'block', marginBottom: '4px' }}>1. Claim Faucet USDT</strong>
-                    Click the Faucet button in the Staking Vault panel to claim 1,000 Mock USDT and Approve the Vault.
-                  </div>
-                  <div>
-                    <strong style={{ color: '#fff', display: 'block', marginBottom: '4px' }}>2. Stake to Earn Credits</strong>
-                    Stake your USDT to watch your virtual Scout Credits accumulate and tick upward in real-time.
-                  </div>
-                  <div>
-                    <strong style={{ color: '#fff', display: 'block', marginBottom: '4px' }}>3. Delegate Authority</strong>
-                    Select the TEE Scout Agent in the delegation box and click Confirm to delegate spending power.
-                  </div>
-                  <div>
-                    <strong style={{ color: '#fff', display: 'block', marginBottom: '4px' }}>4. Simulate & Watch</strong>
-                    Use the Simulator widget in the Console to trigger goals and watch the agent scan safety & swap onchain!
-                  </div>
-                </div>
-              </motion.div>
-            )}
 
             <div className="pitchside-grid">
               <div className="pitchside-vault-area">

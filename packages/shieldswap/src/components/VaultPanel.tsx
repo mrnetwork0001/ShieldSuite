@@ -421,38 +421,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '8px 0' }}>
-            {wallet.chainId !== 196 && (
-              <button 
-                className="btn btn-faucet" 
-                onClick={handleFaucet} 
-                disabled={loading || faucetStatus === "confirming"} 
-                style={{ 
-                  width: '100%', 
-                  fontSize: '0.8rem', 
-                  padding: '8px 12px',
-                  ...(faucetStatus === "success" ? { background: 'rgba(0, 255, 136, 0.2)', borderColor: 'rgba(0, 255, 136, 0.4)', color: '#00ff88' } : {}),
-                  ...(faucetStatus === "error" ? { background: 'rgba(255, 59, 92, 0.2)', borderColor: 'rgba(255, 59, 92, 0.4)', color: '#ff3b5c' } : {}),
-                }}
-              >
-                {faucetStatus === "signing" && "✍️ Sign in Wallet..."}
-                {faucetStatus === "confirming" && "⏳ Confirming onchain..."}
-                {faucetStatus === "success" && "✅ 1,000 USDT Claimed!"}
-                {faucetStatus === "error" && "❌ Claim Failed - Try Again"}
-                {faucetStatus === "idle" && "🚰 Claim 1,000 Mock USDT (Testnet Faucet)"}
-              </button>
-            )}
-            {wallet.chainId === 1952 && (
-              <a 
-                href="https://www.okx.com/explorer/xlayer-test" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{ fontSize: '0.75rem', color: 'var(--accent-blue)', textDecoration: 'underline', textAlign: 'center' }}
-              >
-                ⚓ Need Gas? Get XLayer Testnet OKB here
-              </a>
-            )}
-          </div>
+
 
           {/* Delegation Section */}
           <div className="delegation-box glass-card">
