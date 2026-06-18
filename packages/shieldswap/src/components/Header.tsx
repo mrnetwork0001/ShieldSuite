@@ -94,7 +94,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
           </div>
           <div>
             <h1 className="header-title">ShieldSuite</h1>
-            <span className="header-tagline">Scan. Verify. Swap Safely.</span>
+            <span className="header-tagline">Scan. Verify. Stake & Speculate.</span>
           </div>
         </div>
 
