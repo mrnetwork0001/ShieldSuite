@@ -1,67 +1,201 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface LandingPageProps {
   setActiveTab: (tab: "home" | "swap" | "pitchside") => void;
 }
 
+const fixturesData = [
+  { id: 1, homeTeam: "United States", homeFlag: "🇺🇸", awayTeam: "England", awayFlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", date: "June 22, 2026", time: "20:00 UTC", stadium: "MetLife Stadium, NY/NJ", group: "Group B" },
+  { id: 2, homeTeam: "Mexico", homeFlag: "🇲🇽", awayTeam: "Argentina", awayFlag: "🇦🇷", date: "June 23, 2026", time: "18:00 UTC", stadium: "Estadio Azteca, Mexico City", group: "Group A" },
+  { id: 3, homeTeam: "Canada", homeFlag: "🇨🇦", awayTeam: "Germany", awayFlag: "🇩🇪", date: "June 24, 2026", time: "16:00 UTC", stadium: "BC Place, Vancouver", group: "Group F" },
+  { id: 4, homeTeam: "Brazil", homeFlag: "🇧🇷", awayTeam: "France", awayFlag: "🇫🇷", date: "June 25, 2026", time: "21:00 UTC", stadium: "SoFi Stadium, Los Angeles", group: "Group C" },
+  { id: 5, homeTeam: "Spain", homeFlag: "🇪🇸", awayTeam: "Japan", awayFlag: "🇯🇵", date: "June 26, 2026", time: "19:00 UTC", stadium: "Hard Rock Stadium, Miami", group: "Group E" }
+];
+
+const liveMatchesData = [
+  { id: 101, homeTeam: "Spain", homeFlag: "🇪🇸", awayTeam: "Italy", awayFlag: "🇮🇹", homeScore: 2, awayScore: 1, minute: "78'", status: "LIVE", event: "Goal by Pedri 72'" },
+  { id: 102, homeTeam: "England", homeFlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", awayTeam: "Netherlands", awayFlag: "🇳🇱", homeScore: 1, awayScore: 1, minute: "42'", status: "LIVE", event: "Penalty shootout setup pending" },
+  { id: 103, homeTeam: "Portugal", homeFlag: "🇵🇹", awayTeam: "Croatia", awayFlag: "🇭🇷", homeScore: 0, awayScore: 0, minute: "15'", status: "LIVE", event: "Yellow card to Modric 12'" },
+  { id: 104, homeTeam: "Argentina", homeFlag: "🇦🇷", awayTeam: "Uruguay", awayFlag: "🇺🇾", homeScore: 3, awayScore: 2, minute: "90+2'", status: "LIVE", event: "Stoppage time drama!" },
+];
+
 export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
+  const [currentFixtureIndex, setCurrentFixtureIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentFixtureIndex((prev) => (prev + 1) % fixturesData.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const activeFixture = fixturesData[currentFixtureIndex];
+
   return (
     <div className="landing-container">
       {/* Stadium Pitch Background Grid Overlay */}
       <div className="pitch-overlay" />
       <div className="stadium-glow" />
 
-      {/* Hero Section */}
-      <section className="landing-hero">
-        <motion.div
-          className="hero-badge"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <span className="soccer-ball-emoji">⚽</span> ROAD TO WORLD CUP 2026
-        </motion.div>
-
-        <motion.h1
-          className="hero-main-title"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.1 }}
-        >
-          Secure DeFi Aggregator & <br />
-          <span className="glow-text text-purple">No-Loss Speculation Network</span>
-        </motion.h1>
-
-        <motion.p
-          className="hero-desc"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          Protect your trades with ScanGuard MCP's dual-layer bytecode scanning and speculate on player index shares using virtual yield backed by Aave V3. Zero principal risk, maximum security.
-        </motion.p>
-
-        {/* CTA Actions */}
-        <motion.div
-          className="hero-ctas"
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-        >
-          <button
-            className="btn btn-primary btn-lg-cta hover-glow"
-            onClick={() => setActiveTab("pitchside")}
+      {/* Hero Section Split Layout */}
+      <section className="landing-hero-split">
+        {/* Left Column */}
+        <div className="hero-left">
+          <motion.div
+            className="hero-badge"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
           >
-            ⚽ Launch Pitchside AI
-          </button>
-          <button
-            className="btn btn-ghost btn-lg-cta"
-            onClick={() => setActiveTab("swap")}
+            <span className="soccer-ball-emoji">⚽</span> ROAD TO WORLD CUP 2026
+          </motion.div>
+
+          <motion.h1
+            className="hero-main-title"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
           >
-            🛡️ Enter ShieldSwap DEX
-          </button>
-        </motion.div>
+            Secure DeFi Aggregator & <br />
+            <span className="glow-text text-purple">No-Loss Speculation Network</span>
+          </motion.h1>
+
+          <motion.p
+            className="hero-desc"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            Protect your trades with ScanGuard MCP's bytecode scanning and speculate on player index shares using virtual yield backed by Aave V3. Zero principal risk, maximum security.
+          </motion.p>
+
+          {/* Workflow Pathway */}
+          <div className="workflow-pathway">
+            <div className="pathway-step active">
+              <span className="step-num">1</span>
+              <span className="step-label">Scan & Verify</span>
+            </div>
+            <div className="pathway-arrow">➔</div>
+            <div className="pathway-step active-glow">
+              <span className="step-num">2</span>
+              <span className="step-label">Stake USDT</span>
+            </div>
+            <div className="pathway-arrow">➔</div>
+            <div className="pathway-step active-purple">
+              <span className="step-num">3</span>
+              <span className="step-label">Speculate Risk-Free</span>
+            </div>
+          </div>
+
+          {/* CTA Actions */}
+          <motion.div
+            className="hero-ctas"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <button
+              className="btn btn-primary btn-lg-cta hover-glow"
+              onClick={() => setActiveTab("pitchside")}
+            >
+              ⚽ Launch Pitchside AI
+            </button>
+            <button
+              className="btn btn-ghost btn-lg-cta"
+              onClick={() => setActiveTab("swap")}
+            >
+              🛡️ Enter ShieldSwap DEX
+            </button>
+          </motion.div>
+        </div>
+
+        {/* Right Column: Sliding Match Fixture Card */}
+        <div className="hero-right">
+          <div className="fixtures-card glass-card">
+            <div className="fixtures-card-glow" />
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentFixtureIndex}
+                initial={{ opacity: 0, x: 15 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -15 }}
+                transition={{ duration: 0.3 }}
+                className="fixture-slide-content"
+              >
+                <div className="fixtures-header">
+                  <span className="fixture-tag font-mono">📅 UPCOMING FIXTURE</span>
+                  <span className="group-badge font-mono">{activeFixture.group}</span>
+                </div>
+
+                <div className="matchup-container">
+                  <div className="team-display">
+                    <span className="team-flag">{activeFixture.homeFlag}</span>
+                    <span className="team-name">{activeFixture.homeTeam}</span>
+                  </div>
+                  <div className="vs-badge font-mono">VS</div>
+                  <div className="team-display">
+                    <span className="team-flag">{activeFixture.awayFlag}</span>
+                    <span className="team-name">{activeFixture.awayTeam}</span>
+                  </div>
+                </div>
+
+                <div className="fixture-details">
+                  <div className="detail-row">
+                    <span className="detail-label">Stadium:</span>
+                    <span className="detail-value">{activeFixture.stadium}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Date:</span>
+                    <span className="detail-value">{activeFixture.date}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Time:</span>
+                    <span className="detail-value">{activeFixture.time}</span>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+
+            <button 
+              className="speculate-card-btn font-mono"
+              onClick={() => setActiveTab("pitchside")}
+            >
+              🏆 Speculate on Match
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Live Ticker Section */}
+      <section className="live-ticker-section glass-card">
+        <div className="live-ticker-header">
+          <span className="live-pulse" />
+          <span className="live-ticker-title font-mono">LIVE WORLD CUP MATCHES</span>
+        </div>
+        <div className="live-ticker-scroll-container">
+          <div className="live-ticker-wrapper">
+            {liveMatchesData.map((match) => (
+              <div key={match.id} className="live-match-card" onClick={() => setActiveTab("pitchside")}>
+                <div className="live-match-meta">
+                  <span className="live-badge font-mono">LIVE {match.minute}</span>
+                </div>
+                <div className="live-matchup-row">
+                  <div className="live-team">
+                    <span className="live-flag">{match.homeFlag}</span>
+                    <span className="live-team-name">{match.homeTeam}</span>
+                  </div>
+                  <div className="live-score font-mono">{match.homeScore} - {match.awayScore}</div>
+                  <div className="live-team">
+                    <span className="live-flag">{match.awayFlag}</span>
+                    <span className="live-team-name">{match.awayTeam}</span>
+                  </div>
+                </div>
+                <div className="live-event font-mono">{match.event}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* Metrics Section */}
@@ -236,7 +370,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
       {/* Call to Action Footer */}
       <section className="landing-cta-bottom text-center">
         <div className="glass-card cta-card">
-          <h2>Ready to speculation on World Cup 2026?</h2>
+          <h2>Ready to speculate on World Cup 2026?</h2>
           <p>Join the next generation of security-gated DeFi. Stake stablecoins risk-free, earn credits, and delegate them to autonomous agents.</p>
           <div className="cta-buttons">
             <button className="btn btn-primary hover-glow" onClick={() => setActiveTab("pitchside")}>
@@ -257,7 +391,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           margin: 0 auto;
           display: flex;
           flex-direction: column;
-          gap: 64px;
+          gap: 48px;
           padding: 0 16px;
           color: var(--text-primary);
         }
@@ -289,18 +423,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           pointer-events: none;
         }
 
-        /* Hero */
-        .landing-hero {
-          text-align: center;
-          display: flex;
-          flex-direction: column;
+        /* Hero Split Layout */
+        .landing-hero-split {
+          display: grid;
+          grid-template-columns: 1.15fr 0.85fr;
+          gap: 48px;
           align-items: center;
           padding-top: 48px;
-          gap: 24px;
+          min-height: 480px;
+        }
+
+        .hero-left {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          text-align: left;
+        }
+
+        .hero-right {
+          display: flex;
+          justify-content: center;
+          align-items: center;
         }
 
         .hero-badge {
           display: inline-flex;
+          align-self: flex-start;
           align-items: center;
           gap: 8px;
           background: rgba(75, 123, 245, 0.1);
@@ -329,6 +477,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           font-weight: 900;
           line-height: 1.15;
           letter-spacing: -0.03em;
+          margin: 0;
         }
 
         .glow-text {
@@ -337,27 +486,380 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         }
 
         .hero-desc {
-          font-size: 1.1rem;
+          font-size: 1.05rem;
           color: var(--text-secondary);
-          max-width: 720px;
+          max-width: 680px;
           line-height: 1.6;
+          margin: 0;
+        }
+
+        /* Workflow Pathway */
+        .workflow-pathway {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-top: 8px;
+          flex-wrap: wrap;
+        }
+
+        .pathway-step {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 14px;
+          border-radius: var(--radius-full);
+          border: 1px solid var(--border-default);
+          background: rgba(255, 255, 255, 0.01);
+          font-size: 0.8rem;
+          color: var(--text-secondary);
+          transition: all 0.3s ease;
+        }
+
+        .pathway-step.active {
+          border-color: var(--accent-blue);
+          background: rgba(75, 123, 245, 0.05);
+          color: #fff;
+        }
+
+        .pathway-step.active-glow {
+          border-color: var(--accent-safe);
+          background: rgba(0, 255, 136, 0.05);
+          color: #fff;
+          box-shadow: 0 0 10px rgba(0, 255, 136, 0.15);
+        }
+
+        .pathway-step.active-purple {
+          border-color: var(--accent-purple);
+          background: rgba(168, 85, 247, 0.05);
+          color: #fff;
+          box-shadow: 0 0 10px rgba(168, 85, 247, 0.15);
+        }
+
+        .pathway-step .step-num {
+          background: rgba(255, 255, 255, 0.1);
+          width: 18px;
+          height: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          font-size: 0.7rem;
+          font-weight: 700;
+        }
+
+        .pathway-step.active .step-num {
+          background: var(--accent-blue);
+          color: #000;
+        }
+
+        .pathway-step.active-glow .step-num {
+          background: var(--accent-safe);
+          color: #000;
+        }
+
+        .pathway-step.active-purple .step-num {
+          background: var(--accent-purple);
+          color: #000;
+        }
+
+        .pathway-arrow {
+          color: var(--text-tertiary);
+          font-size: 0.8rem;
         }
 
         .hero-ctas {
           display: flex;
           gap: 16px;
-          margin-top: 12px;
           flex-wrap: wrap;
-          justify-content: center;
         }
 
         .btn-lg-cta {
-          padding: 16px 36px;
-          font-size: 1.05rem;
+          padding: 14px 28px;
+          font-size: 0.95rem;
         }
 
         .hover-glow:hover {
           box-shadow: 0 0 25px rgba(75, 123, 245, 0.5);
+        }
+
+        /* Fixtures Card */
+        .fixtures-card {
+          width: 100%;
+          max-width: 400px;
+          padding: 24px;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          border-color: rgba(75, 123, 245, 0.2);
+          overflow: hidden;
+        }
+
+        .fixtures-card-glow {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at top right, rgba(75, 123, 245, 0.08), transparent 60%);
+          pointer-events: none;
+        }
+
+        .fixture-slide-content {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .fixtures-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid var(--border-default);
+          padding-bottom: 12px;
+        }
+
+        .fixture-tag {
+          font-size: 0.7rem;
+          color: var(--accent-blue);
+          font-weight: 700;
+          letter-spacing: 0.05em;
+        }
+
+        .group-badge {
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid var(--border-default);
+          font-size: 0.65rem;
+          color: var(--text-secondary);
+          padding: 2px 8px;
+          border-radius: var(--radius-sm);
+        }
+
+        .matchup-container {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 0;
+        }
+
+        .team-display {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          flex: 1;
+        }
+
+        .team-flag {
+          font-size: 2.2rem;
+          line-height: 1;
+        }
+
+        .team-name {
+          font-size: 0.95rem;
+          font-weight: 700;
+          color: #fff;
+          text-align: center;
+        }
+
+        .vs-badge {
+          font-size: 0.8rem;
+          font-weight: 800;
+          color: var(--text-tertiary);
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--border-default);
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          margin: 0 16px;
+        }
+
+        .fixture-details {
+          background: rgba(0, 0, 0, 0.2);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-md);
+          padding: 12px 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .detail-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.78rem;
+          line-height: 1.4;
+        }
+
+        .detail-label {
+          color: var(--text-tertiary);
+        }
+
+        .detail-value {
+          color: var(--text-secondary);
+          font-weight: 500;
+        }
+
+        .speculate-card-btn {
+          width: 100%;
+          background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+          border: none;
+          color: #fff;
+          padding: 12px;
+          font-size: 0.85rem;
+          font-weight: 700;
+          border-radius: var(--radius-md);
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .speculate-card-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 5px 15px rgba(168, 85, 247, 0.3);
+        }
+
+        /* Live Ticker Section */
+        .live-ticker-section {
+          padding: 16px 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .live-ticker-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .live-pulse {
+          width: 8px;
+          height: 8px;
+          background-color: #ff3b30;
+          border-radius: 50%;
+          display: inline-block;
+          box-shadow: 0 0 8px #ff3b30;
+          animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+          0% { opacity: 0.4; }
+          50% { opacity: 1; }
+          100% { opacity: 0.4; }
+        }
+
+        .live-ticker-title {
+          font-size: 0.72rem;
+          font-weight: 700;
+          color: #ff3b30;
+          letter-spacing: 0.08em;
+        }
+
+        .live-ticker-scroll-container {
+          width: 100%;
+          overflow-x: auto;
+        }
+
+        .live-ticker-scroll-container::-webkit-scrollbar {
+          height: 4px;
+        }
+        .live-ticker-scroll-container::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 2px;
+        }
+
+        .live-ticker-wrapper {
+          display: flex;
+          gap: 16px;
+          width: max-content;
+          padding-bottom: 4px;
+        }
+
+        .live-match-card {
+          background: rgba(255, 255, 255, 0.01);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-md);
+          padding: 14px 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          min-width: 250px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .live-match-card:hover {
+          border-color: var(--accent-blue);
+          background: rgba(75, 123, 245, 0.03);
+          transform: translateY(-1px);
+        }
+
+        .live-match-meta {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .live-badge {
+          font-size: 0.62rem;
+          font-weight: 700;
+          color: #ff3b30;
+          background: rgba(255, 59, 48, 0.08);
+          border: 1px solid rgba(255, 59, 48, 0.2);
+          padding: 2px 6px;
+          border-radius: 4px;
+        }
+
+        .live-matchup-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .live-team {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex: 1;
+        }
+
+        .live-team:last-child {
+          justify-content: flex-end;
+        }
+
+        .live-flag {
+          font-size: 1.25rem;
+        }
+
+        .live-team-name {
+          font-size: 0.82rem;
+          font-weight: 700;
+          color: #fff;
+        }
+
+        .live-score {
+          font-size: 0.95rem;
+          font-weight: 800;
+          color: var(--accent-safe);
+          background: rgba(0, 255, 136, 0.05);
+          border: 1px solid rgba(0, 255, 136, 0.15);
+          padding: 2px 6px;
+          border-radius: 4px;
+          letter-spacing: 0.05em;
+        }
+
+        .live-event {
+          font-size: 0.68rem;
+          color: var(--text-tertiary);
+          font-style: italic;
+          text-align: center;
+          border-top: 1px solid var(--border-default);
+          padding-top: 6px;
+          margin-top: 2px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         /* Metrics */
@@ -635,6 +1137,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         }
 
         @media (max-width: 900px) {
+          .landing-hero-split {
+            grid-template-columns: 1fr;
+            gap: 32px;
+          }
+          .hero-left {
+            text-align: center;
+            align-items: center;
+          }
+          .hero-badge {
+            align-self: center;
+          }
+          .workflow-pathway {
+            justify-content: center;
+          }
           .hero-main-title {
             font-size: 2.2rem;
           }
