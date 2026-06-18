@@ -100,14 +100,14 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
 
         {/* Navigation Tabs */}
         <div className="header-tabs">
-          <button
-            className={`tab-btn ${activeTab === "home" ? "active" : ""}`}
-            onClick={() => setActiveTab("home")}
-          >
-            🏠 Home
-          </button>
-          
-          {(activeTab === "swap" || activeTab === "pitchside") && (
+          {(activeTab === "home" || activeTab === "docs") ? (
+            <button
+              className={`tab-btn ${activeTab === "docs" ? "active" : ""}`}
+              onClick={() => setActiveTab("docs")}
+            >
+              📄 Docs
+            </button>
+          ) : (
             <>
               <button
                 className={`tab-btn ${activeTab === "swap" ? "active" : ""}`}
@@ -123,13 +123,6 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
               </button>
             </>
           )}
-
-          <button
-            className={`tab-btn ${activeTab === "docs" ? "active" : ""}`}
-            onClick={() => setActiveTab("docs")}
-          >
-            📄 Docs
-          </button>
         </div>
 
         {/* Desktop Actions */}
@@ -355,13 +348,13 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                     )}
 
                     <div className="mobile-nav-links">
-                      <button 
-                        className={`nav-link-item ${activeTab === 'home' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('home'); setMobileMenuOpen(false); }}
-                        style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
-                      >🏠 Home</button>
-
-                      {(activeTab === "swap" || activeTab === "pitchside") && (
+                      {(activeTab === "home" || activeTab === "docs") ? (
+                        <button 
+                          className={`nav-link-item ${activeTab === 'docs' ? 'active' : ''}`}
+                          onClick={() => { setActiveTab('docs'); setMobileMenuOpen(false); }}
+                          style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                        >📄 Docs</button>
+                      ) : (
                         <>
                           <button 
                             className={`nav-link-item ${activeTab === 'swap' ? 'active' : ''}`}
@@ -375,12 +368,6 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                           >⚽ Pitchside AI</button>
                         </>
                       )}
-
-                      <button 
-                        className={`nav-link-item ${activeTab === 'docs' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('docs'); setMobileMenuOpen(false); }}
-                        style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
-                      >📄 Docs</button>
                       <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
                       <a href="https://x.com/encrypt_wizard" target="_blank" className="nav-link-item">Twitter / X</a>
                     </div>
