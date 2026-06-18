@@ -35,6 +35,39 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
   const consoleLogsRef = useRef<HTMLDivElement>(null);
   const prevLogsLengthRef = useRef(0);
 
+  const safeFormatDate = (dateStr?: string) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    try {
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return d.toDateString();
+    }
+  };
+
+  const safeFormatShortDate = (dateStr?: string) => {
+    if (!dateStr) return "TBD";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    try {
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    } catch {
+      return d.toDateString();
+    }
+  };
+
+  const safeFormatTime = (dateStr?: string | null) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    try {
+      return d.toLocaleTimeString();
+    } catch {
+      return d.toTimeString();
+    }
+  };
+
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
@@ -356,7 +389,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
                   📡 Live Match Data Feed
                 </h3>
                 <p style={{ margin: '4px 0 0', fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
-                  Verified at {new Date(liveDataFeed.timestamp!).toLocaleTimeString()}
+                  Verified at {safeFormatTime(liveDataFeed.timestamp)}
                 </p>
               </div>
               <button
@@ -446,7 +479,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
                         </div>
                         {(m.date || m.venue) && (
                           <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {m.date ? new Date(m.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                            {safeFormatDate(m.date)}
                             {m.date && m.venue ? ' · ' : ''}{m.venue || ''}
                           </div>
                         )}
@@ -476,7 +509,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
                           color: m.status === 'FINISHED' ? '#aaa' : 'var(--accent-blue)',
                           fontWeight: '500',
                         }}>
-                          {m.status === 'FINISHED' ? `✅ ${m.score} FT` : `📅 ${m.date ? new Date(m.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'TBD'}`}
+                          {m.status === 'FINISHED' ? `✅ ${m.score} FT` : `📅 ${safeFormatShortDate(m.date)}`}
                         </span>
                       )}
                     </div>

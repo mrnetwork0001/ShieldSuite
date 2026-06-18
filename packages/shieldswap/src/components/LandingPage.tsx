@@ -147,8 +147,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
               id: `api-sched-${idx}`,
               homeTeam: m.home,
               awayTeam: m.away,
-              date: m.date ? new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "TBD Date",
-              time: m.date ? new Date(m.date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }) + " UTC" : "TBD Time",
+              date: (() => {
+                if (!m.date) return "TBD Date";
+                const d = new Date(m.date);
+                return isNaN(d.getTime()) ? m.date : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+              })(),
+              time: (() => {
+                if (!m.date) return "TBD Time";
+                const d = new Date(m.date);
+                return isNaN(d.getTime()) ? "" : d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }) + " UTC";
+              })(),
               stadium: m.venue || "Global Stadium",
               group: m.leagueName || "Group Stage"
             }));
