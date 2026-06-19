@@ -129,7 +129,19 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
   // Pagination states
   const [upcomingPage, setUpcomingPage] = useState(1);
   const [completedPage, setCompletedPage] = useState(1);
-  const PAGE_SIZE = 20;
+  
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const PAGE_SIZE = isMobile ? 10 : 20;
 
   const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "";
 
