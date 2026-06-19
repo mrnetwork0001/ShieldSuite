@@ -535,44 +535,8 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
     });
   };
 
-  const getLiveTimeText = (match: Match) => {
-    if (!match.minute) return "";
-    const numericMinute = Number(match.minute);
-    if (!isNaN(numericMinute) && numericMinute > 0) {
-      return `${numericMinute}'`;
-    }
-    const minStr = String(match.minute).toUpperCase();
-    if (minStr === "HT" || minStr === "HALF" || minStr.includes("HALF_TIME") || minStr.includes("HT")) {
-      return "HT";
-    }
-    if (match.date) {
-      try {
-        const kickOff = new Date(match.date).getTime();
-        const now = Date.now();
-        const diffMs = now - kickOff;
-        if (diffMs > 0) {
-          let elapsed = Math.floor(diffMs / 60000);
-          if (minStr.includes("2ND_HALF") || minStr.includes("SECOND")) {
-            elapsed = elapsed - 15;
-            if (elapsed < 46) elapsed = 46;
-            if (elapsed > 90) elapsed = 90;
-          } else {
-            if (elapsed > 45) elapsed = 45;
-          }
-          if (elapsed > 0) return `${elapsed}'`;
-        }
-      } catch (e) {}
-    }
-    if (minStr.includes("1ST")) return "25'";
-    if (minStr.includes("2ND")) return "70'";
-    return "";
-  };
-
   const getStatusText = (match: Match) => {
-    if (match.status === "LIVE") {
-      const timeText = getLiveTimeText(match);
-      return timeText ? `LIVE ${timeText}` : "LIVE";
-    }
+    if (match.status === "LIVE") return `LIVE ${match.minute ? match.minute : ""}'`;
     if (match.status === "FINISHED" || match.status === "FT") return "FT";
     return "UPCOMING";
   };

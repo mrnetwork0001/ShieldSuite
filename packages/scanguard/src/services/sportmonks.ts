@@ -24,6 +24,10 @@ export interface SportmonksMatch {
   events?: any[];
 }
 
+let cachedFixtures: SportmonksMatch[] | null = null;
+let lastCacheTime = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache
+
 const WORLD_CUP_TEAMS = [
   "Argentina", "France", "England", "Brazil", "Spain",
   "Germany", "United States", "Canada", "Mexico", "Portugal",
@@ -142,6 +146,12 @@ function extractScores(scores: any[] | undefined, homeParticipant: any, awayPart
 
 /** Fetch World Cup 2026 fixtures (Tries Premium Season 26618 first, falls back to Free Leagues 271/501 mapped to World Cup) */
 export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
+  const now = Date.now();
+  if (cachedFixtures && (now - lastCacheTime < CACHE_TTL_MS)) {
+    logger.info("[Sportmonks] Returning cached fixtures list (cache hit).");
+    return cachedFixtures;
+  }
+
   const apiKey = getApiKey();
   if (!apiKey) {
     logger.warn("[Sportmonks] API key is not configured.");
@@ -152,7 +162,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
   try {
     logger.info("[Sportmonks] Attempting to fetch real World Cup Season 26618 fixtures with cursor pagination URL traversal...");
     let allData: any[] = [];
-    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureSeasons:26618&include=participants;scores;venue;state;events;periods";
+    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureSeasons:26618&include=participants;scores;venue;state;events";
     let pageCount = 0;
 
     while (nextUrl && pageCount < 8) {
@@ -180,7 +190,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
 
     if (allData.length > 0) {
       logger.info(`[Sportmonks] Successfully fetched ${allData.length} total World Cup 26618 fixtures.`);
-      return allData.map((item: any) => {
+      const result = allData.map((item: any) => {
         const homeParticipant = item.participants?.find((p: any) => p.meta?.location === "home");
         const awayParticipant = item.participants?.find((p: any) => p.meta?.location === "away");
         
@@ -218,14 +228,6 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
           status = "FINISHED";
         }
 
-        let elapsedMinute: number | undefined = undefined;
-        if (Array.isArray(item.periods)) {
-          const activePeriod = item.periods.find((p: any) => p.ticking === true);
-          if (activePeriod) {
-            elapsedMinute = activePeriod.minutes;
-          }
-        }
-
         return {
           home: homeName,
           away: awayName,
@@ -233,10 +235,13 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
           status,
           venue: item.venue?.name || "FIFA World Cup Arena",
           date: item.starting_at || new Date().toISOString(),
-          minute: elapsedMinute !== undefined ? String(elapsedMinute) : (item.state?.developer_name || undefined),
+          minute: item.state?.developer_name || undefined,
           events: item.events || []
         };
       });
+      cachedFixtures = result;
+      lastCacheTime = now;
+      return result;
     } else {
       logger.warn("[Sportmonks] World Cup Season 26618 query returned empty data.");
     }
@@ -248,7 +253,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
   try {
     logger.info("[Sportmonks] Falling back to Free Plan Leagues (271, 501) with World Cup mapping...");
     let allFallbackData: any[] = [];
-    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureLeagues:271,501&include=participants;scores;venue;state;events;periods";
+    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureLeagues:271,501&include=participants;scores;venue;state;events";
     let pageCount = 0;
 
     while (nextUrl && pageCount < 4) {
@@ -273,7 +278,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
       pageCount++;
     }
 
-    return allFallbackData.map((item: any) => {
+    const result = allFallbackData.map((item: any) => {
       const homeParticipant = item.participants?.find((p: any) => p.meta?.location === "home");
       const awayParticipant = item.participants?.find((p: any) => p.meta?.location === "away");
       const homeClubName = homeParticipant?.name || "TBD";
@@ -296,14 +301,6 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
         status = "FINISHED";
       }
 
-      let elapsedMinute: number | undefined = undefined;
-      if (Array.isArray(item.periods)) {
-        const activePeriod = item.periods.find((p: any) => p.ticking === true);
-        if (activePeriod) {
-          elapsedMinute = activePeriod.minutes;
-        }
-      }
-
       return {
         home,
         away,
@@ -311,14 +308,23 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
         status,
         venue: item.venue?.name || "FIFA World Cup Arena",
         date: item.starting_at || new Date().toISOString(),
-        minute: elapsedMinute !== undefined ? String(elapsedMinute) : (item.state?.developer_name || undefined),
+        minute: item.state?.developer_name || undefined,
         events: item.events || []
       };
     });
+
+    if (result.length > 0) {
+      cachedFixtures = result;
+      lastCacheTime = now;
+    }
+    return result;
   } catch (err: any) {
     logger.error(`[Sportmonks] Failed to fetch fixtures from fallback leagues: ${err.message}`);
+    if (cachedFixtures) {
+      logger.warn("[Sportmonks] Fetch failed. Returning stale cached fixtures list.");
+      return cachedFixtures;
+    }
     return [];
   }
 }
-
 
