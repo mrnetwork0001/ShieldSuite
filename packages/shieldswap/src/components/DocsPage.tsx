@@ -288,13 +288,13 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
 
                   <div className="glass-card docs-info-box" style={{ marginTop: '24px', border: '1px solid rgba(75, 123, 245, 0.3)', background: 'rgba(75, 123, 245, 0.03)' }}>
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 8px 0', color: '#fff' }}>
-                      <span style={{ fontSize: '1.2rem' }}>📡</span> Live Data Subscription & Roadmap
+                      <span style={{ fontSize: '1.2rem' }}>📡</span> Live Data Feed & Future Roadmap
                     </h4>
                     <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', lineHeight: '1.4' }}>
-                      Pitchside AI is powered by the <strong>Sportmonks Football API Regular Plan (€69/mo)</strong>. This provides active live match feeds, lineups, and real-time match events to feed the autonomous scout agent.
+                      Pitchside AI integrates professional-grade live data pipelines from the <strong>Sportmonks Football API</strong>. This provides real-time fixtures, lineups, and match event updates directly to our Trusted Execution Environment (TEE) scout agent.
                     </p>
                     <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.4', color: 'var(--text-secondary)' }}>
-                      <strong>Post-World Cup Upgrade:</strong> We plan to upgrade to the <strong>All-In Plan (€129/mo)</strong>. This upgrade will feed global football news, prediction sentiment, and xG statistics directly into the TEE Scout Agent, enabling 24/7 autonomous sentiment trading and market speculation even outside live match windows.
+                      <strong>Future Roadmap:</strong> We plan to expand the data feed integration to process global football news sentiment, prediction market/odds fluctuations, and advanced xG analytics. This will allow the TEE Scout Agent to perform 24/7 autonomous speculation, even between live match windows.
                     </p>
                   </div>
                 </>

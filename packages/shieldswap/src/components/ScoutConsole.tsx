@@ -321,14 +321,14 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
             lineHeight: '1.4' 
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-              <span style={{ color: 'var(--text-tertiary)' }}>API Data Tier:</span>
-              <span style={{ color: '#4B7BF5', fontWeight: 'bold' }}>Sportmonks Regular Plan (€69/mo)</span>
+              <span style={{ color: 'var(--text-tertiary)' }}>API Data Integration:</span>
+              <span style={{ color: '#00ff88', fontWeight: 'bold' }}>Sportmonks Live Feed</span>
             </div>
             <div style={{ color: 'var(--text-secondary)', fontSize: '0.68rem' }}>
-              <strong>Capabilities:</strong> Real-time match fixtures, lineups, scores, and live match events trigger TEE agent speculation.
+              <strong>Active Pipeline:</strong> Real-time match fixtures, lineups, scores, and live match events trigger TEE agent speculation.
             </div>
             <div style={{ marginTop: '8px', borderTop: '1px dashed rgba(255, 255, 255, 0.08)', paddingTop: '6px', color: 'var(--text-tertiary)', fontSize: '0.68rem' }}>
-              🔮 <strong>Post-World Cup Roadmap:</strong> Upgrade to All-In Plan (€129/mo) to unlock news sentiment trading, odds shifting triggers, and xG analytics.
+              🔮 <strong>Future Roadmap:</strong> Expanding feed to support global football news feeds, prediction/odds sentiment parsing, and advanced xG metrics.
             </div>
           </div>
 
