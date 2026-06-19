@@ -152,7 +152,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
   try {
     logger.info("[Sportmonks] Attempting to fetch real World Cup Season 26618 fixtures with cursor pagination URL traversal...");
     let allData: any[] = [];
-    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureSeasons:26618&include=participants;scores;venue;state;events";
+    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureSeasons:26618&include=participants;scores;venue;state;events;periods";
     let pageCount = 0;
 
     while (nextUrl && pageCount < 8) {
@@ -218,6 +218,20 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
           status = "FINISHED";
         }
 
+        let elapsedMinute: number | undefined = undefined;
+        if (Array.isArray(item.periods)) {
+          const activePeriod = item.periods.find((p: any) => p.ticking === true);
+          if (activePeriod) {
+            elapsedMinute = (activePeriod.counts_from || 0) + (activePeriod.minutes || 0);
+          } else {
+            const finishedPeriods = item.periods.filter((p: any) => p.minutes > 0);
+            if (finishedPeriods.length > 0) {
+              const lastPeriod = finishedPeriods[finishedPeriods.length - 1];
+              elapsedMinute = (lastPeriod.counts_from || 0) + (lastPeriod.minutes || 0);
+            }
+          }
+        }
+
         return {
           home: homeName,
           away: awayName,
@@ -225,7 +239,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
           status,
           venue: item.venue?.name || "FIFA World Cup Arena",
           date: item.starting_at || new Date().toISOString(),
-          minute: item.state?.developer_name || undefined,
+          minute: elapsedMinute !== undefined ? String(elapsedMinute) : (item.state?.developer_name || undefined),
           events: item.events || []
         };
       });
@@ -240,7 +254,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
   try {
     logger.info("[Sportmonks] Falling back to Free Plan Leagues (271, 501) with World Cup mapping...");
     let allFallbackData: any[] = [];
-    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureLeagues:271,501&include=participants;scores;venue;state;events";
+    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureLeagues:271,501&include=participants;scores;venue;state;events;periods";
     let pageCount = 0;
 
     while (nextUrl && pageCount < 4) {
@@ -288,6 +302,20 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
         status = "FINISHED";
       }
 
+      let elapsedMinute: number | undefined = undefined;
+      if (Array.isArray(item.periods)) {
+        const activePeriod = item.periods.find((p: any) => p.ticking === true);
+        if (activePeriod) {
+          elapsedMinute = (activePeriod.counts_from || 0) + (activePeriod.minutes || 0);
+        } else {
+          const finishedPeriods = item.periods.filter((p: any) => p.minutes > 0);
+          if (finishedPeriods.length > 0) {
+            const lastPeriod = finishedPeriods[finishedPeriods.length - 1];
+            elapsedMinute = (lastPeriod.counts_from || 0) + (lastPeriod.minutes || 0);
+          }
+        }
+      }
+
       return {
         home,
         away,
@@ -295,7 +323,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
         status,
         venue: item.venue?.name || "FIFA World Cup Arena",
         date: item.starting_at || new Date().toISOString(),
-        minute: item.state?.developer_name || undefined,
+        minute: elapsedMinute !== undefined ? String(elapsedMinute) : (item.state?.developer_name || undefined),
         events: item.events || []
       };
     });
@@ -304,4 +332,5 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
     return [];
   }
 }
+
 
