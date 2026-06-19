@@ -46,6 +46,8 @@ const FLAG_MAP: Record<string, string> = {
   "Senegal": "🇸🇳",
   "Serbia": "🇷🇸",
   "South Korea": "🇰🇷",
+  "Korea Republic": "🇰🇷",
+  "Korea": "🇰🇷",
   "South Africa": "🇿🇦",
   "Spain": "🇪🇸",
   "Switzerland": "🇨🇭",
@@ -57,6 +59,7 @@ const FLAG_MAP: Record<string, string> = {
   "Bosnia-Herzegovina": "🇧🇦",
   "Bosnia and Herzegovina": "🇧🇦",
   "Czechia": "🇨🇿",
+  "Czech Republic": "🇨🇿",
   "Paraguay": "🇵🇾",
   "Haiti": "🇭🇹",
   "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
@@ -67,6 +70,10 @@ const FLAG_MAP: Record<string, string> = {
   "Norway": "🇳🇴",
   "Panama": "🇵🇦",
   "Colombia": "🇨🇴",
+  "Italy": "🇮🇹",
+  "Ukraine": "🇺🇦",
+  "Slovakia": "🇸🇰",
+  "Chile": "🇨🇱",
 
   // 3-Letter ISO/FIFA Code Mappings (Case-insensitive matches)
   "ARG": "🇦🇷",
@@ -92,7 +99,11 @@ const FLAG_MAP: Record<string, string> = {
   "SUI": "🇨🇭",
   "URU": "🇺🇾",
   "TUR": "🇹🇷",
-  "PAR": "🇵🇾"
+  "PAR": "🇵🇾",
+  "ITA": "🇮🇹",
+  "UKR": "🇺🇦",
+  "SVK": "🇸🇰",
+  "CHI": "🇨🇱"
 };
 
 const getFlag = (team: string) => {

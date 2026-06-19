@@ -56,7 +56,90 @@ function mapTeams(homeClub: string, awayClub: string): { home: string; away: str
   return { home, away };
 }
 
-/** Fetch World Cup 2026 fixtures (Tries Premium League 732 first, falls back to Free Leagues 271/501 mapped to World Cup) */
+function extractScores(scores: any[] | undefined, homeParticipant: any, awayParticipant: any): { home: number; away: number } {
+  if (!scores || !Array.isArray(scores) || scores.length === 0) {
+    return { home: 0, away: 0 };
+  }
+
+  const homeId = homeParticipant?.id;
+  const awayId = awayParticipant?.id;
+
+  // Format A: e.g. score: { home: X, away: Y }
+  const getFormatAScore = (candidates: any[]) => {
+    let bestScore: { home: number; away: number } | null = null;
+    let maxTotal = -1;
+    for (const s of candidates) {
+      const homeVal = s.score?.home ?? s.home;
+      const awayVal = s.score?.away ?? s.away;
+      if (typeof homeVal === 'number' && typeof awayVal === 'number') {
+        const total = homeVal + awayVal;
+        if (total > maxTotal) {
+          maxTotal = total;
+          bestScore = { home: homeVal, away: awayVal };
+        }
+      }
+    }
+    return bestScore;
+  };
+
+  // Format B: e.g. score: { goals: X, participant: "home"|"away" }
+  const getFormatBGoals = (candidates: any[], participantId: any, location: 'home' | 'away'): number | null => {
+    let maxGoals = -1;
+    for (const s of candidates) {
+      const isMatch = (participantId && s.participant_id === participantId) ||
+                      (s.score?.participant === location) ||
+                      (s.participant === location);
+      if (isMatch) {
+        const goals = s.score?.goals ?? s.goals;
+        if (typeof goals === 'number' && goals > maxGoals) {
+          maxGoals = goals;
+        }
+      }
+    }
+    return maxGoals >= 0 ? maxGoals : null;
+  };
+
+  // 1. Try description: "CURRENT"
+  const currentScores = scores.filter(s => s.description === "CURRENT");
+  if (currentScores.length > 0) {
+    const fmtA = getFormatAScore(currentScores);
+    if (fmtA) return fmtA;
+
+    const homeGoals = getFormatBGoals(currentScores, homeId, 'home');
+    const awayGoals = getFormatBGoals(currentScores, awayId, 'away');
+    if (homeGoals !== null || awayGoals !== null) {
+      return { home: homeGoals ?? 0, away: awayGoals ?? 0 };
+    }
+  }
+
+  // 2. Try description: "FT" or "FT_AET"
+  const ftScores = scores.filter(s => s.description === "FT" || s.description === "FT_AET");
+  if (ftScores.length > 0) {
+    const fmtA = getFormatAScore(ftScores);
+    if (fmtA) return fmtA;
+
+    const homeGoals = getFormatBGoals(ftScores, homeId, 'home');
+    const awayGoals = getFormatBGoals(ftScores, awayId, 'away');
+    if (homeGoals !== null || awayGoals !== null) {
+      return { home: homeGoals ?? 0, away: awayGoals ?? 0 };
+    }
+  }
+
+  // 3. Fallback: Search all scores for Format A
+  const anyFmtA = getFormatAScore(scores);
+  if (anyFmtA) return anyFmtA;
+
+  // 4. Fallback: Search all scores for Format B
+  const homeGoals = getFormatBGoals(scores, homeId, 'home');
+  const awayGoals = getFormatBGoals(scores, awayId, 'away');
+  if (homeGoals !== null || awayGoals !== null) {
+    return { home: homeGoals ?? 0, away: awayGoals ?? 0 };
+  }
+
+  return { home: 0, away: 0 };
+}
+
+/** Fetch World Cup 2026 fixtures (Tries Premium Season 26618 first, falls back to Free Leagues 271/501 mapped to World Cup) */
 export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
   const apiKey = getApiKey();
   if (!apiKey) {
@@ -64,83 +147,123 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
     return [];
   }
 
-  // 1. Try Premium/Official World Cup League 732 first
+  // 1. Try Premium/Official World Cup Season 26618 first
   try {
-    logger.info("[Sportmonks] Attempting to fetch real World Cup League 732 fixtures...");
-    const url = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureLeagues:732&include=participants;scores;venue;state";
-    const res = await fetch(url, {
-      headers: {
-        "Authorization": apiKey,
-        "Accept": "application/json"
-      }
-    });
+    logger.info("[Sportmonks] Attempting to fetch real World Cup Season 26618 fixtures with cursor pagination URL traversal...");
+    let allData: any[] = [];
+    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureSeasons:26618&include=participants;scores;venue;state";
+    let pageCount = 0;
 
-    if (res.ok) {
+    while (nextUrl && pageCount < 8) {
+      logger.info(`[Sportmonks] Fetching World Cup Season 26618 page ${pageCount + 1}...`);
+      const res = await fetch(nextUrl, {
+        headers: {
+          "Authorization": apiKey,
+          "Accept": "application/json"
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch page ${pageCount + 1} with status ${res.status}`);
+      }
+
       const json = await res.json() as any;
-      if (json.data && Array.isArray(json.data) && json.data.length > 0) {
-        logger.info(`[Sportmonks] Successfully fetched ${json.data.length} real World Cup 732 matches.`);
-        return json.data.map((item: any) => {
-          const homeParticipant = item.participants?.find((p: any) => p.meta?.location === "home");
-          const awayParticipant = item.participants?.find((p: any) => p.meta?.location === "away");
-          const homeName = homeParticipant?.name || "TBD";
-          const awayName = awayParticipant?.name || "TBD";
-
-          const homeScoreObj = item.scores?.find((s: any) => s.score?.participant_id === homeParticipant?.id && s.description === "CURRENT");
-          const awayScoreObj = item.scores?.find((s: any) => s.score?.participant_id === awayParticipant?.id && s.description === "CURRENT");
-
-          const homeGoals = homeScoreObj?.score?.goals ?? 0;
-          const awayGoals = awayScoreObj?.score?.goals ?? 0;
-          const score = `${homeGoals} - ${awayGoals}`;
-
-          const stateName = (item.state?.developer_name || item.state?.name || "").toUpperCase();
-          let status: "LIVE" | "FINISHED" | "SCHEDULED" = "SCHEDULED";
-          if (["LIVE", "INPLAY", "1ST_HALF", "2ND_HALF", "HT"].includes(stateName)) {
-            status = "LIVE";
-          } else if (["FT", "AET", "POSTPONED", "ENDED"].includes(stateName)) {
-            status = "FINISHED";
-          }
-
-          return {
-            home: homeName,
-            away: awayName,
-            score,
-            status,
-            venue: item.venue?.name || "FIFA World Cup Arena",
-            date: item.starting_at || new Date().toISOString(),
-            minute: item.state?.developer_name || undefined
-          };
-        });
-      } else {
-        logger.warn(`[Sportmonks] League 732 returned no data. Msg: ${json.message || "none"}`);
+      if (json.data && Array.isArray(json.data)) {
+        allData = [...allData, ...json.data];
       }
+
+      // next_cursor in Sportmonks v3 is a full next page URL
+      nextUrl = json.pagination?.next_cursor || "";
+      pageCount++;
+    }
+
+    if (allData.length > 0) {
+      logger.info(`[Sportmonks] Successfully fetched ${allData.length} total World Cup 26618 fixtures.`);
+      return allData.map((item: any) => {
+        const homeParticipant = item.participants?.find((p: any) => p.meta?.location === "home");
+        const awayParticipant = item.participants?.find((p: any) => p.meta?.location === "away");
+        
+        let homeName = homeParticipant?.name;
+        let awayName = awayParticipant?.name;
+
+        if (!homeName && !awayName && item.participants && item.participants.length === 2) {
+          homeName = item.participants[0]?.name;
+          awayName = item.participants[1]?.name;
+        }
+
+        if ((!homeName || homeName === "TBD") && item.name) {
+          const parts = item.name.split(/\s+vs\s+|\s+-\s+/i);
+          if (parts.length === 2) {
+            homeName = parts[0].trim();
+            awayName = parts[1].trim();
+          }
+        }
+
+        homeName = homeName || "TBD";
+        awayName = awayName || "TBD";
+
+        const scoresObj = extractScores(item.scores, homeParticipant, awayParticipant);
+        const score = `${scoresObj.home} - ${scoresObj.away}`;
+
+        const stateName = (item.state?.developer_name || item.state?.name || "").toUpperCase();
+        let status: "LIVE" | "FINISHED" | "SCHEDULED" = "SCHEDULED";
+        
+        const liveStates = ["LIVE", "INPLAY", "HALF", "HT", "BREAK", "PENALTY", "SHOOTOUT", "WARMUP"];
+        const finishedStates = ["FT", "AET", "POSTPONED", "ENDED", "FINISHED", "CANCELLED", "ABANDONED"];
+        
+        if (liveStates.some(s => stateName.includes(s))) {
+          status = "LIVE";
+        } else if (finishedStates.some(s => stateName.includes(s))) {
+          status = "FINISHED";
+        }
+
+        return {
+          home: homeName,
+          away: awayName,
+          score,
+          status,
+          venue: item.venue?.name || "FIFA World Cup Arena",
+          date: item.starting_at || new Date().toISOString(),
+          minute: item.state?.developer_name || undefined
+        };
+      });
     } else {
-      logger.warn(`[Sportmonks] League 732 fetch failed with status ${res.status}`);
+      logger.warn("[Sportmonks] World Cup Season 26618 query returned empty data.");
     }
   } catch (err: any) {
-    logger.warn(`[Sportmonks] Premium League 732 fetch error: ${err.message}`);
+    logger.warn(`[Sportmonks] Premium Season 26618 fetch error: ${err.message}`);
   }
 
   // 2. Fall back to free leagues 271, 501 mapped to World Cup
   try {
     logger.info("[Sportmonks] Falling back to Free Plan Leagues (271, 501) with World Cup mapping...");
-    const url = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureLeagues:271,501&include=participants;scores;venue;state";
-    const res = await fetch(url, {
-      headers: {
-        "Authorization": apiKey,
-        "Accept": "application/json"
+    let allFallbackData: any[] = [];
+    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureLeagues:271,501&include=participants;scores;venue;state";
+    let pageCount = 0;
+
+    while (nextUrl && pageCount < 4) {
+      logger.info(`[Sportmonks] Fetching fallback leagues page ${pageCount + 1}...`);
+      const res = await fetch(nextUrl, {
+        headers: {
+          "Authorization": apiKey,
+          "Accept": "application/json"
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch fallback page ${pageCount + 1} with status ${res.status}`);
       }
-    });
 
-    if (!res.ok) {
-      throw new Error(`Sportmonks API responded with status ${res.status}`);
+      const json = await res.json() as any;
+      if (json.data && Array.isArray(json.data)) {
+        allFallbackData = [...allFallbackData, ...json.data];
+      }
+
+      nextUrl = json.pagination?.next_cursor || "";
+      pageCount++;
     }
 
-    const json = await res.json() as any;
-    if (!json.data || !Array.isArray(json.data)) {
-      return [];
-    }
-
-    return json.data.map((item: any) => {
+    return allFallbackData.map((item: any) => {
       const homeParticipant = item.participants?.find((p: any) => p.meta?.location === "home");
       const awayParticipant = item.participants?.find((p: any) => p.meta?.location === "away");
       const homeClubName = homeParticipant?.name || "TBD";
@@ -148,18 +271,18 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
 
       const { home, away } = mapTeams(homeClubName, awayClubName);
 
-      const homeScoreObj = item.scores?.find((s: any) => s.score?.participant_id === homeParticipant?.id && s.description === "CURRENT");
-      const awayScoreObj = item.scores?.find((s: any) => s.score?.participant_id === awayParticipant?.id && s.description === "CURRENT");
-
-      const homeGoals = homeScoreObj?.score?.goals ?? 0;
-      const awayGoals = awayScoreObj?.score?.goals ?? 0;
-      const score = `${homeGoals} - ${awayGoals}`;
+      const scoresObj = extractScores(item.scores, homeParticipant, awayParticipant);
+      const score = `${scoresObj.home} - ${scoresObj.away}`;
 
       const stateName = (item.state?.developer_name || item.state?.name || "").toUpperCase();
       let status: "LIVE" | "FINISHED" | "SCHEDULED" = "SCHEDULED";
-      if (["LIVE", "INPLAY", "1ST_HALF", "2ND_HALF", "HT"].includes(stateName)) {
+      
+      const liveStates = ["LIVE", "INPLAY", "HALF", "HT", "BREAK", "PENALTY", "SHOOTOUT", "WARMUP"];
+      const finishedStates = ["FT", "AET", "POSTPONED", "ENDED", "FINISHED", "CANCELLED", "ABANDONED"];
+      
+      if (liveStates.some(s => stateName.includes(s))) {
         status = "LIVE";
-      } else if (["FT", "AET", "POSTPONED", "ENDED"].includes(stateName)) {
+      } else if (finishedStates.some(s => stateName.includes(s))) {
         status = "FINISHED";
       }
 
