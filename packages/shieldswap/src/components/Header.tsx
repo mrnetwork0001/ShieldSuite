@@ -15,6 +15,8 @@ interface HeaderProps {
   onDisconnect: () => void;
   activeTab: "home" | "docs" | "swap" | "pitchside";
   setActiveTab: (tab: "home" | "docs" | "swap" | "pitchside") => void;
+  audioMuted: boolean;
+  setAudioMuted: (muted: boolean) => void;
 }
 
 interface TxHistoryItem {
@@ -22,7 +24,7 @@ interface TxHistoryItem {
   blockNumber: number;
 }
 
-const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, activeTab, setActiveTab }) => {
+const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, activeTab, setActiveTab, audioMuted, setAudioMuted }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [txHistory, setTxHistory] = useState<TxHistoryItem[]>([]);
@@ -133,6 +135,32 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
             <div className="chain-switcher-select font-mono" style={{ pointerEvents: 'none', background: 'rgba(75, 123, 245, 0.06)', border: '1px solid rgba(75, 123, 245, 0.2)' }}>
               <NetworkDot /> XLayer Mainnet
             </div>
+
+            {/* Mute toggle button (only on Pitchside AI) */}
+            {activeTab === "pitchside" && (
+              <button
+                onClick={() => setAudioMuted(!audioMuted)}
+                className="btn-mute-toggle"
+                title={audioMuted ? "Unmute music" : "Mute music"}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid var(--border-default)',
+                  borderRadius: '8px',
+                  color: 'var(--text-primary)',
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '0.8rem',
+                  fontWeight: 500,
+                  transition: 'all 0.2s'
+                }}
+              >
+                <span>{audioMuted ? "🔇" : "🔊"}</span>
+                <span className="desktop-only">{audioMuted ? "Unmute" : "Mute"}</span>
+              </button>
+            )}
 
             {/* Wallet button / dropdown */}
             {wallet.connected ? (
@@ -341,6 +369,18 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                             style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
                           >⚽ Pitchside AI</button>
                         </>
+                      )}
+                       {activeTab === "pitchside" && (
+                        <button
+                          onClick={() => {
+                            setAudioMuted(!audioMuted);
+                            setMobileMenuOpen(false);
+                          }}
+                          className="nav-link-item"
+                          style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%', color: 'var(--text-primary)' }}
+                        >
+                          {audioMuted ? "🔇 Unmute Music" : "🔊 Mute Music"}
+                        </button>
                       )}
                       <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
                       <a href="https://x.com/ShieldSuite_" target="_blank" rel="noopener noreferrer" className="nav-link-item">Twitter / X</a>

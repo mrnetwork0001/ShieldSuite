@@ -1,7 +1,7 @@
 // ─── ShieldSwap App ──────────────────────────────────────────────────────────
 // Root application component wiring Header, SwapCard, RiskReport, and Activity Log
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { ethers } from "ethers";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "./components/Header";
@@ -92,6 +92,58 @@ const App: React.FC = () => {
 
   // ─── Agent Chat: trigger scan from chat command ─────────────────────
   const [chatScanAddress, setChatScanAddress] = useState<string | null>(null);
+
+  // ─── Background Music for Pitchside AI ───────────────────────────────────
+  const [audioMuted, setAudioMuted] = useState(true);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize Audio
+  useEffect(() => {
+    const audio = new Audio("/assets/audio/background_music.mp3");
+    audio.loop = true;
+    audio.volume = 0.4;
+    audioRef.current = audio;
+
+    return () => {
+      audio.pause();
+      audioRef.current = null;
+    };
+  }, []);
+
+  // Handle Play/Pause when tab or mute changes
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (activeTab === "pitchside" && !audioMuted) {
+      const playAudio = () => {
+        audio.play().catch((err: any) => {
+          console.warn("Autoplay blocked by browser. Awaiting user interaction.", err);
+        });
+      };
+      
+      playAudio();
+
+      // Fallback: play on first user interaction if blocked
+      const handleUserInteraction = () => {
+        if (activeTab === "pitchside" && !audioMuted) {
+          audio.play().catch(() => {});
+        }
+        window.removeEventListener("click", handleUserInteraction);
+        window.removeEventListener("keydown", handleUserInteraction);
+      };
+
+      window.addEventListener("click", handleUserInteraction);
+      window.addEventListener("keydown", handleUserInteraction);
+
+      return () => {
+        window.removeEventListener("click", handleUserInteraction);
+        window.removeEventListener("keydown", handleUserInteraction);
+      };
+    } else {
+      audio.pause();
+    }
+  }, [activeTab, audioMuted]);
 
   const handleChatScan = useCallback((address: string) => {
     setChatScanAddress(address);
@@ -212,6 +264,8 @@ const App: React.FC = () => {
         onDisconnect={handleDisconnect}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        audioMuted={audioMuted}
+        setAudioMuted={setAudioMuted}
       />
 
       <main className="main-content">
