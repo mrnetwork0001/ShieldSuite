@@ -224,8 +224,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
       }}>
         {/* Campaign Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#fff' }}>
-            {campaignTime.phase === 'pre' ? '<ClockIcon /> Campaign Starts In' : campaignTime.phase === 'live' ? '<GreenDotIcon /> Campaign LIVE - Ends In' : '<FlagIcon /> Campaign Ended'}
+          <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {campaignTime.phase === 'pre' ? <><ClockIcon /> Campaign Starts In</> : campaignTime.phase === 'live' ? <>🟢 Campaign LIVE - Ends In</> : <><FlagIcon /> Campaign Ended</>}
           </span>
           <span style={{
             fontSize: '0.62rem', fontWeight: '700', padding: '2px 10px', borderRadius: '20px',
