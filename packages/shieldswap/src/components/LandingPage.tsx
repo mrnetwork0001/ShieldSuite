@@ -85,8 +85,8 @@ function getFlagUrl(teamName: string): string {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
-  const [fixtures, setFixtures] = useState<any[]>(mockFixtures);
-  const [liveMatches, setLiveMatches] = useState<any[]>(mockLiveMatches);
+  const [fixtures, setFixtures] = useState<any[]>([]);
+  const [liveMatches, setLiveMatches] = useState<any[]>([]);
   const [currentFixtureIndex, setCurrentFixtureIndex] = useState(0);
 
   // ── Auto-slide Timer ────────────────────────────────────────────────
@@ -100,6 +100,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
 
   // ── Fetch Matches API ────────────────────────────────────────────────
   useEffect(() => {
+    const parseDate = (dateStr: string) => {
+      let parseStr = dateStr;
+      if (dateStr && !dateStr.includes("Z") && !dateStr.includes("+") && !dateStr.toLowerCase().includes("utc")) {
+        parseStr = dateStr.replace(" ", "T") + "Z";
+      }
+      return new Date(parseStr);
+    };
+
     const fetchMatches = async () => {
       try {
         const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "";
@@ -129,33 +137,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             return m.status === "LIVE" && isWorldCupLeague(m.leagueName, m.leagueId);
           });
           const scheduled = allMatches.filter(m => {
-            const isScheduledOrFinished = m.status === "SCHEDULED" || m.status === "FINISHED";
-            if (!isScheduledOrFinished) return false;
-
-            const isWC = isWorldCupLeague(m.leagueName, m.leagueId);
-            if (!isWC) return false;
-
-            if (m.date) {
-              const d = new Date(m.date);
-              const cutoff = new Date("2026-06-28T23:59:59.999Z");
-              return d <= cutoff;
-            }
-            return true;
+            if (m.status !== "SCHEDULED") return false;
+            return isWorldCupLeague(m.leagueName, m.leagueId);
           });
 
-          if (scheduled.length > 0) {
-            const mappedScheduled = scheduled.map((m, idx) => ({
+          // Sort scheduled matches chronologically (closest first)
+          scheduled.sort((a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime());
+          
+          // Slice top 5
+          const latest5Upcoming = scheduled.slice(0, 5);
+
+          if (latest5Upcoming.length > 0) {
+            const mappedScheduled = latest5Upcoming.map((m, idx) => ({
               id: `api-sched-${idx}`,
               homeTeam: m.home,
               awayTeam: m.away,
               date: (() => {
                 if (!m.date) return "TBD Date";
-                const d = new Date(m.date);
+                const d = parseDate(m.date);
                 return isNaN(d.getTime()) ? m.date : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
               })(),
               time: (() => {
                 if (!m.date) return "TBD Time";
-                const d = new Date(m.date);
+                const d = parseDate(m.date);
                 return isNaN(d.getTime()) ? "" : d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }) + " UTC";
               })(),
               stadium: m.venue || "Global Stadium",
@@ -163,7 +167,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             }));
             setFixtures(mappedScheduled);
           } else {
-            setFixtures(mockFixtures);
+            setFixtures([]);
           }
 
           if (live.length > 0) {
@@ -182,7 +186,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             });
             setLiveMatches(mappedLive);
           } else {
-            setLiveMatches(mockLiveMatches);
+            setLiveMatches([]);
           }
         }
       } catch (err) {
@@ -195,7 +199,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
     return () => clearInterval(interval);
   }, []);
 
-  const activeFixture = fixtures[currentFixtureIndex] || mockFixtures[0];
+  const activeFixture = fixtures[currentFixtureIndex];
 
   return (
     <div className="landing-container">
@@ -279,7 +283,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         <div className="hero-right">
           <div className="fixtures-card glass-card">
             <div className="fixtures-card-glow" />
-            {fixtures.length > 0 && (
+            {fixtures.length > 0 && activeFixture ? (
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentFixtureIndex}
@@ -322,6 +326,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
                   </div>
                 </motion.div>
               </AnimatePresence>
+            ) : (
+              <div className="fixture-skeleton font-mono">
+                <div className="skeleton-line title" />
+                <div className="skeleton-matchup">
+                  <div className="skeleton-team" />
+                  <div className="skeleton-vs">VS</div>
+                  <div className="skeleton-team" />
+                </div>
+                <div className="skeleton-details">
+                  <div className="skeleton-line detail" />
+                  <div className="skeleton-line detail" />
+                </div>
+              </div>
             )}
 
             <button 
@@ -341,27 +358,34 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           <span className="live-ticker-title font-mono">LIVE WORLD CUP MATCHES</span>
         </div>
         <div className="live-ticker-scroll-container">
-          <div className="live-ticker-wrapper">
-            {liveMatches.map((match) => (
-              <div key={match.id} className="live-match-card" onClick={() => setActiveTab("pitchside")}>
-                <div className="live-match-meta">
-                  <span className="live-badge font-mono">LIVE {match.minute}</span>
-                </div>
-                <div className="live-matchup-row">
-                  <div className="live-team">
-                    <img src={getFlagUrl(match.homeTeam)} alt={match.homeTeam} className="live-flag-img" />
-                    <span className="live-team-name">{match.homeTeam}</span>
+          {liveMatches.length > 0 ? (
+            <div className="live-ticker-wrapper">
+              {liveMatches.map((match) => (
+                <div key={match.id} className="live-match-card" onClick={() => setActiveTab("pitchside")}>
+                  <div className="live-match-meta">
+                    <span className="live-badge font-mono">LIVE {match.minute}</span>
                   </div>
-                  <div className="live-score font-mono">{match.homeScore} - {match.awayScore}</div>
-                  <div className="live-team">
-                    <img src={getFlagUrl(match.awayTeam)} alt={match.awayTeam} className="live-flag-img" />
-                    <span className="live-team-name">{match.awayTeam}</span>
+                  <div className="live-matchup-row">
+                    <div className="live-team">
+                      <img src={getFlagUrl(match.homeTeam)} alt={match.homeTeam} className="live-flag-img" />
+                      <span className="live-team-name">{match.homeTeam}</span>
+                    </div>
+                    <div className="live-score font-mono">{match.homeScore} - {match.awayScore}</div>
+                    <div className="live-team">
+                      <img src={getFlagUrl(match.awayTeam)} alt={match.awayTeam} className="live-flag-img" />
+                      <span className="live-team-name">{match.awayTeam}</span>
+                    </div>
                   </div>
+                  <div className="live-event font-mono">{match.event}</div>
                 </div>
-                <div className="live-event font-mono">{match.event}</div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="no-live-matches-container">
+              <span className="rolling-football">⚽</span>
+              <span className="no-live-text font-mono">No live match at the moment</span>
+            </div>
+          )}
         </div>
       </section>
 
@@ -1269,6 +1293,102 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           }
           .hero-ctas button {
             width: 100%;
+          }
+        }
+
+        /* Skeleton Loading styles */
+        .fixture-skeleton {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          opacity: 0.6;
+        }
+
+        .skeleton-line {
+          height: 12px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: var(--radius-sm);
+          animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        .skeleton-line.title {
+          width: 60%;
+        }
+
+        .skeleton-line.detail {
+          width: 80%;
+          height: 10px;
+        }
+
+        .skeleton-matchup {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 0;
+        }
+
+        .skeleton-team {
+          width: 50px;
+          height: 50px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 50%;
+          animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        .skeleton-vs {
+          font-size: 0.8rem;
+          color: var(--text-tertiary);
+        }
+
+        .skeleton-details {
+          background: rgba(0, 0, 0, 0.2);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-md);
+          padding: 12px 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        @keyframes pulse {
+          0% { opacity: 0.3; }
+          50% { opacity: 0.8; }
+          100% { opacity: 0.3; }
+        }
+
+        /* Rolling Football / No Live Match styles */
+        .no-live-matches-container {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          width: 100%;
+          min-height: 80px;
+          background: rgba(255, 255, 255, 0.01);
+          border: 1px dashed rgba(255, 255, 255, 0.08);
+          border-radius: var(--radius-md);
+          padding: 12px;
+        }
+
+        .rolling-football {
+          font-size: 1.5rem;
+          display: inline-block;
+          animation: spin-and-roll 3s ease-in-out infinite alternate;
+        }
+
+        .no-live-text {
+          font-size: 0.82rem;
+          color: var(--text-tertiary);
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }
+
+        @keyframes spin-and-roll {
+          0% {
+            transform: translateX(-15px) rotate(0deg);
+          }
+          100% {
+            transform: translateX(15px) rotate(360deg);
           }
         }
       `}</style>
