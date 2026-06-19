@@ -290,27 +290,15 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
           </button>
         </div>
       ) : (
-        <div className="simulator-box glass-card" style={{ border: '1px solid rgba(255, 215, 0, 0.3)', background: 'rgba(255, 215, 0, 0.02)' }}>
-          <div className="simulator-header" style={{ color: '#FFD700', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span><TrophyIcon /></span> FIFA World Cup 2026 Kickoff
+        <div className="simulator-box glass-card" style={{ border: '1px solid rgba(0, 255, 136, 0.3)', background: 'rgba(0, 255, 136, 0.02)' }}>
+          <div className="simulator-header" style={{ color: '#00ff88', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span><TrophyIcon /></span> FIFA World Cup 2026
           </div>
           
-          {/* Countdown Clock */}
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', margin: '16px 0' }}>
-            {[
-              { value: timeLeft.days, label: 'DAYS' },
-              { value: timeLeft.hours, label: 'HOURS' },
-              { value: timeLeft.minutes, label: 'MINS' },
-              { value: timeLeft.seconds, label: 'SECS' },
-            ].map((unit, idx) => (
-              <React.Fragment key={unit.label}>
-                {idx > 0 && <div style={{ alignSelf: 'center', fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-secondary)' }}>:</div>}
-                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-default)', padding: '6px 10px', minWidth: '55px', textAlign: 'center', borderRadius: '6px' }}>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'monospace', color: '#FFD700' }}>{String(unit.value).padStart(2, '0')}</div>
-                  <div style={{ fontSize: '0.55rem', color: 'var(--text-secondary)' }}>{unit.label}</div>
-                </div>
-              </React.Fragment>
-            ))}
+          {/* Live Status Indicator */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '16px 0', background: 'rgba(0, 255, 136, 0.1)', border: '1px solid rgba(0, 255, 136, 0.2)', padding: '8px 16px', borderRadius: '8px' }}>
+            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#00ff88', boxShadow: '0 0 8px #00ff88', display: 'inline-block', animation: 'glow-pulse 1.5s ease-in-out infinite' }} />
+            <span style={{ fontSize: '0.9rem', fontWeight: 'bold', letterSpacing: '0.05em', color: '#00ff88', fontFamily: 'monospace' }}>TOURNAMENT LIVE</span>
           </div>
 
           <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.4', margin: '0 0 8px 0' }}>
