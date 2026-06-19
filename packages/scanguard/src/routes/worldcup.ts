@@ -99,6 +99,16 @@ let registeredUsers = new Set<string>([
   "0xCd0a2370F2dC12c1802707B7d9aB3fec891E3c02" // default test user
 ]);
 
+const SPORTMONKS_PLAYER_MAP: Record<number, { tokenId: number; name: string }> = {
+  184798: { tokenId: 1, name: "Lionel Messi" },
+  96611: { tokenId: 2, name: "Kylian Mbappe" },
+  16827155: { tokenId: 3, name: "Bukayo Saka" },
+  154421: { tokenId: 4, name: "Erling Haaland" },
+  31527: { tokenId: 5, name: "Vinicius Junior" }
+};
+
+const processedEvents = new Set<number>();
+
 // ─── Inline Agent Processing ─────────────────────────────────────────────────
 // Instead of relying on a separate agent process, we execute trades inline
 // when a simulation event is posted.  This ensures the Scout Console logs are
@@ -349,6 +359,78 @@ async function processEventInline(
   addAgentLog("🏁 Inline agent processing complete.", "info");
 }
 
+async function syncLiveEvents(fixtures: any[], chainId: number) {
+  for (const match of fixtures) {
+    if (match.status !== "LIVE" && match.status !== "FINISHED") continue;
+    
+    const eventsList = match.events;
+    if (!Array.isArray(eventsList)) continue;
+    
+    for (const ev of eventsList) {
+      const eventId = Number(ev.id);
+      if (isNaN(eventId) || processedEvents.has(eventId)) continue;
+      
+      const typeId = Number(ev.type_id);
+      const playerId = Number(ev.player_id);
+      const relatedPlayerId = Number(ev.related_player_id);
+      const desc = ev.description || "";
+      
+      // 1. Check for Goal (type_id 14 or 16)
+      if (typeId === 14 || typeId === 16) {
+        // Scorer goal
+        if (playerId && SPORTMONKS_PLAYER_MAP[playerId]) {
+          const mapping = SPORTMONKS_PLAYER_MAP[playerId];
+          logger.info(`[WorldCupSync] Real-world GOAL detected for ${mapping.name} (Sportmonks ID: ${playerId}, Event ID: ${eventId})`);
+          try {
+            await processEventInline({
+              type: "GOAL",
+              tokenId: mapping.tokenId,
+              description: `Real-world Goal: ${mapping.name} scores a goal! (${desc})`
+            }, chainId);
+            processedEvents.add(eventId);
+          } catch (err: any) {
+            logger.error(`[WorldCupSync] Failed to process live goal event: ${err.message}`);
+          }
+        }
+        
+        // Assistant assist
+        if (relatedPlayerId && SPORTMONKS_PLAYER_MAP[relatedPlayerId]) {
+          const mapping = SPORTMONKS_PLAYER_MAP[relatedPlayerId];
+          logger.info(`[WorldCupSync] Real-world ASSIST detected for ${mapping.name} (Sportmonks ID: ${relatedPlayerId}, Event ID: ${eventId})`);
+          try {
+            await processEventInline({
+              type: "ASSIST",
+              tokenId: mapping.tokenId,
+              description: `Real-world Assist: ${mapping.name} provides an assist! (${desc})`
+            }, chainId);
+            processedEvents.add(eventId);
+          } catch (err: any) {
+            logger.error(`[WorldCupSync] Failed to process live assist event: ${err.message}`);
+          }
+        }
+      }
+      
+      // 2. Check for Red Card (type_id 20 or 21)
+      if (typeId === 20 || typeId === 21) {
+        if (playerId && SPORTMONKS_PLAYER_MAP[playerId]) {
+          const mapping = SPORTMONKS_PLAYER_MAP[playerId];
+          logger.info(`[WorldCupSync] Real-world RED CARD detected for ${mapping.name} (Sportmonks ID: ${playerId}, Event ID: ${eventId})`);
+          try {
+            await processEventInline({
+              type: "CARD",
+              tokenId: mapping.tokenId,
+              description: `Real-world Red Card: ${mapping.name} receives a red card! (${desc})`
+            }, chainId);
+            processedEvents.add(eventId);
+          } catch (err: any) {
+            logger.error(`[WorldCupSync] Failed to process live card event: ${err.message}`);
+          }
+        }
+      }
+    }
+  }
+}
+
 
 // POST /api/worldcup/update — Trigger a new event + inline agent trade execution
 worldCupRouter.post("/update", (req: Request, res: Response) => {
@@ -545,6 +627,10 @@ worldCupRouter.get("/matches", async (_req: Request, res: Response) => {
       const sm = await sportmonks.fetchWorldCupFixtures();
       if (sm && sm.length > 0) {
         fifaMatches = sm;
+        const targetChainId = process.env.XLAYER_RPC_URL?.includes("testrpc") ? 1952 : 196;
+        syncLiveEvents(sm, targetChainId).catch((err) => {
+          logger.error(`[WorldCupSync] Error in live events sync: ${err.message}`);
+        });
       }
     } catch (err: any) {
       logger.warn(`[WorldCup] Failed to fetch fixtures from Sportmonks: ${err.message}`);
@@ -632,6 +718,11 @@ async function syncFromSportmonks() {
     try {
       const matchesData = await sportmonks.fetchWorldCupFixtures();
       if (matchesData && matchesData.length > 0) {
+        const targetChainId = process.env.XLAYER_RPC_URL?.includes("testrpc") ? 1952 : 196;
+        syncLiveEvents(matchesData, targetChainId).catch((err) => {
+          logger.error(`[WorldCupSync] Error in cron live events sync: ${err.message}`);
+        });
+
         syncedMatches = matchesData.map((m, idx) => ({
           id: `sportmonks-${idx}`,
           homeTeam: m.home,
@@ -639,7 +730,7 @@ async function syncFromSportmonks() {
           status: m.status,
           score: m.score,
           minute: m.status === "LIVE" ? 45 : 0,
-          events: []
+          events: m.events || []
         }));
         logger.info(`[WorldCup] Synced ${syncedMatches.length} World Cup matches from Sportmonks.`);
       }

@@ -21,6 +21,7 @@ export interface SportmonksMatch {
   venue: string | null;
   date: string;
   minute?: string;
+  events?: any[];
 }
 
 const WORLD_CUP_TEAMS = [
@@ -151,7 +152,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
   try {
     logger.info("[Sportmonks] Attempting to fetch real World Cup Season 26618 fixtures with cursor pagination URL traversal...");
     let allData: any[] = [];
-    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureSeasons:26618&include=participants;scores;venue;state";
+    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureSeasons:26618&include=participants;scores;venue;state;events";
     let pageCount = 0;
 
     while (nextUrl && pageCount < 8) {
@@ -224,7 +225,8 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
           status,
           venue: item.venue?.name || "FIFA World Cup Arena",
           date: item.starting_at || new Date().toISOString(),
-          minute: item.state?.developer_name || undefined
+          minute: item.state?.developer_name || undefined,
+          events: item.events || []
         };
       });
     } else {
@@ -238,7 +240,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
   try {
     logger.info("[Sportmonks] Falling back to Free Plan Leagues (271, 501) with World Cup mapping...");
     let allFallbackData: any[] = [];
-    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureLeagues:271,501&include=participants;scores;venue;state";
+    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureLeagues:271,501&include=participants;scores;venue;state;events";
     let pageCount = 0;
 
     while (nextUrl && pageCount < 4) {
@@ -293,7 +295,8 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
         status,
         venue: item.venue?.name || "FIFA World Cup Arena",
         date: item.starting_at || new Date().toISOString(),
-        minute: item.state?.developer_name || undefined
+        minute: item.state?.developer_name || undefined,
+        events: item.events || []
       };
     });
   } catch (err: any) {
