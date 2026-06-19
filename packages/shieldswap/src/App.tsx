@@ -94,7 +94,7 @@ const App: React.FC = () => {
   const [chatScanAddress, setChatScanAddress] = useState<string | null>(null);
 
   // ─── Background Music for Pitchside AI ───────────────────────────────────
-  const [audioMuted, setAudioMuted] = useState(true);
+  const [audioMuted, setAudioMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Initialize Audio
