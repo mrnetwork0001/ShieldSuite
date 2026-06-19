@@ -330,20 +330,48 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
               try {
                 const res = await fetch(`${API_BASE}/api/worldcup/matches`);
                 const data = await res.json();
-                if (data.success) {
+                if (data.success && Array.isArray(data.data)) {
+                  // Normalize: API may return raw match objects or league-wrapped objects
+                  let leagueResults: any[];
+                  const first = data.data[0];
+                  if (first && first.league && Array.isArray(first.matches)) {
+                    // Already league-wrapped format
+                    leagueResults = data.data;
+                  } else {
+                    // Raw match objects — wrap them into a single league entry
+                    // Normalize field names (homeTeam→home, awayTeam→away)
+                    const normalizedMatches = data.data.map((m: any) => ({
+                      home: m.home || m.homeTeam || '??',
+                      away: m.away || m.awayTeam || '??',
+                      score: m.score || '0 - 0',
+                      status: m.status || 'SCHEDULED',
+                      venue: m.venue || 'FIFA World Cup Arena',
+                      date: m.date || new Date().toISOString(),
+                      minute: m.minute,
+                    }));
+                    leagueResults = [{
+                      league: 'FIFA World Cup 2026',
+                      leagueId: 'fifa.world',
+                      matchCount: normalizedMatches.length,
+                      matches: normalizedMatches,
+                    }];
+                  }
+                  const totalMatches = leagueResults.reduce((sum: number, r: any) => sum + (r.matchCount || r.matches?.length || 0), 0);
                   setLiveDataFeed({
                     loading: false,
-                    results: data.data,
-                    timestamp: data.timestamp,
-                    totalMatches: data.data.reduce((sum: number, r: any) => sum + r.matchCount, 0),
+                    results: leagueResults,
+                    timestamp: data.timestamp || new Date().toISOString(),
+                    totalMatches,
                     source: data.source || 'live',
                   });
                   onActivityLog({
                     id: `live-feed-${Date.now()}`,
                     timestamp: Date.now(),
                     type: "info",
-                    message: data.message
+                    message: data.message || `Loaded ${totalMatches} matches from live feed.`
                   });
+                } else {
+                  setLiveDataFeed(prev => ({ ...prev, loading: false }));
                 }
               } catch (err: any) {
                 console.error("Live feed verification failed:", err);
@@ -433,7 +461,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
                     </span>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                       {/* Live badge */}
-                      {league.matches.some((m: any) => m.status === 'LIVE') && (
+                      {Array.isArray(league.matches) && league.matches.some((m: any) => m.status === 'LIVE') && (
                         <span className="font-mono" style={{
                           fontSize: '0.62rem', padding: '2px 8px', borderRadius: '20px',
                           background: 'rgba(255,59,92,0.15)', color: '#ff3b5c',
@@ -444,7 +472,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
                             width: '5px', height: '5px', borderRadius: '50%', background: '#ff3b5c',
                             animation: 'pulse-live 1.5s ease-in-out infinite',
                           }} />
-                          {league.matches.filter((m: any) => m.status === 'LIVE').length} LIVE
+                          {(league.matches || []).filter((m: any) => m.status === 'LIVE').length} LIVE
                         </span>
                       )}
                       {/* Total count */}
@@ -460,7 +488,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
                   </div>
 
                   {/* Match Rows - show up to 5 for leagues with live matches */}
-                  {league.matches.slice(0, 3).map((m: any, i: number) => (
+                  {(league.matches || []).slice(0, 3).map((m: any, i: number) => (
                     <div key={i} style={{
                       display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'center',
                       fontSize: '0.75rem', padding: '8px 10px',

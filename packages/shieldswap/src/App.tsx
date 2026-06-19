@@ -403,11 +403,13 @@ const App: React.FC = () => {
         </div>
       </footer>
 
-      {/* Agent Chat */}
-      <AgentChat
-        onScanToken={handleChatScan}
-        onSwapCommand={handleChatSwap}
-      />
+      {/* Agent Chat - only visible on shieldswap */}
+      {activeTab === "swap" && (
+        <AgentChat
+          onScanToken={handleChatScan}
+          onSwapCommand={handleChatSwap}
+        />
+      )}
 
       <style>{`
         .hero-text {

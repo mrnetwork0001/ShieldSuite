@@ -343,7 +343,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                         </>
                       )}
                       <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
-                      <a href="https://x.com/encrypt_wizard" target="_blank" className="nav-link-item">Twitter / X</a>
+                      <a href="https://x.com/ShieldSuite_" target="_blank" rel="noopener noreferrer" className="nav-link-item">Twitter / X</a>
                     </div>
                   </div>
                 </div>
