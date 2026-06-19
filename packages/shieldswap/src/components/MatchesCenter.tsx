@@ -18,106 +18,409 @@ interface MatchesCenterProps {
   onActivityLog: (entry: { id: string; timestamp: number; type: "info" | "warning" | "scan" | "swap"; message: string }) => void;
 }
 
-const FLAG_MAP: Record<string, string> = {
-  // A-Z World Cup Countries & Common Teams
-  "Argentina": "🇦🇷",
-  "Australia": "🇦🇺",
-  "Belgium": "🇧🇪",
-  "Brazil": "🇧🇷",
-  "Canada": "🇨🇦",
-  "Cameroon": "🇨🇲",
-  "Costa Rica": "🇨🇷",
-  "Croatia": "🇭🇷",
-  "Denmark": "🇩🇰",
-  "Ecuador": "🇪🇨",
-  "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-  "France": "🇫🇷",
-  "Germany": "🇩🇪",
-  "Ghana": "🇬🇭",
-  "Iran": "🇮🇷",
-  "Japan": "🇯🇵",
-  "Mexico": "🇲🇽",
-  "Morocco": "🇲🇦",
-  "Netherlands": "🇳🇱",
-  "Poland": "🇵🇱",
-  "Portugal": "🇵🇹",
-  "Qatar": "🇶🇦",
-  "Saudi Arabia": "🇸🇦",
-  "Senegal": "🇸🇳",
-  "Serbia": "🇷🇸",
-  "South Korea": "🇰🇷",
-  "Korea Republic": "🇰🇷",
-  "Korea": "🇰🇷",
-  "South Africa": "🇿🇦",
-  "Spain": "🇪🇸",
-  "Switzerland": "🇨🇭",
-  "Tunisia": "🇹🇳",
-  "United States": "🇺🇸",
-  "USA": "🇺🇸",
-  "Uruguay": "🇺🇾",
-  "Wales": "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
-  "Bosnia-Herzegovina": "🇧🇦",
-  "Bosnia and Herzegovina": "🇧🇦",
-  "Czechia": "🇨🇿",
-  "Czech Republic": "🇨🇿",
-  "Paraguay": "🇵🇾",
-  "Haiti": "🇭🇹",
-  "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-  "Turkey": "🇹🇷",
-  "Curacao": "🇨🇼",
-  "Sweden": "🇸🇪",
-  "Ivory Coast": "🇨🇮",
-  "Norway": "🇳🇴",
-  "Panama": "🇵🇦",
-  "Colombia": "🇨🇴",
-  "Italy": "🇮🇹",
-  "Ukraine": "🇺🇦",
-  "Slovakia": "🇸🇰",
-  "Chile": "🇨🇱",
+const ISO_MAP: Record<string, string> = {
+  // Names
+  "argentina": "ar",
+  "australia": "au",
+  "austria": "at",
+  "belgium": "be",
+  "bolivia": "bo",
+  "brazil": "br",
+  "bulgaria": "bg",
+  "canada": "ca",
+  "cameroon": "cm",
+  "chile": "cl",
+  "china": "cn",
+  "colombia": "co",
+  "costa rica": "cr",
+  "croatia": "hr",
+  "cuba": "cu",
+  "czechia": "cz",
+  "czech republic": "cz",
+  "denmark": "dk",
+  "ecuador": "ec",
+  "egypt": "eg",
+  "england": "gb-eng",
+  "finland": "fi",
+  "france": "fr",
+  "germany": "de",
+  "ghana": "gh",
+  "greece": "gr",
+  "haiti": "ht",
+  "honduras": "hn",
+  "hungary": "hu",
+  "iceland": "is",
+  "iran": "ir",
+  "ireland": "ie",
+  "italy": "it",
+  "ivory coast": "ci",
+  "cote d'ivoire": "ci",
+  "côte d'ivoire": "ci",
+  "jamaica": "jm",
+  "japan": "jp",
+  "mexico": "mx",
+  "morocco": "ma",
+  "netherlands": "nl",
+  "holland": "nl",
+  "new zealand": "nz",
+  "nigeria": "ng",
+  "norway": "no",
+  "panama": "pa",
+  "paraguay": "py",
+  "peru": "pe",
+  "poland": "pl",
+  "portugal": "pt",
+  "qatar": "qa",
+  "romania": "ro",
+  "saudi arabia": "sa",
+  "scotland": "gb-sct",
+  "senegal": "sn",
+  "serbia": "rs",
+  "slovakia": "sk",
+  "slovenia": "si",
+  "south africa": "za",
+  "south korea": "kr",
+  "korea republic": "kr",
+  "korea": "kr",
+  "spain": "es",
+  "sweden": "se",
+  "switzerland": "ch",
+  "tunisia": "tn",
+  "turkey": "tr",
+  "türkiye": "tr",
+  "ukraine": "ua",
+  "united states": "us",
+  "usa": "us",
+  "uruguay": "uy",
+  "wales": "gb-wls",
+  "bosnia-herzegovina": "ba",
+  "bosnia and herzegovina": "ba",
+  "curacao": "cw",
+  "algeria": "dz",
+  "cape verde islands": "cv",
+  "cape verde": "cv",
+  "congo dr": "cd",
+  "dr congo": "cd",
+  "iraq": "iq",
+  "jordan": "jo",
+  "uzbekistan": "uz",
 
-  // 3-Letter ISO/FIFA Code Mappings (Case-insensitive matches)
-  "ARG": "🇦🇷",
-  "AUS": "🇦🇺",
-  "BEL": "🇧🇪",
-  "BRA": "🇧🇷",
-  "CAN": "🇨🇦",
-  "CRO": "🇭🇷",
-  "ECU": "🇪🇨",
-  "ENG": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-  "FRA": "🇫🇷",
-  "GER": "🇩🇪",
-  "IRN": "🇮🇷",
-  "JPN": "🇯🇵",
-  "MEX": "🇲🇽",
-  "MAR": "🇲🇦",
-  "NED": "🇳🇱",
-  "POR": "🇵🇹",
-  "KSA": "🇸🇦",
-  "SEN": "🇸🇳",
-  "KOR": "🇰🇷",
-  "ESP": "🇪🇸",
-  "SUI": "🇨🇭",
-  "URU": "🇺🇾",
-  "TUR": "🇹🇷",
-  "PAR": "🇵🇾",
-  "ITA": "🇮🇹",
-  "UKR": "🇺🇦",
-  "SVK": "🇸🇰",
-  "CHI": "🇨🇱"
+  // 3-Letter ISO/FIFA codes
+  "arg": "ar",
+  "aus": "au",
+  "aut": "at",
+  "bel": "be",
+  "bol": "bo",
+  "bra": "br",
+  "bul": "bg",
+  "can": "ca",
+  "cmr": "cm",
+  "chi": "cl",
+  "chn": "cn",
+  "col": "co",
+  "crc": "cr",
+  "cro": "hr",
+  "cub": "cu",
+  "cze": "cz",
+  "den": "dk",
+  "ecu": "ec",
+  "egy": "eg",
+  "eng": "gb-eng",
+  "fin": "fi",
+  "fra": "fr",
+  "ger": "de",
+  "gha": "gh",
+  "gre": "gr",
+  "hai": "ht",
+  "hon": "hn",
+  "hun": "hu",
+  "isl": "is",
+  "irn": "ir",
+  "irl": "ie",
+  "ita": "it",
+  "civ": "ci",
+  "jam": "jm",
+  "jpn": "jp",
+  "mex": "mx",
+  "mar": "ma",
+  "ned": "nl",
+  "nzl": "nz",
+  "nga": "ng",
+  "nor": "no",
+  "pan": "pa",
+  "par": "py",
+  "per": "pe",
+  "pol": "pl",
+  "por": "pt",
+  "qat": "qa",
+  "rou": "ro",
+  "ksa": "sa",
+  "sco": "gb-sct",
+  "sen": "sn",
+  "srb": "rs",
+  "svk": "sk",
+  "slo": "si",
+  "rsa": "za",
+  "kor": "kr",
+  "esp": "es",
+  "swe": "se",
+  "sui": "ch",
+  "tun": "tn",
+  "tur": "tr",
+  "ukr": "ua",
+  "uru": "uy",
+  "wal": "gb-wls",
+  "bih": "ba",
+  "alg": "dz",
+  "cpv": "cv",
+  "cod": "cd",
+  "irq": "iq",
+  "jor": "jo",
+  "uzb": "uz"
 };
 
-const getFlag = (team: string) => {
-  const normalized = team.toLowerCase().trim();
+const getIsoCode = (team: string): string | null => {
+  const normalized = team.trim().toLowerCase();
   
-  // 1. Exact match or check if key is a substring of the team name
-  for (const [key, value] of Object.entries(FLAG_MAP)) {
-    if (normalized.includes(key.toLowerCase())) {
-      return value;
+  // 1. First check for exact match of full name or code
+  if (ISO_MAP[normalized]) {
+    return ISO_MAP[normalized];
+  }
+
+  // 2. Split team name by space / non-word chars and check if any word matches a country name or code exactly
+  const words = normalized.split(/[\s\-_,]+/);
+  for (const word of words) {
+    if (ISO_MAP[word]) {
+      return ISO_MAP[word];
     }
   }
 
-  // 2. Fallback to generic soccer ball if no flag is found
-  return "⚽";
+  // 3. Fallback: check if any country name is a substring of the team name
+  // Sort keys by length descending to ensure longer matches take precedence
+  const sortedKeys = Object.keys(ISO_MAP).sort((a, b) => b.length - a.length);
+  for (const key of sortedKeys) {
+    // Only allow substring match for country names that are long to prevent false short code matches
+    if (key.length > 3 && normalized.includes(key)) {
+      return ISO_MAP[key];
+    }
+  }
+
+  // 4. Fallback for tournament placeholders (Group X, Winner, Loser)
+  if (normalized.includes("group") || normalized.includes("winner") || normalized.includes("loser")) {
+    return "un"; // United Nations flag representing the international tournament stage
+  }
+
+  return null;
+};
+
+const renderTeamFlag = (teamName: string, size: "sm" | "md" | "lg" = "md") => {
+  const isoCode = getIsoCode(teamName);
+  const width = size === "sm" ? 36 : size === "md" ? 48 : 64;
+  const height = size === "sm" ? 24 : size === "md" ? 32 : 44;
+  
+  if (isoCode) {
+    return (
+      <img
+        src={`https://flagcdn.com/w80/${isoCode}.png`}
+        alt={teamName}
+        title={teamName}
+        style={{
+          width: `${width}px`,
+          height: `${height}px`,
+          objectFit: "cover",
+          borderRadius: "6px",
+          border: "1.5px solid rgba(255, 255, 255, 0.15)",
+          boxShadow: "0 4px 10px rgba(0, 0, 0, 0.35)",
+          display: "inline-block",
+          verticalAlign: "middle"
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      title={teamName}
+      style={{
+        width: `${width}px`,
+        height: `${height}px`,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: "6px",
+        background: "linear-gradient(135deg, #1f2937, #111827)",
+        border: "1.5px solid rgba(255, 255, 255, 0.1)",
+        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.3)",
+        fontSize: size === "sm" ? "1rem" : size === "md" ? "1.3rem" : "1.8rem"
+      }}
+    >
+      ⚽
+    </div>
+  );
+};
+
+const getPrettyName = (team: string): string => {
+  const normalized = team.trim().toLowerCase();
+  
+  const prettyNames: Record<string, string> = {
+    "argentina": "Argentina",
+    "arg": "Argentina",
+    "australia": "Australia",
+    "aus": "Australia",
+    "austria": "Austria",
+    "aut": "Austria",
+    "belgium": "Belgium",
+    "bel": "Belgium",
+    "bolivia": "Bolivia",
+    "bol": "Bolivia",
+    "brazil": "Brazil",
+    "bra": "Brazil",
+    "bulgaria": "Bulgaria",
+    "bul": "Bulgaria",
+    "canada": "Canada",
+    "can": "Canada",
+    "cameroon": "Cameroon",
+    "cmr": "Cameroon",
+    "chile": "Chile",
+    "chi": "Chile",
+    "china": "China",
+    "chn": "China",
+    "colombia": "Colombia",
+    "col": "Colombia",
+    "costa rica": "Costa Rica",
+    "crc": "Costa Rica",
+    "croatia": "Croatia",
+    "cro": "Croatia",
+    "cuba": "Cuba",
+    "cub": "Cuba",
+    "czechia": "Czechia",
+    "cze": "Czechia",
+    "czech republic": "Czechia",
+    "denmark": "Denmark",
+    "den": "Denmark",
+    "ecuador": "Ecuador",
+    "ecu": "Ecuador",
+    "egypt": "Egypt",
+    "egy": "Egypt",
+    "england": "England",
+    "eng": "England",
+    "finland": "Finland",
+    "fin": "Finland",
+    "france": "France",
+    "fra": "France",
+    "germany": "Germany",
+    "ger": "Germany",
+    "ghana": "Ghana",
+    "gha": "Ghana",
+    "greece": "Greece",
+    "gre": "Greece",
+    "haiti": "Haiti",
+    "hai": "Haiti",
+    "honduras": "Honduras",
+    "hon": "Honduras",
+    "hungary": "Hungary",
+    "hun": "Hungary",
+    "iceland": "Iceland",
+    "isl": "Iceland",
+    "iran": "Iran",
+    "irn": "Iran",
+    "ireland": "Ireland",
+    "irl": "Ireland",
+    "italy": "Italy",
+    "ita": "Italy",
+    "ivory coast": "Ivory Coast",
+    "cote d'ivoire": "Ivory Coast",
+    "civ": "Ivory Coast",
+    "jamaica": "Jamaica",
+    "jam": "Jamaica",
+    "japan": "Japan",
+    "jpn": "Japan",
+    "mexico": "Mexico",
+    "mex": "Mexico",
+    "morocco": "Morocco",
+    "mar": "Morocco",
+    "netherlands": "Netherlands",
+    "holland": "Netherlands",
+    "ned": "Netherlands",
+    "new zealand": "New Zealand",
+    "nzl": "New Zealand",
+    "nigeria": "Nigeria",
+    "nga": "Nigeria",
+    "norway": "Norway",
+    "nor": "Norway",
+    "panama": "Panama",
+    "pan": "Panama",
+    "paraguay": "Paraguay",
+    "par": "Paraguay",
+    "peru": "Peru",
+    "per": "Peru",
+    "poland": "Poland",
+    "pol": "Poland",
+    "portugal": "Portugal",
+    "por": "Portugal",
+    "qatar": "Qatar",
+    "qat": "Qatar",
+    "romania": "Romania",
+    "rou": "Romania",
+    "saudi arabia": "Saudi Arabia",
+    "ksa": "Saudi Arabia",
+    "scotland": "Scotland",
+    "sco": "Scotland",
+    "senegal": "Senegal",
+    "sen": "Senegal",
+    "serbia": "Serbia",
+    "srb": "Serbia",
+    "slovakia": "Slovakia",
+    "svk": "Slovakia",
+    "slovenia": "Slovenia",
+    "slo": "Slovenia",
+    "south africa": "South Africa",
+    "rsa": "South Africa",
+    "south korea": "South Korea",
+    "korea republic": "South Korea",
+    "korea": "South Korea",
+    "kor": "South Korea",
+    "spain": "Spain",
+    "esp": "Spain",
+    "sweden": "Sweden",
+    "swe": "Sweden",
+    "switzerland": "Switzerland",
+    "sui": "Switzerland",
+    "tunisia": "Tunisia",
+    "tun": "Tunisia",
+    "turkey": "Turkey",
+    "tur": "Turkey",
+    "ukraine": "Ukraine",
+    "ukr": "Ukraine",
+    "united states": "United States",
+    "usa": "United States",
+    "uruguay": "Uruguay",
+    "uru": "Uruguay",
+    "wales": "Wales",
+    "wal": "Wales",
+    "bosnia-herzegovina": "Bosnia",
+    "bosnia and herzegovina": "Bosnia",
+    "bih": "Bosnia",
+    "curacao": "Curacao"
+  };
+
+  if (prettyNames[normalized]) {
+    return prettyNames[normalized];
+  }
+
+  const words = team.split(/[\s\-_,]+/);
+  return words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+};
+
+const shortenName = (name: string): string => {
+  if (name.length > 12) {
+    if (name === "Saudi Arabia") return "S. Arabia";
+    if (name === "United States") return "USA";
+    if (name === "Czech Republic") return "Czechia";
+    if (name === "Ivory Coast" || name === "Cote d'Ivoire") return "Ivory Coast";
+    return name.slice(0, 10) + ".";
+  }
+  return name;
 };
 
 export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivityLog }) => {
@@ -400,16 +703,22 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
                       {/* Teams & Score */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.92rem', fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '1.2rem' }}>{getFlag(m.home)}</span> {m.home}
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {renderTeamFlag(m.home, "md")}
+                            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#fff' }}>
+                              {shortenName(getPrettyName(m.home))}
+                            </span>
                           </span>
                           <span style={{ fontSize: '1.1rem', fontWeight: '800', color: '#00ff88', fontFamily: 'monospace' }}>
                             {m.score.split('-')[0]?.trim() || '0'}
                           </span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.92rem', fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '1.2rem' }}>{getFlag(m.away)}</span> {m.away}
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {renderTeamFlag(m.away, "md")}
+                            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#fff' }}>
+                              {shortenName(getPrettyName(m.away))}
+                            </span>
                           </span>
                           <span style={{ fontSize: '1.1rem', fontWeight: '800', color: '#00ff88', fontFamily: 'monospace' }}>
                             {m.score.split('-')[1]?.trim() || '0'}
@@ -461,16 +770,22 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
                       {/* Teams & Score */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '1rem', fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '1.3rem' }}>{getFlag(m.home)}</span> {m.home}
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {renderTeamFlag(m.home, "md")}
+                            <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#fff' }}>
+                              {shortenName(getPrettyName(m.home))}
+                            </span>
                           </span>
                           <span style={{ fontSize: '1.2rem', fontWeight: '800', color: '#00ff88', fontFamily: 'monospace' }}>
                             {m.score.split('-')[0]?.trim() || '0'}
                           </span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '1rem', fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '1.3rem' }}>{getFlag(m.away)}</span> {m.away}
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {renderTeamFlag(m.away, "md")}
+                            <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#fff' }}>
+                              {shortenName(getPrettyName(m.away))}
+                            </span>
                           </span>
                           <span style={{ fontSize: '1.2rem', fontWeight: '800', color: '#00ff88', fontFamily: 'monospace' }}>
                             {m.score.split('-')[1]?.trim() || '0'}
@@ -527,12 +842,19 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
                       </span>
 
                       {/* Teams */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', marginBottom: '14px' }}>
-                        <div style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span>{getFlag(m.home)}</span> {m.home}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginTop: '12px', marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, gap: '6px', textAlign: 'center' }}>
+                          {renderTeamFlag(m.home, "md")}
+                          <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={getPrettyName(m.home)}>
+                            {shortenName(getPrettyName(m.home))}
+                          </span>
                         </div>
-                        <div style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span>{getFlag(m.away)}</span> {m.away}
+                        <span style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--text-tertiary)', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)', alignSelf: 'center', marginBottom: '16px' }}>VS</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, gap: '6px', textAlign: 'center' }}>
+                          {renderTeamFlag(m.away, "md")}
+                          <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={getPrettyName(m.away)}>
+                            {shortenName(getPrettyName(m.away))}
+                          </span>
                         </div>
                       </div>
 
@@ -585,17 +907,27 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
 
                       {/* Teams & Score */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', marginBottom: '14px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span>{getFlag(m.home)}</span> {m.home}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {renderTeamFlag(m.home, "md")}
+                            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                              {shortenName(getPrettyName(m.home))}
+                            </span>
                           </span>
-                          <span style={{ fontFamily: 'monospace' }}>{m.score.split('-')[0]?.trim()}</span>
+                          <span style={{ fontFamily: 'monospace', fontSize: '1rem', fontWeight: '700', color: 'var(--text-secondary)' }}>
+                            {m.score.split('-')[0]?.trim()}
+                          </span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span>{getFlag(m.away)}</span> {m.away}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {renderTeamFlag(m.away, "md")}
+                            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                              {shortenName(getPrettyName(m.away))}
+                            </span>
                           </span>
-                          <span style={{ fontFamily: 'monospace' }}>{m.score.split('-')[1]?.trim()}</span>
+                          <span style={{ fontFamily: 'monospace', fontSize: '1rem', fontWeight: '700', color: 'var(--text-secondary)' }}>
+                            {m.score.split('-')[1]?.trim()}
+                          </span>
                         </div>
                       </div>
 
