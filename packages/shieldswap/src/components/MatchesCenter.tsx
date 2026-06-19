@@ -185,14 +185,22 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
     });
   };
 
+  const parseDate = (dateStr: string) => {
+    let parseStr = dateStr;
+    if (dateStr && !dateStr.includes("Z") && !dateStr.includes("+") && !dateStr.toLowerCase().includes("utc")) {
+      parseStr = dateStr.replace(" ", "T") + "Z";
+    }
+    return new Date(parseStr);
+  };
+
   // Categorize
   const liveMatches = matches.filter(m => m.status === "LIVE");
   const scheduledMatches = matches
     .filter(m => m.status === "SCHEDULED")
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    .sort((a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime());
   const finishedMatches = matches
     .filter(m => m.status === "FINISHED" || m.status === "FT")
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    .sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime());
 
   // Pagination calculation
   const totalUpcomingPages = Math.ceil(scheduledMatches.length / PAGE_SIZE);
@@ -202,7 +210,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
   const paginatedCompleted = finishedMatches.slice((completedPage - 1) * PAGE_SIZE, completedPage * PAGE_SIZE);
 
   const formatKickoffTime = (dateStr: string) => {
-    const d = new Date(dateStr);
+    const d = parseDate(dateStr);
     if (isNaN(d.getTime())) return dateStr;
     return d.toLocaleDateString(undefined, {
       month: "short",
