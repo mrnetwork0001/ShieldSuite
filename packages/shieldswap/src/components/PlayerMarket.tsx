@@ -194,12 +194,19 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
   // Dynamically compute countries represented in the roster
   const countries = ["All", ...Array.from(new Set(INITIAL_PLAYERS.map(p => p.country)))];
 
-  // Emoji Flag Mappings for Qualified 2026 World Cup Countries
-  const flagMap: Record<string, string> = {
-    "Argentina": "🇦🇷", "France": "🇫🇷", "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Brazil": "🇧🇷",
-    "Spain": "🇪🇸", "Germany": "🇩🇪", "United States": "🇺🇸", "Mexico": "🇲🇽",
-    "Portugal": "🇵🇹", "Netherlands": "🇳🇱", "Belgium": "🇧🇪", "Uruguay": "🇺🇾",
-    "Japan": "🇯🇵", "Morocco": "🇲🇦", "Canada": "🇨🇦"
+  // ISO Alpha-2 Country Codes for Qualified 2026 World Cup Countries
+  const countryIsoMap: Record<string, string> = {
+    "Argentina": "ar", "France": "fr", "England": "gb-eng", "Brazil": "br",
+    "Spain": "es", "Germany": "de", "United States": "us", "Mexico": "mx",
+    "Portugal": "pt", "Netherlands": "nl", "Belgium": "be", "Uruguay": "uy",
+    "Japan": "jp", "Morocco": "ma", "Canada": "ca"
+  };
+
+  const getFlagUrl = (country: string) => {
+    const code = countryIsoMap[country];
+    if (!code) return "";
+    // Using standard flagcdn CDN for lightweight flag images
+    return `https://flagcdn.com/w40/${code}.png`;
   };
 
   return (
@@ -232,11 +239,14 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
               cursor: 'pointer'
             }}
           >
-            {countries.map(c => (
-              <option key={c} value={c} style={{ background: '#0d131f' }}>
-                {c === "All" ? "🌍 All Countries" : `${flagMap[c] || "🏳️"} ${c}`}
-              </option>
-            ))}
+            {countries.map(c => {
+              const flagCode = countryIsoMap[c];
+              return (
+                <option key={c} value={c} style={{ background: '#0d131f' }}>
+                  {c === "All" ? "🌍 All Countries" : `${flagCode ? "" : "🏳️"} ${c}`}
+                </option>
+              );
+            })}
           </select>
 
           {/* Search bar */}
@@ -271,12 +281,20 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
           ) : (
             filteredPlayers.map((p) => {
               const hasBalance = parseFloat(p.balance) > 0;
-              const flag = flagMap[p.country] || "🏳️";
+              const flagUrl = getFlagUrl(p.country);
               return (
                 <div key={p.id} className="player-card glass-card">
                   <div className="player-info-main">
-                    <div className="player-meta-top">
-                      <span className="player-flag">{flag}</span>
+                    <div className="player-meta-top" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="player-flag" style={{ display: 'flex', alignItems: 'center' }}>
+                        {flagUrl ? (
+                          <img 
+                            src={flagUrl} 
+                            alt={`${p.country} flag`} 
+                            style={{ width: '18px', height: '12px', borderRadius: '2px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} 
+                          />
+                        ) : "🏳️"}
+                      </span>
                       <span className="player-country">{p.country}</span>
                       <span className="player-rating-badge">OVR {p.rating}</span>
                     </div>
