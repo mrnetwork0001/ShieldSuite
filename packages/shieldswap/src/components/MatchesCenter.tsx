@@ -55,8 +55,55 @@ const FLAG_MAP: Record<string, string> = {
   "Colombia": "🇨🇴"
 };
 
+const COUNTRY_NAME_MAP: Record<string, string> = {
+  "USA": "United States",
+  "ARG": "Argentina",
+  "FRA": "France",
+  "ENG": "England",
+  "BRA": "Brazil",
+  "ESP": "Spain",
+  "GER": "Germany",
+  "POR": "Portugal",
+  "BEL": "Belgium",
+  "NED": "Netherlands",
+  "URU": "Uruguay",
+  "SEN": "Senegal",
+  "CRO": "Croatia",
+  "MAR": "Morocco",
+  "MAROCCO": "Morocco",
+  "JPN": "Japan",
+  "SUI": "Switzerland",
+  "ECU": "Ecuador",
+  "KSA": "Saudi Arabia",
+  "IRN": "Iran",
+  "AUS": "Australia",
+  "TUR": "Turkey",
+  "PAR": "Paraguay",
+  "RSA": "South Africa",
+  "KOR": "South Korea",
+  "MEX": "Mexico",
+  "CAN": "Canada",
+  "SWE": "Sweden",
+  "CIV": "Ivory Coast",
+  "BIH": "Bosnia and Herzegovina"
+};
+
+const normalizeCountryName = (name: string): string => {
+  if (!name) return name;
+  const upper = name.trim().toUpperCase();
+  if (COUNTRY_NAME_MAP[upper]) {
+    return COUNTRY_NAME_MAP[upper];
+  }
+  const matchKey = Object.keys(FLAG_MAP).find(k => k.toUpperCase() === upper);
+  if (matchKey) {
+    return matchKey;
+  }
+  return name;
+};
+
 const getFlag = (team: string) => {
-  return FLAG_MAP[team] || "⚽";
+  const normalized = normalizeCountryName(team);
+  return FLAG_MAP[normalized] || "⚽";
 };
 
 export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivityLog }) => {
@@ -124,12 +171,18 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
     });
   };
 
-  // Categorize
-  const liveMatches = matches.filter(m => m.status === "LIVE");
-  const scheduledMatches = matches
+  // Categorize & Normalize Names
+  const normalizedList = matches.map(m => ({
+    ...m,
+    home: normalizeCountryName(m.home),
+    away: normalizeCountryName(m.away)
+  }));
+
+  const liveMatches = normalizedList.filter(m => m.status === "LIVE");
+  const scheduledMatches = normalizedList
     .filter(m => m.status === "SCHEDULED")
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const finishedMatches = matches
+  const finishedMatches = normalizedList
     .filter(m => m.status === "FINISHED" || m.status === "FT")
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
