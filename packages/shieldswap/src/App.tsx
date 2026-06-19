@@ -34,7 +34,7 @@ const App: React.FC = () => {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [activeTab, setActiveTab] = useState<"home" | "docs" | "swap" | "pitchside">("home");
-  const [pitchsideSubTab, setPitchsideSubTab] = useState<"speculation" | "matches">("speculation");
+  const [pitchsideSubTab, setPitchsideSubTab] = useState<"speculation" | "matches" | "leaderboard">("speculation");
   const [instructionsExpanded, setInstructionsExpanded] = useState(false);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([
     {
@@ -388,6 +388,28 @@ const App: React.FC = () => {
               >
                 ⚽ Matches Center
               </button>
+              <button
+                className={`subnav-btn ${pitchsideSubTab === 'leaderboard' ? 'active' : ''}`}
+                onClick={() => setPitchsideSubTab('leaderboard')}
+                style={{
+                  background: pitchsideSubTab === 'leaderboard' ? 'linear-gradient(135deg, rgba(75, 123, 245, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%)' : 'transparent',
+                  border: '1px solid',
+                  borderColor: pitchsideSubTab === 'leaderboard' ? 'var(--accent-blue)' : 'var(--border-default)',
+                  borderRadius: '10px',
+                  color: pitchsideSubTab === 'leaderboard' ? '#fff' : 'var(--text-secondary)',
+                  padding: '10px 20px',
+                  fontSize: '0.85rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s',
+                  boxShadow: pitchsideSubTab === 'leaderboard' ? '0 0 15px rgba(75, 123, 245, 0.15)' : 'none'
+                }}
+              >
+                🏆 Leaderboard
+              </button>
             </div>
 
             {pitchsideSubTab === 'speculation' ? (
@@ -401,12 +423,11 @@ const App: React.FC = () => {
                 <div className="pitchside-market-area">
                   <PlayerMarket wallet={wallet} onActivityLog={handleActivityLog} />
                 </div>
-                <div className="pitchside-leaderboard-area">
-                  <Leaderboard wallet={wallet} />
-                </div>
               </div>
-            ) : (
+            ) : pitchsideSubTab === 'matches' ? (
               <MatchesCenter wallet={wallet} onActivityLog={handleActivityLog} />
+            ) : (
+              <Leaderboard wallet={wallet} />
             )}
           </div>
         )}
@@ -755,7 +776,7 @@ const App: React.FC = () => {
           grid-template-columns: 1.2fr 1.1fr;
           grid-template-areas: 
             "vault console"
-            "market leaderboard";
+            "market market";
           gap: 24px;
           align-items: start;
         }
@@ -768,9 +789,6 @@ const App: React.FC = () => {
         }
         .pitchside-market-area {
           grid-area: market;
-        }
-        .pitchside-leaderboard-area {
-          grid-area: leaderboard;
         }
 
         .panel-header {
@@ -1215,8 +1233,7 @@ const App: React.FC = () => {
             grid-template-areas: 
               "vault"
               "console"
-              "market"
-              "leaderboard" !important;
+              "market" !important;
             gap: 24px !important;
           }
           .scout-console {
