@@ -305,9 +305,31 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
             On mainnet, match data auto-syncs every 60 seconds during live World Cup matches. Verify the Live Data integration below.
           </p>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', fontSize: '0.72rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', fontSize: '0.72rem' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00ff88', boxShadow: '0 0 6px #00ff88', display: 'inline-block', flexShrink: 0, animation: 'glow-pulse 2s ease-in-out infinite' }} />
             <span style={{ color: 'var(--text-secondary)' }}>Auto-Sync: <strong style={{ color: '#00ff88' }}>Active</strong> (every 60s on Mainnet)</span>
+          </div>
+
+          {/* Sportmonks Plan & Roadmap Box */}
+          <div style={{ 
+            fontSize: '0.72rem', 
+            background: 'rgba(255, 255, 255, 0.02)', 
+            border: '1px solid rgba(255, 255, 255, 0.05)', 
+            borderRadius: '8px', 
+            padding: '10px', 
+            marginBottom: '14px', 
+            lineHeight: '1.4' 
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+              <span style={{ color: 'var(--text-tertiary)' }}>API Data Tier:</span>
+              <span style={{ color: '#4B7BF5', fontWeight: 'bold' }}>Sportmonks Regular Plan (€69/mo)</span>
+            </div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.68rem' }}>
+              <strong>Capabilities:</strong> Real-time match fixtures, lineups, scores, and live match events trigger TEE agent speculation.
+            </div>
+            <div style={{ marginTop: '8px', borderTop: '1px dashed rgba(255, 255, 255, 0.08)', paddingTop: '6px', color: 'var(--text-tertiary)', fontSize: '0.68rem' }}>
+              🔮 <strong>Post-World Cup Roadmap:</strong> Upgrade to All-In Plan (€129/mo) to unlock news sentiment trading, odds shifting triggers, and xG analytics.
+            </div>
           </div>
 
           {/* Live Feed Button */}
