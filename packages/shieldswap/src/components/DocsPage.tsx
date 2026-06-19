@@ -291,7 +291,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
                       <span style={{ fontSize: '1.2rem' }}>📡</span> Live Data Feed & Future Roadmap
                     </h4>
                     <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', lineHeight: '1.4' }}>
-                      Pitchside AI integrates professional-grade live data pipelines supporting both <strong>API-Football</strong> and <strong>Sportmonks Football API</strong> integrations. This provides real-time fixtures, lineups, and match event updates directly to our Trusted Execution Environment (TEE) scout agent.
+                      Pitchside AI integrates professional-grade live data pipelines from the <strong>Sportmonks Football API</strong>. This provides real-time fixtures, lineups, and match event updates directly to our Trusted Execution Environment (TEE) scout agent.
                     </p>
                     <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.4', color: 'var(--text-secondary)' }}>
                       <strong>Future Roadmap:</strong> We plan to expand the data feed integration to process global football news sentiment, prediction market/odds fluctuations, and advanced xG analytics. This will allow the TEE Scout Agent to perform 24/7 autonomous speculation, even between live match windows.

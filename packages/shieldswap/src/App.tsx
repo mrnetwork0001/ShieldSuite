@@ -16,6 +16,7 @@ import { ScoutConsole } from "./components/ScoutConsole";
 import { Leaderboard } from "./components/Leaderboard";
 import { LandingPage } from "./components/LandingPage";
 import { DocsPage } from "./components/DocsPage";
+import { MatchesCenter } from "./components/MatchesCenter";
 import { GreenDotIcon, SearchIcon, SwapIcon, WarningIcon, InfoIcon } from "./components/Icons";
 
 const INITIAL_WALLET: WalletState = {
@@ -33,6 +34,7 @@ const App: React.FC = () => {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [activeTab, setActiveTab] = useState<"home" | "docs" | "swap" | "pitchside">("home");
+  const [pitchsideSubTab, setPitchsideSubTab] = useState<"speculation" | "matches">("speculation");
   const [instructionsExpanded, setInstructionsExpanded] = useState(false);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([
     {
@@ -340,22 +342,72 @@ const App: React.FC = () => {
           </div>
         ) : (
           <div className="pitchside-portal animate-fade-in">
-
-
-            <div className="pitchside-grid">
-              <div className="pitchside-vault-area">
-                <VaultPanel wallet={wallet} onActivityLog={handleActivityLog} />
-              </div>
-              <div className="pitchside-console-area">
-                <ScoutConsole wallet={wallet} onActivityLog={handleActivityLog} />
-              </div>
-              <div className="pitchside-market-area">
-                <PlayerMarket wallet={wallet} onActivityLog={handleActivityLog} />
-              </div>
-              <div className="pitchside-leaderboard-area">
-                <Leaderboard wallet={wallet} />
-              </div>
+            {/* Pitchside Sub-Navigation Tabs */}
+            <div className="pitchside-subnav" style={{ display: 'flex', gap: '16px', marginBottom: '24px', borderBottom: '1px solid var(--border-default)', paddingBottom: '12px' }}>
+              <button
+                className={`subnav-btn ${pitchsideSubTab === 'speculation' ? 'active' : ''}`}
+                onClick={() => setPitchsideSubTab('speculation')}
+                style={{
+                  background: pitchsideSubTab === 'speculation' ? 'linear-gradient(135deg, rgba(75, 123, 245, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%)' : 'transparent',
+                  border: '1px solid',
+                  borderColor: pitchsideSubTab === 'speculation' ? 'var(--accent-blue)' : 'var(--border-default)',
+                  borderRadius: '10px',
+                  color: pitchsideSubTab === 'speculation' ? '#fff' : 'var(--text-secondary)',
+                  padding: '10px 20px',
+                  fontSize: '0.85rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s',
+                  boxShadow: pitchsideSubTab === 'speculation' ? '0 0 15px rgba(75, 123, 245, 0.15)' : 'none'
+                }}
+              >
+                📈 Speculation Board
+              </button>
+              <button
+                className={`subnav-btn ${pitchsideSubTab === 'matches' ? 'active' : ''}`}
+                onClick={() => setPitchsideSubTab('matches')}
+                style={{
+                  background: pitchsideSubTab === 'matches' ? 'linear-gradient(135deg, rgba(75, 123, 245, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%)' : 'transparent',
+                  border: '1px solid',
+                  borderColor: pitchsideSubTab === 'matches' ? 'var(--accent-blue)' : 'var(--border-default)',
+                  borderRadius: '10px',
+                  color: pitchsideSubTab === 'matches' ? '#fff' : 'var(--text-secondary)',
+                  padding: '10px 20px',
+                  fontSize: '0.85rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s',
+                  boxShadow: pitchsideSubTab === 'matches' ? '0 0 15px rgba(75, 123, 245, 0.15)' : 'none'
+                }}
+              >
+                ⚽ Matches Center
+              </button>
             </div>
+
+            {pitchsideSubTab === 'speculation' ? (
+              <div className="pitchside-grid">
+                <div className="pitchside-vault-area">
+                  <VaultPanel wallet={wallet} onActivityLog={handleActivityLog} />
+                </div>
+                <div className="pitchside-console-area">
+                  <ScoutConsole wallet={wallet} onActivityLog={handleActivityLog} />
+                </div>
+                <div className="pitchside-market-area">
+                  <PlayerMarket wallet={wallet} onActivityLog={handleActivityLog} />
+                </div>
+                <div className="pitchside-leaderboard-area">
+                  <Leaderboard wallet={wallet} />
+                </div>
+              </div>
+            ) : (
+              <MatchesCenter wallet={wallet} onActivityLog={handleActivityLog} />
+            )}
           </div>
         )}
 

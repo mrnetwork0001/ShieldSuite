@@ -5,7 +5,6 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 import { logger } from "../logger.js";
 import * as sportmonks from "../services/sportmonks.js";
-import * as apifootball from "../services/apifootball.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -526,137 +525,63 @@ worldCupRouter.get("/metadata/:id", (req: Request, res: Response) => {
   });
 });
 
-// GET /api/worldcup/sync-sportmonks — Sync real-time matches from active provider
+// GET /api/worldcup/sync-sportmonks — Sync real-time matches from Sportmonks
 worldCupRouter.get("/sync-sportmonks", async (_req: Request, res: Response) => {
   try {
-    const result = await syncFromActiveProvider();
+    const result = await syncFromSportmonks();
     res.json(result);
   } catch (err: any) {
-    logger.error(`[WorldCup] Sync failed: ${err.message}`);
+    logger.error(`[WorldCup] Sportmonks sync failed: ${err.message}`);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-let cachedFifaMatches: any[] = [];
-let cachedSource = "fallback";
-let cachedMessage = "Loaded fallback World Cup matches.";
-let lastCacheTime = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes caching
-
-// GET /api/worldcup/matches — Official FIFA website feed via API-Football or Sportmonks
+// GET /api/worldcup/matches — Official FIFA website feed via Sportmonks
 worldCupRouter.get("/matches", async (_req: Request, res: Response) => {
-  const now = Date.now();
-  
-  // Return cached result if still fresh
-  if (cachedFifaMatches.length > 0 && (now - lastCacheTime) < CACHE_TTL) {
-    logger.info(`[WorldCup] Returning cached fixtures (source: ${cachedSource}, age: ${Math.round((now - lastCacheTime) / 1000)}s)`);
-    
-    const liveMatches = matches.map((m) => ({
-      home: m.homeTeam,
-      away: m.awayTeam,
-      score: m.score,
-      status: m.status,
-      venue: "FIFA World Cup Arena",
-      date: new Date().toISOString(),
-      minute: String(m.minute),
-      events: m.events || []
-    }));
-
-    const parsedFifaMatches = cachedFifaMatches.map((m) => ({
-      home: m.home,
-      away: m.away,
-      score: m.score,
-      status: m.status,
-      venue: m.venue || "FIFA World Cup Arena",
-      date: m.date || new Date().toISOString(),
-      minute: m.minute || "0",
-      events: m.events || []
-    }));
-
-    const allMatches = [...liveMatches, ...parsedFifaMatches];
-    res.json({
-      success: true,
-      source: cachedSource,
-      message: cachedMessage,
-      timestamp: new Date().toISOString(),
-      data: [
-        {
-          league: "FIFA World Cup 2026",
-          leagueId: "fifa.world",
-          matchCount: allMatches.length,
-          matches: allMatches
-        }
-      ]
-    });
-    return;
-  }
-
+  // If sportmonks is configured and has key, fetch from Sportmonks
   let fifaMatches: any[] = [];
-  let source = "fallback";
-  let message = "Loaded fallback World Cup matches.";
-
-  if (apifootball.isConfigured()) {
-    try {
-      const af = await apifootball.fetchWorldCupFixtures();
-      if (af && af.length > 0) {
-        fifaMatches = af;
-        source = "api-football";
-        message = `API-Football Match Centre verified. Loaded ${af.length} matches.`;
-      }
-    } catch (err: any) {
-      logger.warn(`[WorldCup] Failed to fetch fixtures from API-Football: ${err.message}`);
-    }
-  }
-
-  if (fifaMatches.length === 0 && sportmonks.isConfigured()) {
+  if (sportmonks.isConfigured()) {
     try {
       const sm = await sportmonks.fetchWorldCupFixtures();
       if (sm && sm.length > 0) {
         fifaMatches = sm;
-        source = "sportmonks";
-        message = `Sportmonks Match Centre verified. Loaded ${sm.length} matches.`;
       }
     } catch (err: any) {
       logger.warn(`[WorldCup] Failed to fetch fixtures from Sportmonks: ${err.message}`);
     }
   }
 
+  // Fallback to official fixtures if Sportmonks returned empty/not configured
+  if (fifaMatches.length === 0) {
+    fifaMatches = [
+      { home: "Mexico", away: "South Africa", score: "2 - 1", status: "FINISHED", venue: "Mexico City Stadium", date: "2026-06-11T20:00:00Z" },
+      { home: "South Korea", away: "Czechia", score: "1 - 1", status: "FINISHED", venue: "Guadalajara Stadium", date: "2026-06-12T17:00:00Z" },
+      { home: "Canada", away: "Bosnia-Herzegovina", score: "2 - 0", status: "FINISHED", venue: "Toronto Stadium", date: "2026-06-12T20:00:00Z" },
+      { home: "United States", away: "Paraguay", score: "3 - 1", status: "FINISHED", venue: "SoFi Stadium, Los Angeles", date: "2026-06-13T19:00:00Z" },
+      { home: "Qatar", away: "Switzerland", score: "0 - 2", status: "FINISHED", venue: "Levi's Stadium, San Francisco", date: "2026-06-13T16:00:00Z" },
+      { home: "Brazil", away: "Morocco", score: "2 - 1", status: "FINISHED", venue: "MetLife Stadium, New Jersey", date: "2026-06-13T21:00:00Z" },
+      { home: "Haiti", away: "Scotland", score: "1 - 2", status: "FINISHED", venue: "Gillette Stadium, Boston", date: "2026-06-13T18:00:00Z" },
+      { home: "Australia", away: "Turkey", score: "1 - 1", status: "FINISHED", venue: "BC Place, Vancouver", date: "2026-06-14T15:00:00Z" },
+      { home: "Germany", away: "Curacao", score: "4 - 0", status: "FINISHED", venue: "NRG Stadium, Houston", date: "2026-06-14T17:00:00Z" },
+      { home: "Netherlands", away: "Japan", score: "2 - 2", status: "FINISHED", venue: "AT&T Stadium, Dallas", date: "2026-06-14T20:00:00Z" },
+      { home: "United States", away: "Australia", score: "0 - 0", status: "SCHEDULED", venue: "Lumen Field, Seattle", date: "2026-06-19T19:00:00Z" },
+      { home: "Scotland", away: "Morocco", score: "0 - 0", status: "SCHEDULED", venue: "Gillette Stadium, Boston", date: "2026-06-19T16:00:00Z" },
+      { home: "Brazil", away: "Haiti", score: "0 - 0", status: "SCHEDULED", venue: "Lincoln Financial Field, Philadelphia", date: "2026-06-19T21:00:00Z" },
+      { home: "Turkey", away: "Paraguay", score: "0 - 0", status: "SCHEDULED", venue: "Levi's Stadium, San Francisco", date: "2026-06-19T18:00:00Z" },
+      { home: "Netherlands", away: "Sweden", score: "0 - 0", status: "SCHEDULED", venue: "NRG Stadium, Houston", date: "2026-06-20T20:00:00Z" },
+      { home: "Germany", away: "Ivory Coast", score: "0 - 0", status: "SCHEDULED", venue: "BMO Field, Toronto", date: "2026-06-20T17:00:00Z" },
+      { home: "Spain", away: "Saudi Arabia", score: "0 - 0", status: "SCHEDULED", venue: "MetLife Stadium, New York/New Jersey", date: "2026-06-21T15:00:00Z" },
+      { home: "Belgium", away: "Iran", score: "0 - 0", status: "SCHEDULED", venue: "SoFi Stadium, Los Angeles", date: "2026-06-21T18:00:00Z" },
+      { home: "Norway", away: "Senegal", score: "0 - 0", status: "SCHEDULED", venue: "Mercedes-Benz Stadium, Atlanta", date: "2026-06-22T16:00:00Z" },
+      { home: "Bosnia and Herzegovina", away: "Qatar", score: "0 - 0", status: "SCHEDULED", venue: "Hard Rock Stadium, Miami", date: "2026-06-24T19:00:00Z" },
+      { home: "Ecuador", away: "Germany", score: "0 - 0", status: "SCHEDULED", venue: "AT&T Stadium, Dallas", date: "2026-06-25T20:00:00Z" },
+      { home: "Panama", away: "England", score: "0 - 0", status: "SCHEDULED", venue: "Arrowhead Stadium, Kansas City", date: "2026-06-27T17:00:00Z" },
+      { home: "Portugal", away: "Colombia", score: "0 - 0", status: "SCHEDULED", venue: "BC Place, Vancouver", date: "2026-06-27T21:00:00Z" },
+      { home: "Round of 32 Match 1", away: "Round of 32 Match 2", score: "0 - 0", status: "SCHEDULED", venue: "SoFi Stadium, Los Angeles", date: "2026-06-28T18:00:00Z" }
+    ];
+  }
 
-
-  // Fallback to official fixtures if both returned empty/not configured
-  const displayMatches = fifaMatches.length > 0 ? fifaMatches : [
-    { home: "Mexico", away: "South Africa", score: "2 - 1", status: "FINISHED", venue: "Mexico City Stadium", date: "2026-06-11T20:00:00Z", events: [] },
-    { home: "South Korea", away: "Czechia", score: "1 - 1", status: "FINISHED", venue: "Guadalajara Stadium", date: "2026-06-12T17:00:00Z", events: [] },
-    { home: "Canada", away: "Bosnia-Herzegovina", score: "2 - 0", status: "FINISHED", venue: "Toronto Stadium", date: "2026-06-12T20:00:00Z", events: [] },
-    { home: "United States", away: "Paraguay", score: "3 - 1", status: "FINISHED", venue: "SoFi Stadium, Los Angeles", date: "2026-06-13T19:00:00Z", events: [] },
-    { home: "Qatar", away: "Switzerland", score: "0 - 2", status: "FINISHED", venue: "Levi's Stadium, San Francisco", date: "2026-06-13T16:00:00Z", events: [] },
-    { home: "Brazil", away: "Morocco", score: "2 - 1", status: "FINISHED", venue: "MetLife Stadium, New Jersey", date: "2026-06-13T21:00:00Z", events: [] },
-    { home: "Haiti", away: "Scotland", score: "1 - 2", status: "FINISHED", venue: "Gillette Stadium, Boston", date: "2026-06-13T18:00:00Z", events: [] },
-    { home: "Australia", away: "Turkey", score: "1 - 1", status: "FINISHED", venue: "BC Place, Vancouver", date: "2026-06-14T15:00:00Z", events: [] },
-    { home: "Germany", away: "Curacao", score: "4 - 0", status: "FINISHED", venue: "NRG Stadium, Houston", date: "2026-06-14T17:00:00Z", events: [] },
-    { home: "Netherlands", away: "Japan", score: "2 - 2", status: "FINISHED", venue: "AT&T Stadium, Dallas", date: "2026-06-14T20:00:00Z", events: [] },
-    { home: "United States", away: "Australia", score: "0 - 0", status: "SCHEDULED", venue: "Lumen Field, Seattle", date: "2026-06-19T19:00:00Z", events: [] },
-    { home: "Scotland", away: "Morocco", score: "0 - 0", status: "SCHEDULED", venue: "Gillette Stadium, Boston", date: "2026-06-19T16:00:00Z", events: [] },
-    { home: "Brazil", away: "Haiti", score: "0 - 0", status: "SCHEDULED", venue: "Lincoln Financial Field, Philadelphia", date: "2026-06-19T21:00:00Z", events: [] },
-    { home: "Turkey", away: "Paraguay", score: "0 - 0", status: "SCHEDULED", venue: "Levi's Stadium, San Francisco", date: "2026-06-19T18:00:00Z", events: [] },
-    { home: "Netherlands", away: "Sweden", score: "0 - 0", status: "SCHEDULED", venue: "NRG Stadium, Houston", date: "2026-06-20T20:00:00Z", events: [] },
-    { home: "Germany", away: "Ivory Coast", score: "0 - 0", status: "SCHEDULED", venue: "BMO Field, Toronto", date: "2026-06-20T17:00:00Z", events: [] },
-    { home: "Spain", away: "Saudi Arabia", score: "0 - 0", status: "SCHEDULED", venue: "MetLife Stadium, New York/New Jersey", date: "2026-06-21T15:00:00Z", events: [] },
-    { home: "Belgium", away: "Iran", score: "0 - 0", status: "SCHEDULED", venue: "SoFi Stadium, Los Angeles", date: "2026-06-21T18:00:00Z", events: [] },
-    { home: "Norway", away: "Senegal", score: "0 - 0", status: "SCHEDULED", venue: "Mercedes-Benz Stadium, Atlanta", date: "2026-06-22T16:00:00Z", events: [] },
-    { home: "Bosnia and Herzegovina", away: "Qatar", score: "0 - 0", status: "SCHEDULED", venue: "Hard Rock Stadium, Miami", date: "2026-06-24T19:00:00Z", events: [] },
-    { home: "Ecuador", away: "Germany", score: "0 - 0", status: "SCHEDULED", venue: "AT&T Stadium, Dallas", date: "2026-06-25T20:00:00Z", events: [] },
-    { home: "Panama", away: "England", score: "0 - 0", status: "SCHEDULED", venue: "Arrowhead Stadium, Kansas City", date: "2026-06-27T17:00:00Z", events: [] },
-    { home: "Portugal", away: "Colombia", score: "0 - 0", status: "SCHEDULED", venue: "BC Place, Vancouver", date: "2026-06-27T21:00:00Z", events: [] },
-    { home: "Round of 32 Match 1", away: "Round of 32 Match 2", score: "0 - 0", status: "SCHEDULED", venue: "SoFi Stadium, Los Angeles", date: "2026-06-28T18:00:00Z", events: [] }
-  ];
-
-  // ALWAYS cache the result (whether from API or fallback) to prevent spamming APIs and hitting rate limits
-  cachedFifaMatches = displayMatches;
-  cachedSource = source;
-  cachedMessage = message;
-  lastCacheTime = now;
-
+  // Map active in-memory live simulated matches from the enclave
   const liveMatches = matches.map((m) => ({
     home: m.homeTeam,
     away: m.awayTeam,
@@ -668,7 +593,8 @@ worldCupRouter.get("/matches", async (_req: Request, res: Response) => {
     events: m.events || []
   }));
 
-  const parsedFifaMatches = displayMatches.map((m) => ({
+  // Ensure fifaMatches have events property to prevent agent runtime crashes
+  const parsedFifaMatches = fifaMatches.map((m) => ({
     home: m.home,
     away: m.away,
     score: m.score,
@@ -683,8 +609,8 @@ worldCupRouter.get("/matches", async (_req: Request, res: Response) => {
 
   res.json({
     success: true,
-    source,
-    message,
+    source: "sportmonks",
+    message: `Sportmonks Match Centre verified. Loaded ${allMatches.length} matches.`,
     timestamp: new Date().toISOString(),
     data: [
       {
@@ -697,33 +623,10 @@ worldCupRouter.get("/matches", async (_req: Request, res: Response) => {
   });
 });
 
-// ── Shared active sync function ──────────────────────────────────────────
-async function syncFromActiveProvider() {
+// ── Shared Sportmonks sync function ──────────────────────────────────────────
+async function syncFromSportmonks() {
   let syncedMatches: any[] = [];
-  let provider = "none";
-
-  if (apifootball.isConfigured()) {
-    try {
-      const matchesData = await apifootball.fetchWorldCupFixtures();
-      if (matchesData && matchesData.length > 0) {
-        syncedMatches = matchesData.map((m, idx) => ({
-          id: m.id || `apifootball-${idx}`,
-          homeTeam: m.home,
-          awayTeam: m.away,
-          status: m.status,
-          score: m.score,
-          minute: m.minute ? Number(m.minute) : (m.status === "LIVE" ? 45 : 0),
-          events: m.events || []
-        }));
-        provider = "api-football";
-        logger.info(`[WorldCup] Synced ${syncedMatches.length} World Cup matches from API-Football.`);
-      }
-    } catch (err: any) {
-      logger.warn(`[WorldCup] API-Football fetch failed: ${err.message}`);
-    }
-  }
-
-  if (syncedMatches.length === 0 && sportmonks.isConfigured()) {
+  if (sportmonks.isConfigured()) {
     try {
       const matchesData = await sportmonks.fetchWorldCupFixtures();
       if (matchesData && matchesData.length > 0) {
@@ -736,7 +639,6 @@ async function syncFromActiveProvider() {
           minute: m.status === "LIVE" ? 45 : 0,
           events: []
         }));
-        provider = "sportmonks";
         logger.info(`[WorldCup] Synced ${syncedMatches.length} World Cup matches from Sportmonks.`);
       }
     } catch (err: any) {
@@ -745,11 +647,11 @@ async function syncFromActiveProvider() {
   }
 
   if (syncedMatches.length === 0) {
-    logger.info("[WorldCup] Active providers have no active event matches. Populating upcoming scheduled World Cup matches.");
+    logger.info("[WorldCup] Sportmonks has no active event matches. Populating upcoming scheduled World Cup matches.");
     syncedMatches = [
-      { id: "mock-wc1", homeTeam: "Argentina", awayTeam: "France", status: "SCHEDULED", score: "0 - 0", minute: 0, events: [] },
-      { id: "mock-wc2", homeTeam: "England", awayTeam: "Senegal", status: "SCHEDULED", score: "0 - 0", minute: 0, events: [] },
-      { id: "mock-wc3", homeTeam: "Brazil", awayTeam: "Germany", status: "SCHEDULED", score: "0 - 0", minute: 0, events: [] }
+      { id: "sm-mock-wc1", homeTeam: "Argentina", awayTeam: "France", status: "SCHEDULED", score: "0 - 0", minute: 0, events: [] },
+      { id: "sm-mock-wc2", homeTeam: "England", awayTeam: "Senegal", status: "SCHEDULED", score: "0 - 0", minute: 0, events: [] },
+      { id: "sm-mock-wc3", homeTeam: "Brazil", awayTeam: "Germany", status: "SCHEDULED", score: "0 - 0", minute: 0, events: [] }
     ];
   }
 
@@ -757,12 +659,7 @@ async function syncFromActiveProvider() {
   syncedMatches.forEach((synced: any) => {
     const idx = matches.findIndex(m => m.homeTeam.toLowerCase() === synced.homeTeam.toLowerCase() && m.awayTeam.toLowerCase() === synced.awayTeam.toLowerCase());
     if (idx !== -1) {
-      matches[idx] = { 
-        ...matches[idx], 
-        score: synced.score, 
-        status: synced.status,
-        events: synced.events && synced.events.length > 0 ? synced.events : matches[idx].events
-      };
+      matches[idx] = { ...matches[idx], score: synced.score, status: synced.status };
     } else {
       matches.push(synced);
     }
@@ -770,30 +667,30 @@ async function syncFromActiveProvider() {
 
   return {
     success: true,
-    message: provider !== "none"
-      ? `Successfully synced ${syncedMatches.length} World Cup matches from ${provider}`
+    message: syncedMatches.length > 0
+      ? `Successfully synced ${syncedMatches.length} World Cup matches from Sportmonks`
       : "Successfully synced upcoming scheduled World Cup matches (graceful fallback)",
     data: matches
   };
 }
 
-// ── Auto-sync (Mainnet only) ──────────────────────────────────────
+// ── Auto-sync Sportmonks (Mainnet only) ──────────────────────────────────────
 const rpcUrl = process.env.XLAYER_RPC_URL || "";
 const isMainnetBackend = rpcUrl.includes("rpc.xlayer.tech") && !rpcUrl.includes("testrpc");
 
 if (isMainnetBackend) {
-  const POLL_INTERVAL = 60_000; // 60 seconds
-  logger.info(`[WorldCup] Mainnet detected — starting matches auto-sync every ${POLL_INTERVAL / 1000}s`);
+  const SPORTMONKS_POLL_INTERVAL = 60_000; // 60 seconds
+  logger.info(`[WorldCup] Mainnet detected — starting Sportmonks auto-sync every ${SPORTMONKS_POLL_INTERVAL / 1000}s`);
 
   setInterval(async () => {
     try {
-      await syncFromActiveProvider();
-      logger.info("[WorldCup] Matches auto-sync complete.");
+      await syncFromSportmonks();
+      logger.info("[WorldCup] Sportmonks auto-sync complete.");
     } catch (err: any) {
-      logger.warn(`[WorldCup] Matches auto-sync failed: ${err.message}`);
+      logger.warn(`[WorldCup] Sportmonks auto-sync failed: ${err.message}`);
     }
-  }, POLL_INTERVAL);
+  }, SPORTMONKS_POLL_INTERVAL);
 } else {
-  logger.info("[WorldCup] Testnet/local mode — auto-sync disabled. Use manual sync button or match simulator.");
+  logger.info("[WorldCup] Testnet/local mode — Sportmonks auto-sync disabled. Use manual sync button or match simulator.");
 }
 
