@@ -107,8 +107,6 @@ const SPORTMONKS_PLAYER_MAP: Record<number, { tokenId: number; name: string }> =
   31527: { tokenId: 5, name: "Vinicius Junior" }
 };
 
-const processedEvents = new Set<number>();
-
 // ─── Inline Agent Processing ─────────────────────────────────────────────────
 // Instead of relying on a separate agent process, we execute trades inline
 // when a simulation event is posted.  This ensures the Scout Console logs are
@@ -359,7 +357,22 @@ async function processEventInline(
   addAgentLog("🏁 Inline agent processing complete.", "info");
 }
 
-async function syncLiveEvents(fixtures: any[], chainId: number) {
+const BASE_RATINGS: Record<number, number> = {
+  1: 90, // Messi
+  2: 91, // Mbappe
+  3: 87, // Saka
+  4: 90, // Haaland
+  5: 89  // Vinicius Jr
+};
+
+async function syncCumulativePlayerStats(fixtures: any[], chainId: number) {
+  // 1. Initialize stats object for each player
+  const playerStats: Record<number, { goals: number; assists: number; redCards: number }> = {};
+  for (const [, config] of Object.entries(SPORTMONKS_PLAYER_MAP)) {
+    playerStats[config.tokenId] = { goals: 0, assists: 0, redCards: 0 };
+  }
+
+  // 2. Aggregate stats across all matches
   for (const match of fixtures) {
     if (match.status !== "LIVE" && match.status !== "FINISHED") continue;
     
@@ -367,66 +380,75 @@ async function syncLiveEvents(fixtures: any[], chainId: number) {
     if (!Array.isArray(eventsList)) continue;
     
     for (const ev of eventsList) {
-      const eventId = Number(ev.id);
-      if (isNaN(eventId) || processedEvents.has(eventId)) continue;
-      
       const typeId = Number(ev.type_id);
       const playerId = Number(ev.player_id);
       const relatedPlayerId = Number(ev.related_player_id);
-      const desc = ev.description || "";
       
-      // 1. Check for Goal (type_id 14 or 16)
+      // Goal (14) or Penalty (16)
       if (typeId === 14 || typeId === 16) {
-        // Scorer goal
         if (playerId && SPORTMONKS_PLAYER_MAP[playerId]) {
-          const mapping = SPORTMONKS_PLAYER_MAP[playerId];
-          logger.info(`[WorldCupSync] Real-world GOAL detected for ${mapping.name} (Sportmonks ID: ${playerId}, Event ID: ${eventId})`);
-          try {
-            await processEventInline({
-              type: "GOAL",
-              tokenId: mapping.tokenId,
-              description: `Real-world Goal: ${mapping.name} scores a goal! (${desc})`
-            }, chainId);
-            processedEvents.add(eventId);
-          } catch (err: any) {
-            logger.error(`[WorldCupSync] Failed to process live goal event: ${err.message}`);
-          }
+          const tokenId = SPORTMONKS_PLAYER_MAP[playerId].tokenId;
+          playerStats[tokenId].goals++;
         }
-        
-        // Assistant assist
         if (relatedPlayerId && SPORTMONKS_PLAYER_MAP[relatedPlayerId]) {
-          const mapping = SPORTMONKS_PLAYER_MAP[relatedPlayerId];
-          logger.info(`[WorldCupSync] Real-world ASSIST detected for ${mapping.name} (Sportmonks ID: ${relatedPlayerId}, Event ID: ${eventId})`);
-          try {
-            await processEventInline({
-              type: "ASSIST",
-              tokenId: mapping.tokenId,
-              description: `Real-world Assist: ${mapping.name} provides an assist! (${desc})`
-            }, chainId);
-            processedEvents.add(eventId);
-          } catch (err: any) {
-            logger.error(`[WorldCupSync] Failed to process live assist event: ${err.message}`);
-          }
+          const tokenId = SPORTMONKS_PLAYER_MAP[relatedPlayerId].tokenId;
+          playerStats[tokenId].assists++;
         }
       }
       
-      // 2. Check for Red Card (type_id 20 or 21)
+      // Red Card (20) or YellowRed Card (21)
       if (typeId === 20 || typeId === 21) {
         if (playerId && SPORTMONKS_PLAYER_MAP[playerId]) {
-          const mapping = SPORTMONKS_PLAYER_MAP[playerId];
-          logger.info(`[WorldCupSync] Real-world RED CARD detected for ${mapping.name} (Sportmonks ID: ${playerId}, Event ID: ${eventId})`);
-          try {
-            await processEventInline({
-              type: "CARD",
-              tokenId: mapping.tokenId,
-              description: `Real-world Red Card: ${mapping.name} receives a red card! (${desc})`
-            }, chainId);
-            processedEvents.add(eventId);
-          } catch (err: any) {
-            logger.error(`[WorldCupSync] Failed to process live card event: ${err.message}`);
-          }
+          const tokenId = SPORTMONKS_PLAYER_MAP[playerId].tokenId;
+          playerStats[tokenId].redCards++;
         }
       }
+    }
+  }
+
+  // 3. Connect to X Layer PlayerShares contract
+  const pk = process.env.AGENT_PRIVATE_KEY;
+  if (!pk) {
+    logger.warn("[WorldCupSync] AGENT_PRIVATE_KEY not set — cannot sync player stats on-chain.");
+    return;
+  }
+
+  const addresses = getAddressesForChain(chainId);
+  if (!addresses) return;
+
+  const isMainnet = chainId === 196;
+  const rpcUrl = isMainnet ? "https://rpc.xlayer.tech" : "https://testrpc.xlayer.tech/terigon";
+  const provider = new ethers.JsonRpcProvider(rpcUrl, isMainnet ? 196 : 1952, { staticNetwork: true });
+  const wallet = new ethers.Wallet(pk, provider);
+  const shares = new ethers.Contract(addresses.PlayerShares, SHARES_ABI, wallet);
+
+  // 4. Compare with on-chain values and update if necessary
+  for (const [tokenIdStr, stats] of Object.entries(playerStats)) {
+    const tokenId = Number(tokenIdStr);
+    try {
+      const onChainData = await shares.players(tokenId);
+      const onChainGoals = Number(onChainData[3]);
+      const onChainAssists = Number(onChainData[4]);
+
+      if (stats.goals !== onChainGoals || stats.assists !== onChainAssists) {
+        const baseRating = BASE_RATINGS[tokenId] || 85;
+        let newRating = baseRating + stats.goals + stats.assists - (stats.redCards * 2);
+        if (newRating > 99) newRating = 99;
+        if (newRating < 50) newRating = 50;
+
+        logger.info(`[WorldCupSync] Stats mismatch detected for Token ID ${tokenId}:`);
+        logger.info(`  Real-world: Goals: ${stats.goals}, Assists: ${stats.assists}, Red Cards: ${stats.redCards} -> Rating: ${newRating}`);
+        logger.info(`  On-chain: Goals: ${onChainGoals}, Assists: ${onChainAssists}`);
+        logger.info(`[WorldCupSync] Broadcasting update transaction to X Layer...`);
+
+        const tx = await shares.updatePlayer(tokenId, newRating, stats.goals, stats.assists, "");
+        await tx.wait();
+        
+        logger.info(`[WorldCupSync] On-chain stats updated. Tx: ${tx.hash}`);
+        addAgentLog(`🔄 Real-world sync: Updated Token ID ${tokenId} (${onChainData[0]}) on X Layer to Rating: ${newRating}, Goals: ${stats.goals}, Assists: ${stats.assists}.`, "info");
+      }
+    } catch (err: any) {
+      logger.error(`[WorldCupSync] Failed to sync stats for Token ID ${tokenId}: ${err.message}`);
     }
   }
 }
@@ -628,8 +650,8 @@ worldCupRouter.get("/matches", async (_req: Request, res: Response) => {
       if (sm && sm.length > 0) {
         fifaMatches = sm;
         const targetChainId = process.env.XLAYER_RPC_URL?.includes("testrpc") ? 1952 : 196;
-        syncLiveEvents(sm, targetChainId).catch((err) => {
-          logger.error(`[WorldCupSync] Error in live events sync: ${err.message}`);
+        syncCumulativePlayerStats(sm, targetChainId).catch((err) => {
+          logger.error(`[WorldCupSync] Error in cumulative stats sync: ${err.message}`);
         });
       }
     } catch (err: any) {
@@ -719,8 +741,8 @@ async function syncFromSportmonks() {
       const matchesData = await sportmonks.fetchWorldCupFixtures();
       if (matchesData && matchesData.length > 0) {
         const targetChainId = process.env.XLAYER_RPC_URL?.includes("testrpc") ? 1952 : 196;
-        syncLiveEvents(matchesData, targetChainId).catch((err) => {
-          logger.error(`[WorldCupSync] Error in cron live events sync: ${err.message}`);
+        syncCumulativePlayerStats(matchesData, targetChainId).catch((err) => {
+          logger.error(`[WorldCupSync] Error in cron stats sync: ${err.message}`);
         });
 
         syncedMatches = matchesData.map((m, idx) => ({
