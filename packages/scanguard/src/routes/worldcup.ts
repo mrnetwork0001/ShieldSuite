@@ -104,7 +104,7 @@ const SPORTMONKS_PLAYER_MAP: Record<number, { tokenId: number; name: string }> =
   96611: { tokenId: 2, name: "Kylian Mbappe" },
   16827155: { tokenId: 3, name: "Bukayo Saka" },
   154421: { tokenId: 4, name: "Erling Haaland" },
-  31527: { tokenId: 5, name: "Vinicius Junior" }
+  600687: { tokenId: 5, name: "Vinicius Junior" }
 };
 
 // ─── Inline Agent Processing ─────────────────────────────────────────────────

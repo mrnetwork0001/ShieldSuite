@@ -17,13 +17,52 @@ const DEX_ABI = [
 import STATIC_DEPLOYED_ADDRESSES from "../deployed-addresses.json";
 
 import { SearchIcon, CheckIcon, ShoeIcon } from "./Icons";
-const INITIAL_PLAYERS = [
-  { id: 1, name: "Lionel Messi", country: "Argentina", rating: 90, goals: 0, assists: 0, price: "90", balance: "0" },
-  { id: 2, name: "Kylian Mbappe", country: "France", rating: 91, goals: 0, assists: 0, price: "91", balance: "0" },
-  { id: 3, name: "Bukayo Saka", country: "England", rating: 87, goals: 0, assists: 0, price: "87", balance: "0" },
-  { id: 4, name: "Erling Haaland", country: "Norway", rating: 90, goals: 0, assists: 0, price: "90", balance: "0" },
-  { id: 5, name: "Vinicius Junior", country: "Brazil", rating: 89, goals: 0, assists: 0, price: "89", balance: "0" }
-];
+import ROSTER_PLAYERS from "../data/worldcup_rosters.json";
+
+interface PlayerRosterItem {
+  id: number;
+  name: string;
+  country: string;
+  rating: number;
+  goals: number;
+  assists: number;
+  price: string;
+  balance: string;
+  tokenId?: number;
+  isTradeable?: boolean;
+}
+
+const getInitialPlayers = (): PlayerRosterItem[] => {
+  const list: PlayerRosterItem[] = (ROSTER_PLAYERS as any[]).map(p => ({
+    id: p.id,
+    name: p.name,
+    country: p.country,
+    rating: p.rating,
+    goals: 0,
+    assists: 0,
+    price: String(p.rating),
+    balance: "0",
+    isTradeable: false
+  }));
+
+  if (!list.some(p => p.name.toLowerCase() === "erling haaland")) {
+    list.push({
+      id: 9999,
+      name: "Erling Haaland",
+      country: "Norway",
+      rating: 90,
+      goals: 0,
+      assists: 0,
+      price: "90",
+      balance: "0",
+      tokenId: 4,
+      isTradeable: true
+    });
+  }
+  return list;
+};
+
+const INITIAL_PLAYERS = getInitialPlayers();
 
 interface PlayerMarketProps {
   wallet: WalletState;
@@ -78,38 +117,80 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
         const shares = new ethers.Contract(DEPLOYED_ADDRESSES.PlayerShares, SHARES_ABI, provider);
         const dex = new ethers.Contract(DEPLOYED_ADDRESSES.PlayerDex, DEX_ABI, provider);
 
-        const updated = await Promise.all(
-          INITIAL_PLAYERS.map(async (p) => {
+        const onChainIds = [1, 2, 3, 4, 5];
+        const onChainDataList = await Promise.all(
+          onChainIds.map(async (id) => {
             try {
-              // Try to fetch live details, fallback to static defaults on RPC error
-              const data = await shares.players(p.id).catch(() => null);
-              const priceWei = await dex.getSharePrice(p.id).catch(() => null);
-
+              const data = await shares.players(id).catch(() => null);
+              const priceWei = await dex.getSharePrice(id).catch(() => null);
               let bal = "0";
               if (wallet.connected && wallet.address) {
-                const balWei = await shares.balanceOf(wallet.address, p.id).catch(() => null);
+                const balWei = await shares.balanceOf(wallet.address, id).catch(() => null);
                 if (balWei !== null) {
                   bal = ethers.formatEther(balWei);
                 }
               }
-
-              const hasOnChainData = data && data.name && data.name.trim().length > 0;
-
               return {
-                id: p.id,
-                name: hasOnChainData ? data.name : p.name,
-                country: hasOnChainData ? data.country : p.country,
-                rating: hasOnChainData ? Number(data.rating) : p.rating,
-                goals: hasOnChainData ? Number(data.goals) : 0,
-                assists: hasOnChainData ? Number(data.assists) : 0,
-                price: priceWei ? ethers.formatEther(priceWei) : p.price,
+                id,
+                data,
+                price: priceWei ? ethers.formatEther(priceWei) : null,
                 balance: bal
               };
             } catch (err) {
-              return p;
+              return { id, data: null, price: null, balance: "0" };
             }
           })
         );
+
+        const onChainMap: Record<string, { tokenId: number; rating: number; goals: number; assists: number; price: string; balance: string }> = {};
+
+        onChainDataList.forEach(item => {
+          if (item.data) {
+            const rawName = item.data.name || item.data.nameString || item.data[0];
+            if (rawName) {
+              const nameKey = String(rawName).trim().toLowerCase();
+              onChainMap[nameKey] = {
+                tokenId: item.id,
+                rating: Number(item.data.rating || item.data[2] || 0),
+                goals: Number(item.data.goals || item.data[3] || 0),
+                assists: Number(item.data.assists || item.data[4] || 0),
+                price: item.price || String(Number(item.data.rating || item.data[2] || 90)),
+                balance: item.balance
+              };
+            }
+          }
+        });
+
+        const updated = INITIAL_PLAYERS.map((p) => {
+          const onChain = onChainMap[p.name.trim().toLowerCase()];
+          if (onChain) {
+            return {
+              id: p.id,
+              tokenId: onChain.tokenId,
+              name: p.name,
+              country: p.country,
+              rating: onChain.rating,
+              goals: onChain.goals,
+              assists: onChain.assists,
+              price: onChain.price,
+              balance: onChain.balance,
+              isTradeable: true
+            };
+          } else {
+            return {
+              id: p.id,
+              tokenId: undefined,
+              name: p.name,
+              country: p.country,
+              rating: p.rating,
+              goals: 0,
+              assists: 0,
+              price: String(p.rating),
+              balance: "0",
+              isTradeable: false
+            };
+          }
+        });
 
         setPlayers(updated);
       } catch (err: any) {
@@ -362,23 +443,29 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
                       <div className="balance-value font-mono">{parseFloat(p.balance).toFixed(1)}</div>
                     </div>
 
-                    {wallet.connected && (
-                      <div className="player-actions">
-                        <button
-                          className="btn btn-primary btn-buy"
-                          onClick={() => handleBuy(p.id, p.price, p.name)}
-                          disabled={loading}
-                        >
-                          Buy 1
-                        </button>
-                        <button
-                          className="btn btn-sell"
-                          onClick={() => handleSell(p.id, p.balance, p.name)}
-                          disabled={loading || !hasBalance}
-                        >
-                          Sell All
-                        </button>
-                      </div>
+                    {(p as any).isTradeable ? (
+                      wallet.connected ? (
+                        <div className="player-actions">
+                          <button
+                            className="btn btn-primary btn-buy"
+                            onClick={() => handleBuy((p as any).tokenId!, p.price, p.name)}
+                            disabled={loading}
+                          >
+                            Buy 1
+                          </button>
+                          <button
+                            className="btn btn-sell"
+                            onClick={() => handleSell((p as any).tokenId!, p.balance, p.name)}
+                            disabled={loading || !hasBalance}
+                          >
+                            Sell All
+                          </button>
+                        </div>
+                      ) : null
+                    ) : (
+                      <span className="not-tradeable-badge" style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)', padding: '6px 10px', borderRadius: '6px' }}>
+                        Not Tradeable
+                      </span>
                     )}
                   </div>
                 </div>
