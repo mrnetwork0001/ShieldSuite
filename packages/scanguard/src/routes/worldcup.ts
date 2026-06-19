@@ -250,11 +250,9 @@ async function processEventInline(
 
     if (action === "BUY") {
       if (desc.includes("assist")) {
-        newAssists += 1;
         newRating  += 1;
       } else {
         const isBrace = desc.includes("brace") || desc.includes("hat-trick");
-        newGoals  += isBrace ? 2 : 1;
         newRating += isBrace ? 2 : 1;
       }
       if (newRating > 99) newRating = 99;
@@ -264,7 +262,7 @@ async function processEventInline(
     }
 
     addAgentLog(
-      `📝 Updating on-chain stats for ${playerName}: Rating → ${newRating}, Goals → ${newGoals}, Assists → ${newAssists}`,
+      `📝 Updating on-chain stats for ${playerName}: Rating → ${newRating} (Goals and Assists remain real-world synced)`,
       "info",
     );
     const updateTx = await shares.updatePlayer(event.tokenId, newRating, newGoals, newAssists, "");
@@ -796,6 +794,11 @@ const isMainnetBackend = rpcUrl.includes("rpc.xlayer.tech") && !rpcUrl.includes(
 if (isMainnetBackend) {
   const SPORTMONKS_POLL_INTERVAL = 60_000; // 60 seconds
   logger.info(`[WorldCup] Mainnet detected — starting Sportmonks auto-sync every ${SPORTMONKS_POLL_INTERVAL / 1000}s`);
+
+  // Run immediate sync on startup to clean up simulated stats on-chain
+  syncFromSportmonks()
+    .then(() => logger.info("[WorldCup] Initial Sportmonks startup sync complete."))
+    .catch((err) => logger.warn(`[WorldCup] Initial Sportmonks startup sync failed: ${err.message}`));
 
   setInterval(async () => {
     try {

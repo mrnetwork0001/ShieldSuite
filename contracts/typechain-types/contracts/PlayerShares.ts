@@ -42,6 +42,7 @@ export interface PlayerSharesInterface extends Interface {
       | "setAuthorizedMinter"
       | "supportsInterface"
       | "symbol"
+      | "totalSupply"
       | "transferOwnership"
       | "updatePlayer"
       | "uri"
@@ -120,6 +121,10 @@ export interface PlayerSharesInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "symbol", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "totalSupply",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "transferOwnership",
     values: [AddressLike]
   ): string;
@@ -172,6 +177,10 @@ export interface PlayerSharesInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "symbol", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "totalSupply",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "transferOwnership",
     data: BytesLike
@@ -471,6 +480,8 @@ export interface PlayerShares extends BaseContract {
 
   symbol: TypedContractMethod<[], [string], "view">;
 
+  totalSupply: TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
+
   transferOwnership: TypedContractMethod<
     [newOwner: AddressLike],
     [void],
@@ -603,6 +614,9 @@ export interface PlayerShares extends BaseContract {
   getFunction(
     nameOrSignature: "symbol"
   ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "totalSupply"
+  ): TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
   getFunction(
     nameOrSignature: "transferOwnership"
   ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;

@@ -1,8 +1,9 @@
 // ─── ScanGuard — MCP Security Scanner Server ─────────────────────────────────
 
+import "./env.js";
+
 import express, { Request, Response } from "express";
 import cors from "cors";
-import { config } from "dotenv";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import path from "path";
@@ -20,12 +21,6 @@ import { loadDatabase, saveDatabase } from "./database.js";
 import { worldCupRouter } from "./routes/worldcup.js";
 
 export { logger };
-
-// ─── Environment ─────────────────────────────────────────────────────────────
-// Load .env from monorepo root (2 levels up from packages/scanguard/src/)
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-config({ path: path.resolve(__dirname, "../../../.env") });
-config(); // Also try CWD as fallback
 
 // BigInt JSON serialization (ethers.js returns BigInt values)
 (BigInt.prototype as any).toJSON = function () { return this.toString(); };

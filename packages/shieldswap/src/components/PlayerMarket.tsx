@@ -17,7 +17,13 @@ const DEX_ABI = [
 import STATIC_DEPLOYED_ADDRESSES from "../deployed-addresses.json";
 
 import { SearchIcon, CheckIcon, ShoeIcon } from "./Icons";
-import INITIAL_PLAYERS from "../data/worldcup_rosters.json";
+const INITIAL_PLAYERS = [
+  { id: 1, name: "Lionel Messi", country: "Argentina", rating: 90, goals: 0, assists: 0, price: "90", balance: "0" },
+  { id: 2, name: "Kylian Mbappe", country: "France", rating: 91, goals: 0, assists: 0, price: "91", balance: "0" },
+  { id: 3, name: "Bukayo Saka", country: "England", rating: 87, goals: 0, assists: 0, price: "87", balance: "0" },
+  { id: 4, name: "Erling Haaland", country: "Norway", rating: 90, goals: 0, assists: 0, price: "90", balance: "0" },
+  { id: 5, name: "Vinicius Junior", country: "Brazil", rating: 89, goals: 0, assists: 0, price: "89", balance: "0" }
+];
 
 interface PlayerMarketProps {
   wallet: WalletState;
@@ -87,13 +93,15 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
                 }
               }
 
+              const hasOnChainData = data && data.name && data.name.trim().length > 0;
+
               return {
                 id: p.id,
-                name: (data && data.name) || p.name,
-                country: (data && data.country) || p.country,
-                rating: (data && Number(data.rating)) || p.rating,
-                goals: (data && Number(data.goals)) || p.goals,
-                assists: (data && Number(data.assists)) || p.assists,
+                name: hasOnChainData ? data.name : p.name,
+                country: hasOnChainData ? data.country : p.country,
+                rating: hasOnChainData ? Number(data.rating) : p.rating,
+                goals: hasOnChainData ? Number(data.goals) : 0,
+                assists: hasOnChainData ? Number(data.assists) : 0,
                 price: priceWei ? ethers.formatEther(priceWei) : p.price,
                 balance: bal
               };
