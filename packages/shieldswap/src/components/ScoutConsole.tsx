@@ -33,6 +33,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
   const [liveDataFeed, setLiveDataFeed] = useState<{ loading: boolean; results: any[] | null; timestamp: string | null; totalMatches: number; source: string }>({
     loading: false, results: null, timestamp: null, totalMatches: 0, source: 'sportmonks'
   });
+  const [activeProvider, setActiveProvider] = useState("Loading Feed...");
   const consoleLogsRef = useRef<HTMLDivElement>(null);
   const prevLogsLengthRef = useRef(0);
 
@@ -103,8 +104,27 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
     } catch (err) {}
   };
 
+  const fetchActiveProvider = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/worldcup/matches`);
+      const data = await res.json();
+      if (data.success) {
+        if (data.source === "api-football") {
+          setActiveProvider("API-Football Live Feed");
+        } else if (data.source === "sportmonks") {
+          setActiveProvider("Sportmonks Live Feed");
+        } else {
+          setActiveProvider("Local Mock Feed");
+        }
+      }
+    } catch (err) {
+      setActiveProvider("Local Mock Feed");
+    }
+  };
+
   useEffect(() => {
     fetchAgentStatus();
+    fetchActiveProvider();
   }, []);
 
   // 1. Fetch agent logs
@@ -310,7 +330,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
             <span style={{ color: 'var(--text-secondary)' }}>Auto-Sync: <strong style={{ color: '#00ff88' }}>Active</strong> (every 60s on Mainnet)</span>
           </div>
 
-          {/* Sportmonks Plan & Roadmap Box */}
+          {/* Active Data Provider & Roadmap Box */}
           <div style={{ 
             fontSize: '0.72rem', 
             background: 'rgba(255, 255, 255, 0.02)', 
@@ -322,7 +342,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
               <span style={{ color: 'var(--text-tertiary)' }}>API Data Integration:</span>
-              <span style={{ color: '#00ff88', fontWeight: 'bold' }}>Sportmonks Live Feed</span>
+              <span style={{ color: '#00ff88', fontWeight: 'bold' }}>{activeProvider}</span>
             </div>
             <div style={{ color: 'var(--text-secondary)', fontSize: '0.68rem' }}>
               <strong>Active Pipeline:</strong> Real-time match fixtures, lineups, scores, and live match events trigger TEE agent speculation.
