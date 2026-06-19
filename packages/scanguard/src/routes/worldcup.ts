@@ -605,7 +605,9 @@ worldCupRouter.get("/matches", async (_req: Request, res: Response) => {
     events: m.events || []
   }));
 
-  const allMatches = [...liveMatches, ...parsedFifaMatches];
+  // If Sportmonks is configured and active, output only the real Sportmonks fixtures.
+  // Otherwise, include in-memory mock live simulated matches.
+  const allMatches = sportmonks.isConfigured() ? parsedFifaMatches : [...liveMatches, ...parsedFifaMatches];
 
   res.json({
     success: true,
