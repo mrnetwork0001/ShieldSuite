@@ -19,91 +19,94 @@ interface MatchesCenterProps {
 }
 
 const FLAG_MAP: Record<string, string> = {
-  "Mexico": "🇲🇽",
-  "South Africa": "🇿🇦",
-  "South Korea": "🇰🇷",
-  "Czechia": "🇨🇿",
+  // A-Z World Cup Countries & Common Teams
+  "Argentina": "🇦🇷",
+  "Australia": "🇦🇺",
+  "Belgium": "🇧🇪",
+  "Brazil": "🇧🇷",
   "Canada": "🇨🇦",
+  "Cameroon": "🇨🇲",
+  "Costa Rica": "🇨🇷",
+  "Croatia": "🇭🇷",
+  "Denmark": "🇩🇰",
+  "Ecuador": "🇪🇨",
+  "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+  "France": "🇫🇷",
+  "Germany": "🇩🇪",
+  "Ghana": "🇬🇭",
+  "Iran": "🇮🇷",
+  "Japan": "🇯🇵",
+  "Mexico": "🇲🇽",
+  "Morocco": "🇲🇦",
+  "Netherlands": "🇳🇱",
+  "Poland": "🇵🇱",
+  "Portugal": "🇵🇹",
+  "Qatar": "🇶🇦",
+  "Saudi Arabia": "🇸🇦",
+  "Senegal": "🇸🇳",
+  "Serbia": "🇷🇸",
+  "South Korea": "🇰🇷",
+  "South Africa": "🇿🇦",
+  "Spain": "🇪🇸",
+  "Switzerland": "🇨🇭",
+  "Tunisia": "🇹🇳",
+  "United States": "🇺🇸",
+  "USA": "🇺🇸",
+  "Uruguay": "🇺🇾",
+  "Wales": "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
   "Bosnia-Herzegovina": "🇧🇦",
   "Bosnia and Herzegovina": "🇧🇦",
-  "United States": "🇺🇸",
+  "Czechia": "🇨🇿",
   "Paraguay": "🇵🇾",
-  "Qatar": "🇶🇦",
-  "Switzerland": "🇨🇭",
-  "Brazil": "🇧🇷",
-  "Morocco": "🇲🇦",
   "Haiti": "🇭🇹",
   "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-  "Australia": "🇦🇺",
   "Turkey": "🇹🇷",
-  "Germany": "🇩🇪",
   "Curacao": "🇨🇼",
-  "Netherlands": "🇳🇱",
-  "Japan": "🇯🇵",
   "Sweden": "🇸🇪",
   "Ivory Coast": "🇨🇮",
-  "Spain": "🇪🇸",
-  "Saudi Arabia": "🇸🇦",
-  "Belgium": "🇧🇪",
-  "Iran": "🇮🇷",
   "Norway": "🇳🇴",
-  "Senegal": "🇸🇳",
-  "Ecuador": "🇪🇨",
   "Panama": "🇵🇦",
-  "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-  "Portugal": "🇵🇹",
-  "Colombia": "🇨🇴"
-};
+  "Colombia": "🇨🇴",
 
-const COUNTRY_NAME_MAP: Record<string, string> = {
-  "USA": "United States",
-  "ARG": "Argentina",
-  "FRA": "France",
-  "ENG": "England",
-  "BRA": "Brazil",
-  "ESP": "Spain",
-  "GER": "Germany",
-  "POR": "Portugal",
-  "BEL": "Belgium",
-  "NED": "Netherlands",
-  "URU": "Uruguay",
-  "SEN": "Senegal",
-  "CRO": "Croatia",
-  "MAR": "Morocco",
-  "MAROCCO": "Morocco",
-  "JPN": "Japan",
-  "SUI": "Switzerland",
-  "ECU": "Ecuador",
-  "KSA": "Saudi Arabia",
-  "IRN": "Iran",
-  "AUS": "Australia",
-  "TUR": "Turkey",
-  "PAR": "Paraguay",
-  "RSA": "South Africa",
-  "KOR": "South Korea",
-  "MEX": "Mexico",
-  "CAN": "Canada",
-  "SWE": "Sweden",
-  "CIV": "Ivory Coast",
-  "BIH": "Bosnia and Herzegovina"
-};
-
-const normalizeCountryName = (name: string): string => {
-  if (!name) return name;
-  const upper = name.trim().toUpperCase();
-  if (COUNTRY_NAME_MAP[upper]) {
-    return COUNTRY_NAME_MAP[upper];
-  }
-  const matchKey = Object.keys(FLAG_MAP).find(k => k.toUpperCase() === upper);
-  if (matchKey) {
-    return matchKey;
-  }
-  return name;
+  // 3-Letter ISO/FIFA Code Mappings (Case-insensitive matches)
+  "ARG": "🇦🇷",
+  "AUS": "🇦🇺",
+  "BEL": "🇧🇪",
+  "BRA": "🇧🇷",
+  "CAN": "🇨🇦",
+  "CRO": "🇭🇷",
+  "ECU": "🇪🇨",
+  "ENG": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+  "FRA": "🇫🇷",
+  "GER": "🇩🇪",
+  "IRN": "🇮🇷",
+  "JPN": "🇯🇵",
+  "MEX": "🇲🇽",
+  "MAR": "🇲🇦",
+  "NED": "🇳🇱",
+  "POR": "🇵🇹",
+  "KSA": "🇸🇦",
+  "SEN": "🇸🇳",
+  "KOR": "🇰🇷",
+  "ESP": "🇪🇸",
+  "SUI": "🇨🇭",
+  "URU": "🇺🇾",
+  "TUR": "🇹🇷",
+  "PAR": "🇵🇾"
 };
 
 const getFlag = (team: string) => {
-  const normalized = normalizeCountryName(team);
-  return FLAG_MAP[normalized] || "⚽";
+  const normalized = team.toLowerCase().trim();
+  
+  // 1. Exact match or check if key is a substring of the team name
+  for (const [key, value] of Object.entries(FLAG_MAP)) {
+    if (normalized.includes(key.toLowerCase())) {
+      return value;
+    }
+  }
+
+  // 2. Fallback to generic soccer ball if no flag is found
+  return "⚽";
 };
 
 export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivityLog }) => {
@@ -171,18 +174,12 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
     });
   };
 
-  // Categorize & Normalize Names
-  const normalizedList = matches.map(m => ({
-    ...m,
-    home: normalizeCountryName(m.home),
-    away: normalizeCountryName(m.away)
-  }));
-
-  const liveMatches = normalizedList.filter(m => m.status === "LIVE");
-  const scheduledMatches = normalizedList
+  // Categorize
+  const liveMatches = matches.filter(m => m.status === "LIVE");
+  const scheduledMatches = matches
     .filter(m => m.status === "SCHEDULED")
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const finishedMatches = normalizedList
+  const finishedMatches = matches
     .filter(m => m.status === "FINISHED" || m.status === "FT")
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
