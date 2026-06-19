@@ -23,8 +23,13 @@ contract PlayerDex is Ownable {
     function getSharePrice(uint256 tokenId) public view returns (uint256) {
         (,, uint256 rating,,) = shares.players(tokenId);
         require(rating > 0, "Invalid player tokenId");
-        // 1 Share = rating * 1e18 (e.g., 90 rating = 90 credits)
-        return rating * 10**18;
+        
+        uint256 supply = shares.totalSupply(tokenId);
+        // Slope = 0.05 credits (5e16 wei) per share
+        uint256 slope = 5 * 10**16;
+        uint256 premium = (supply * slope) / 10**18;
+        
+        return (rating * 10**18) + premium;
     }
     
     function buyShares(uint256 tokenId, uint256 amount) external {

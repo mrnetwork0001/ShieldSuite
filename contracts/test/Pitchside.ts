@@ -158,5 +158,27 @@ describe("Pitchside AI Contract Suite", function () {
 
       expect(await playerShares.balanceOf(user.address, 1)).to.equal(ethers.parseEther("1"));
     });
+
+    it("should adjust share price dynamically using the bonding curve", async function () {
+      // 1. Initial price should be baseline (90 rating = 90 credits)
+      let price = await playerDex.getSharePrice(1);
+      expect(price).to.equal(ethers.parseEther("90"));
+
+      // 2. Buy 100 shares (outstanding supply becomes 100)
+      const buyAmount = ethers.parseEther("100");
+      await playerDex.connect(agent).buySharesFor(user.address, 1, buyAmount);
+
+      // 3. Price should increase by (100 * 0.05) = 5 credits -> total 95 credits
+      price = await playerDex.getSharePrice(1);
+      expect(price).to.equal(ethers.parseEther("95"));
+
+      // 4. Sell 50 shares (outstanding supply becomes 50)
+      const sellAmount = ethers.parseEther("50");
+      await playerDex.connect(agent).sellSharesFor(user.address, 1, sellAmount);
+
+      // 5. Price should decrease by (50 * 0.05) = 2.5 credits -> total 92.5 credits
+      price = await playerDex.getSharePrice(1);
+      expect(price).to.equal(ethers.parseEther("92.5"));
+    });
   });
 });

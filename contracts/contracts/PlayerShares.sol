@@ -23,6 +23,7 @@ contract PlayerShares is ERC1155, Ownable {
     mapping(uint256 => PlayerStats) public players;
     mapping(uint256 => string) private _tokenURIs;
     mapping(address => bool) public authorizedMinters;
+    mapping(uint256 => uint256) public totalSupply;
     
     event PlayerUpdated(uint256 indexed tokenId, uint256 rating, uint256 goals, uint256 assists, string metadataUri);
     event MinterAuthorized(address indexed minter, bool status);
@@ -71,11 +72,13 @@ contract PlayerShares is ERC1155, Ownable {
     
     function mint(address to, uint256 id, uint256 amount, bytes memory data) external {
         require(msg.sender == owner() || authorizedMinters[msg.sender], "Unauthorized minter");
+        totalSupply[id] += amount;
         _mint(to, id, amount, data);
     }
     
     function burn(address from, uint256 id, uint256 amount) external {
         require(from == msg.sender || isApprovedForAll(from, msg.sender) || authorizedMinters[msg.sender], "Not authorized to burn");
+        totalSupply[id] -= amount;
         _burn(from, id, amount);
     }
 }
