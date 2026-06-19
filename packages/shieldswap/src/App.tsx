@@ -359,10 +359,10 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Agent Activity Log */}
-        {activeTab !== "home" && activeTab !== "docs" && (
+        {/* Agent Activity Log - only visible on swap tab */}
+        {activeTab === "swap" && (
           <motion.div
-            className={`activity-log glass-card ${activeTab === 'pitchside' ? 'hide-on-mobile-pitchside' : ''}`}
+            className="activity-log glass-card"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
