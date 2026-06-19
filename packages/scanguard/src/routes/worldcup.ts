@@ -589,10 +589,23 @@ worldCupRouter.get("/matches", async (_req: Request, res: Response) => {
     status: m.status,
     venue: "FIFA World Cup Arena",
     date: new Date().toISOString(),
-    minute: String(m.minute)
+    minute: String(m.minute),
+    events: m.events || []
   }));
 
-  const allMatches = [...liveMatches, ...fifaMatches];
+  // Ensure fifaMatches have events property to prevent agent runtime crashes
+  const parsedFifaMatches = fifaMatches.map((m) => ({
+    home: m.home,
+    away: m.away,
+    score: m.score,
+    status: m.status,
+    venue: m.venue || "FIFA World Cup Arena",
+    date: m.date || new Date().toISOString(),
+    minute: m.minute || "0",
+    events: m.events || []
+  }));
+
+  const allMatches = [...liveMatches, ...parsedFifaMatches];
 
   res.json({
     success: true,

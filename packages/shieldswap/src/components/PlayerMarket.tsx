@@ -38,6 +38,8 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [marketExpanded, setMarketExpanded] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PLAYERS_PER_PAGE = 10;
 
   // ─── Success Modal State ──────────────────────────────────────────────────────
   const [txModal, setTxModal] = useState<{
@@ -56,6 +58,11 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
       message
     });
   };
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCountry, searchQuery]);
 
   // Fetch player details and user balances
   useEffect(() => {
@@ -191,6 +198,25 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
     return matchesCountry && matchesSearch;
   });
 
+  // Pagination logic
+  const totalPages = Math.max(1, Math.ceil(filteredPlayers.length / PLAYERS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIdx = (safeCurrentPage - 1) * PLAYERS_PER_PAGE;
+  const paginatedPlayers = filteredPlayers.slice(startIdx, startIdx + PLAYERS_PER_PAGE);
+
+  // Generate page numbers to show (max 5 visible page buttons)
+  const getVisiblePages = () => {
+    const pages: number[] = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      const start = Math.max(1, safeCurrentPage - 2);
+      const end = Math.min(totalPages, start + 4);
+      for (let i = start; i <= end; i++) pages.push(i);
+    }
+    return pages;
+  };
+
   // Dynamically compute countries represented in the roster
   const countries = ["All", ...Array.from(new Set(INITIAL_PLAYERS.map(p => p.country)))];
 
@@ -273,13 +299,25 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
           </div>
         </div>
 
+        {/* ── Player Count Info ─────────────────────────────────────────────── */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          marginBottom: '12px', fontSize: '0.78rem', color: 'var(--text-tertiary)'
+        }}>
+          <span>
+            Showing {paginatedPlayers.length} of {filteredPlayers.length} players
+            {selectedCountry !== "All" && ` in ${selectedCountry}`}
+          </span>
+          <span>Page {safeCurrentPage} of {totalPages}</span>
+        </div>
+
         <div className={`player-list ${marketExpanded ? "expanded" : "collapsed"}`}>
-          {filteredPlayers.length === 0 ? (
+          {paginatedPlayers.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-tertiary)', fontSize: '0.85rem', gridColumn: '1 / -1' }}>
               No players found matching your criteria.
             </div>
           ) : (
-            filteredPlayers.map((p) => {
+            paginatedPlayers.map((p) => {
               const hasBalance = parseFloat(p.balance) > 0;
               const flagUrl = getFlagUrl(p.country);
               return (
@@ -340,6 +378,83 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
             })
           )}
         </div>
+
+        {/* ── Pagination Controls ───────────────────────────────────────────── */}
+        {totalPages > 1 && (
+          <div className="pagination-controls" style={{
+            display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px',
+            marginTop: '20px', flexWrap: 'wrap'
+          }}>
+            {/* Previous */}
+            <button
+              className="btn btn-pagination"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={safeCurrentPage === 1}
+              style={{
+                background: safeCurrentPage === 1 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.06)',
+                border: '1px solid var(--border-default)',
+                color: safeCurrentPage === 1 ? 'var(--text-tertiary)' : 'var(--text-primary)',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                opacity: safeCurrentPage === 1 ? 0.5 : 1
+              }}
+            >
+              ← Prev
+            </button>
+
+            {/* Page numbers */}
+            {getVisiblePages().map(pageNum => (
+              <button
+                key={pageNum}
+                className="btn btn-pagination"
+                onClick={() => setCurrentPage(pageNum)}
+                style={{
+                  background: pageNum === safeCurrentPage
+                    ? 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))'
+                    : 'rgba(255,255,255,0.06)',
+                  border: pageNum === safeCurrentPage
+                    ? '1px solid var(--accent-primary)'
+                    : '1px solid var(--border-default)',
+                  color: pageNum === safeCurrentPage ? '#fff' : 'var(--text-secondary)',
+                  padding: '8px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.82rem',
+                  fontWeight: pageNum === safeCurrentPage ? 700 : 500,
+                  cursor: 'pointer',
+                  minWidth: '40px',
+                  transition: 'all 0.2s ease',
+                  boxShadow: pageNum === safeCurrentPage ? '0 0 12px rgba(0,200,255,0.25)' : 'none'
+                }}
+              >
+                {pageNum}
+              </button>
+            ))}
+
+            {/* Next */}
+            <button
+              className="btn btn-pagination"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={safeCurrentPage === totalPages}
+              style={{
+                background: safeCurrentPage === totalPages ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.06)',
+                border: '1px solid var(--border-default)',
+                color: safeCurrentPage === totalPages ? 'var(--text-tertiary)' : 'var(--text-primary)',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                opacity: safeCurrentPage === totalPages ? 0.5 : 1
+              }}
+            >
+              Next →
+            </button>
+          </div>
+        )}
+
         <button 
           className="btn btn-sm btn-ghost mobile-market-toggle"
           onClick={() => setMarketExpanded(!marketExpanded)}

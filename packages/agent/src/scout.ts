@@ -97,17 +97,28 @@ async function runScoutLoop() {
   const dex = new ethers.Contract(addresses.PlayerDex, DEX_ABI, wallet);
 
   // 1. Fetch matches and news from API
-  let matchesData;
+  let matchesData: any[] = [];
   try {
     const res = await fetch(`${BACKEND_URL}/matches`);
     const json = await res.json() as any;
-    matchesData = json.data;
+    if (json.success && Array.isArray(json.data)) {
+      const first = json.data[0];
+      if (first && first.league && Array.isArray(first.matches)) {
+        for (const league of json.data) {
+          if (Array.isArray(league.matches)) {
+            matchesData.push(...league.matches);
+          }
+        }
+      } else {
+        matchesData = json.data;
+      }
+    }
   } catch (err: any) {
     await postLog(`Failed to fetch matches: ${err.message}`, "error");
     return;
   }
 
-  if (!matchesData || matchesData.length === 0) return;
+  if (matchesData.length === 0) return;
 
   // 2. Query delegated users
   const delegatedUsers = new Set<string>();
@@ -299,11 +310,25 @@ async function start() {
   try {
     const res = await fetch(`${BACKEND_URL}/matches`);
     const json = await res.json() as any;
-    if (json.success && json.data) {
-      for (const match of json.data) {
-        for (const event of match.events) {
-          const eventKey = `${match.id}-${event.tokenId}-${event.minute}-${event.description}`;
-          processedEvents.add(eventKey);
+    if (json.success && Array.isArray(json.data)) {
+      let seedMatches: any[] = [];
+      const first = json.data[0];
+      if (first && first.league && Array.isArray(first.matches)) {
+        for (const league of json.data) {
+          if (Array.isArray(league.matches)) {
+            seedMatches.push(...league.matches);
+          }
+        }
+      } else {
+        seedMatches = json.data;
+      }
+
+      for (const match of seedMatches) {
+        if (Array.isArray(match.events)) {
+          for (const event of match.events) {
+            const eventKey = `${match.id}-${event.tokenId}-${event.minute}-${event.description}`;
+            processedEvents.add(eventKey);
+          }
         }
       }
     }
