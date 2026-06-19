@@ -222,13 +222,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
         if (Array.isArray(item.periods)) {
           const activePeriod = item.periods.find((p: any) => p.ticking === true);
           if (activePeriod) {
-            elapsedMinute = (activePeriod.counts_from || 0) + (activePeriod.minutes || 0);
-          } else {
-            const finishedPeriods = item.periods.filter((p: any) => p.minutes > 0);
-            if (finishedPeriods.length > 0) {
-              const lastPeriod = finishedPeriods[finishedPeriods.length - 1];
-              elapsedMinute = (lastPeriod.counts_from || 0) + (lastPeriod.minutes || 0);
-            }
+            elapsedMinute = activePeriod.minutes;
           }
         }
 
@@ -306,13 +300,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
       if (Array.isArray(item.periods)) {
         const activePeriod = item.periods.find((p: any) => p.ticking === true);
         if (activePeriod) {
-          elapsedMinute = (activePeriod.counts_from || 0) + (activePeriod.minutes || 0);
-        } else {
-          const finishedPeriods = item.periods.filter((p: any) => p.minutes > 0);
-          if (finishedPeriods.length > 0) {
-            const lastPeriod = finishedPeriods[finishedPeriods.length - 1];
-            elapsedMinute = (lastPeriod.counts_from || 0) + (lastPeriod.minutes || 0);
-          }
+          elapsedMinute = activePeriod.minutes;
         }
       }
 
