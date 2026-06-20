@@ -168,14 +168,15 @@ const App: React.FC = () => {
 
   // Listen for wallet events (chain/account changes)
   useEffect(() => {
-    if (!window.ethereum) return;
+    const providerVal = (window as any).okxwallet || window.ethereum;
+    if (!providerVal) return;
 
     const handleChainChanged = async (hexChainId: string) => {
       const chainId = Number(hexChainId);
       try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const address = await signer.getAddress();
+        const provider = new ethers.BrowserProvider(providerVal);
+        const resolvedSigner = await provider.getSigner();
+        const address = await resolvedSigner.getAddress();
         const balance = ethers.formatEther(await provider.getBalance(address));
         const isXLayer = chainId === 196;
         setWallet({
@@ -185,7 +186,7 @@ const App: React.FC = () => {
           balance,
           isXLayer,
           provider,
-          signer,
+          signer: resolvedSigner,
         });
         handleActivityLog({
           id: `chain-${Date.now()}`,
@@ -209,7 +210,7 @@ const App: React.FC = () => {
         });
       } else {
         try {
-          const provider = new ethers.BrowserProvider(window.ethereum);
+          const provider = new ethers.BrowserProvider(providerVal);
           const signer = await provider.getSigner();
           const address = await signer.getAddress();
           const network = await provider.getNetwork();
@@ -229,12 +230,12 @@ const App: React.FC = () => {
       }
     };
 
-    window.ethereum.on("chainChanged", handleChainChanged);
-    window.ethereum.on("accountsChanged", handleAccountsChanged);
+    providerVal.on("chainChanged", handleChainChanged);
+    providerVal.on("accountsChanged", handleAccountsChanged);
 
     return () => {
-      window.ethereum.removeListener("chainChanged", handleChainChanged);
-      window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
+      providerVal.removeListener("chainChanged", handleChainChanged);
+      providerVal.removeListener("accountsChanged", handleAccountsChanged);
     };
   }, [handleActivityLog]);
 

@@ -23,12 +23,13 @@ const INITIAL_STATE: WalletState = {
 
 /** Connect to MetaMask or injected wallet */
 export async function connectWallet(): Promise<WalletState> {
-  if (!window.ethereum) {
+  const providerVal = (window as any).okxwallet || window.ethereum;
+  if (!providerVal) {
     throw new Error("No wallet detected. Please install MetaMask or OKX Wallet.");
   }
 
   try {
-    const provider = new ethers.BrowserProvider(window.ethereum);
+    const provider = new ethers.BrowserProvider(providerVal);
     const accounts = await provider.send("eth_requestAccounts", []);
 
     if (accounts.length === 0) {
@@ -100,6 +101,7 @@ export function formatBalance(balance: string, decimals = 4): string {
 declare global {
   interface Window {
     ethereum?: any;
+    okxwallet?: any;
   }
 }
 

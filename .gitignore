@@ -27,4 +27,4 @@ logs/
 npm-debug.log*
 
 # Persistent database (per-environment)
-packages/scanguard/data/database.json
+packages/scanguard/data/

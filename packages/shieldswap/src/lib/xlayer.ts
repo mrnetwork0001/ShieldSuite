@@ -173,12 +173,13 @@ export function getExplorerUrl(type: "address" | "tx", value: string, chainId = 
 
 /** Add chain to MetaMask / wallet */
 export async function addChainToWallet(chainId: number): Promise<boolean> {
-  if (!window.ethereum) return false;
+  const provider = (window as any).okxwallet || window.ethereum;
+  if (!provider) return false;
 
   const info = chainId === 1952 ? XLAYER_TESTNET : XLAYER_CHAIN;
 
   try {
-    await window.ethereum.request({
+    await provider.request({
       method: "wallet_addEthereumChain",
       params: [
         {
@@ -198,12 +199,13 @@ export async function addChainToWallet(chainId: number): Promise<boolean> {
 
 /** Switch wallet to a specific chain */
 export async function switchToChain(chainId: number): Promise<boolean> {
-  if (!window.ethereum) return false;
+  const provider = (window as any).okxwallet || window.ethereum;
+  if (!provider) return false;
 
   const hex = chainId === 1952 ? XLAYER_TESTNET.chainIdHex : XLAYER_CHAIN.chainIdHex;
 
   try {
-    await window.ethereum.request({
+    await provider.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: hex }],
     });
