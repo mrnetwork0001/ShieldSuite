@@ -30,7 +30,7 @@ export async function connectWallet(): Promise<WalletState> {
 
   try {
     const provider = new ethers.BrowserProvider(providerVal);
-    const accounts = await provider.send("eth_requestAccounts", []);
+    const accounts = await providerVal.request({ method: "eth_requestAccounts" });
 
     if (accounts.length === 0) {
       throw new Error("No accounts found. Please unlock your wallet.");
