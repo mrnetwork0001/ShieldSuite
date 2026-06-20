@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ShieldIcon, CalendarIcon, TrophyIcon, ScienceIcon, CardIcon, RobotIcon, SignalIcon, WarningIcon, CrossIcon, LockIcon, SwapIcon, ArrowRightIcon } from "./Icons";
+import { ShieldIcon, CalendarIcon, TrophyIcon, ScienceIcon, CardIcon, RobotIcon, SignalIcon, WarningIcon, CrossIcon, LockIcon, SwapIcon, ArrowRightIcon, VaultIcon } from "./Icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { ethers } from "ethers";
 import DEPLOYED_ADDRESSES from "../deployed-addresses.json";
@@ -519,7 +519,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
 
       {/* Protocol Statistics Section */}
       <section className="landing-section">
-        <h2 className="section-title text-center">📊 ShieldSuite Live Protocol Activity</h2>
+        <h2 className="section-title text-center" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg>
+          ShieldSuite Live Protocol Activity
+        </h2>
         <p className="section-subtitle text-center">
           Real-time metrics monitored directly on X Layer mainnet.
         </p>
@@ -527,7 +534,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         <div className="metrics-grid">
           <div className="glass-card metric-card">
             <div className="metric-header">
-              <span className="metric-icon">💰</span>
+              <span className="metric-icon">
+                <VaultIcon size={22} style={{ marginRight: 0, color: "var(--accent-blue)" }} />
+              </span>
               <span className="metric-label font-mono">TOTAL VALUE LOCKED</span>
             </div>
             <div className="metric-value font-mono" style={{ color: "var(--accent-blue)" }}>
@@ -537,7 +546,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
 
           <div className="glass-card metric-card">
             <div className="metric-header">
-              <span className="metric-icon">👥</span>
+              <span className="metric-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: "middle" }}>
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </span>
               <span className="metric-label font-mono">ACTIVE SPECULATORS</span>
             </div>
             <div className="metric-value font-mono" style={{ color: "var(--accent-purple)" }}>
@@ -547,7 +563,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
 
           <div className="glass-card metric-card">
             <div className="metric-header">
-              <span className="metric-icon">🪙</span>
+              <span className="metric-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-safe)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: "middle" }}>
+                  <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5" />
+                  <polygon points="12 6 18 10 18 14 12 18 6 14 6 10" fill="currentColor" fillOpacity="0.1" />
+                </svg>
+              </span>
               <span className="metric-label font-mono">SPECULATOR $PSAI HELD</span>
             </div>
             <div className="metric-value font-mono" style={{ color: "var(--accent-safe)" }}>
@@ -1181,19 +1202,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         }
 
         .metric-card {
-          padding: 24px;
-          text-align: left;
+          padding: 28px 24px 24px;
+          text-align: center;
         }
 
         .metric-card::before {
           content: '+--- SHIELD_STAT ---+' !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
         }
 
         .metric-header {
           display: flex;
+          flex-direction: column;
           align-items: center;
-          gap: 10px;
-          margin-bottom: 12px;
+          gap: 8px;
+          margin-bottom: 14px;
         }
 
         .metric-icon {
