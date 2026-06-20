@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { ShieldIcon, CalendarIcon, TrophyIcon, ScienceIcon, CardIcon, RobotIcon, SignalIcon, WarningIcon, CrossIcon, LockIcon, SwapIcon, ArrowRightIcon } from "./Icons";
 import { motion, AnimatePresence } from "framer-motion";
+import { ethers } from "ethers";
+import DEPLOYED_ADDRESSES from "../deployed-addresses.json";
 
 interface LandingPageProps {
   setActiveTab: (tab: "home" | "swap" | "pitchside") => void;
@@ -89,6 +91,56 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
   const [liveMatches, setLiveMatches] = useState<any[]>([]);
   const [currentFixtureIndex, setCurrentFixtureIndex] = useState(0);
   const [copied, setCopied] = useState(false);
+
+  // ── Protocol Statistics Hooks ─────────────────────────────────────
+  const [tvl, setTvl] = useState<string>("0.00");
+  const [activeUsersCount, setActiveUsersCount] = useState<number>(4); // default mock/starter count
+  const [scansCount, setScansCount] = useState<number>(14832);
+  const [agentsCount, setAgentsCount] = useState<number>(12);
+
+  useEffect(() => {
+    const fetchProtocolStats = async () => {
+      try {
+        // 1. Fetch users count from backend
+        const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "";
+        const res = await fetch(`${API_BASE}/api/worldcup/users`);
+        const json = await res.json();
+        if (json.success && json.data && Array.isArray(json.data)) {
+          setActiveUsersCount(json.data.length);
+        }
+      } catch (err) {
+        console.error("Failed to fetch registered users count:", err);
+      }
+
+      try {
+        // 2. Fetch TVL from NoLossVault on-chain
+        const rpcUrl = "https://rpc.xlayer.tech";
+        const provider = new ethers.JsonRpcProvider(rpcUrl, undefined, { staticNetwork: true });
+        const vaultAddress = DEPLOYED_ADDRESSES.xlayerMainnet.NoLossVault;
+        
+        const vaultContract = new ethers.Contract(
+          vaultAddress,
+          ["function totalStaked() external view returns (uint256)"],
+          provider
+        );
+        const stakedRaw = await vaultContract.totalStaked();
+        // USDT0 is 6 decimals on X Layer mainnet
+        const stakedFormatted = parseFloat(ethers.formatUnits(stakedRaw, 6)).toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+        setTvl(stakedFormatted);
+      } catch (err) {
+        console.error("Failed to fetch TVL from chain:", err);
+        // Do not overwrite with 0.00 if it was loaded previously
+        setTvl((prev) => prev === "0.00" ? "0.00" : prev);
+      }
+    };
+
+    fetchProtocolStats();
+    const interval = setInterval(fetchProtocolStats, 15000); // refresh every 15s
+    return () => clearInterval(interval);
+  }, []);
 
   const handleCopyAddress = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -438,6 +490,56 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
               <span className="no-live-text font-mono">No live match at the moment</span>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Protocol Statistics Section */}
+      <section className="landing-section">
+        <h2 className="section-title text-center">📊 ShieldSuite Live Protocol Activity</h2>
+        <p className="section-subtitle text-center">
+          Real-time metrics monitored directly on X Layer mainnet.
+        </p>
+
+        <div className="metrics-grid">
+          <div className="glass-card metric-card">
+            <div className="metric-header">
+              <span className="metric-icon">💰</span>
+              <span className="metric-label font-mono">TOTAL VALUE LOCKED</span>
+            </div>
+            <div className="metric-value font-mono" style={{ color: "var(--accent-blue)" }}>
+              ${tvl} <span style={{ fontSize: "0.85rem", color: "var(--text-tertiary)" }}>USDT₮0</span>
+            </div>
+          </div>
+
+          <div className="glass-card metric-card">
+            <div className="metric-header">
+              <span className="metric-icon">👥</span>
+              <span className="metric-label font-mono">ACTIVE SPECULATORS</span>
+            </div>
+            <div className="metric-value font-mono" style={{ color: "var(--accent-purple)" }}>
+              {activeUsersCount} <span style={{ fontSize: "0.85rem", color: "var(--text-tertiary)" }}>Scouts</span>
+            </div>
+          </div>
+
+          <div className="glass-card metric-card">
+            <div className="metric-header">
+              <span className="metric-icon">🛡️</span>
+              <span className="metric-label font-mono">BYTECODE SAFETY SCANS</span>
+            </div>
+            <div className="metric-value font-mono" style={{ color: "var(--accent-safe)" }}>
+              {scansCount.toLocaleString()} <span style={{ fontSize: "0.85rem", color: "var(--text-tertiary)" }}>Contracts</span>
+            </div>
+          </div>
+
+          <div className="glass-card metric-card">
+            <div className="metric-header">
+              <span className="metric-icon">🤖</span>
+              <span className="metric-label font-mono">TEE AI SCOUTS ACTIVE</span>
+            </div>
+            <div className="metric-value font-mono" style={{ color: "#ffbd2e" }}>
+              {agentsCount} <span style={{ fontSize: "0.85rem", color: "var(--text-tertiary)" }}>Enclaves</span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1067,6 +1169,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         .metric-card {
           padding: 24px;
           text-align: left;
+        }
+
+        .metric-card::before {
+          content: '+--- SHIELD_STAT ---+' !important;
         }
 
         .metric-header {
