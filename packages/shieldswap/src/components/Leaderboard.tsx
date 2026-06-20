@@ -318,6 +318,39 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         </div>
       </div>
 
+      {/* ── PSAI Boost Tiers Legend ────────────────────────────────────────── */}
+      <div style={{
+        margin: '0 0 16px',
+        padding: '12px 16px',
+        borderRadius: '10px',
+        border: '1px solid rgba(168, 85, 247, 0.2)',
+        background: 'rgba(168, 85, 247, 0.03)',
+        fontSize: '0.75rem',
+      }}>
+        <div style={{ fontWeight: '700', color: '#fff', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span>⚡ Scout Multipliers (Hold $PSAI to Boost Virtual Yield)</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', textAlign: 'center' }}>
+          <div style={{ padding: '6px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid rgba(168, 85, 247, 0.15)' }}>
+            <div style={{ color: '#c084fc', fontWeight: 'bold' }}>1.5x Boost</div>
+            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ 10k PSAI</div>
+          </div>
+          <div style={{ padding: '6px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid rgba(14, 165, 233, 0.15)' }}>
+            <div style={{ color: '#38bdf8', fontWeight: 'bold' }}>2.0x Boost</div>
+            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ 50k PSAI</div>
+          </div>
+          <div style={{ padding: '6px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.15)' }}>
+            <div style={{ color: '#fbbf24', fontWeight: 'bold' }}>3.0x Boost</div>
+            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ 250k PSAI</div>
+          </div>
+          <div style={{ padding: '6px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid rgba(34, 197, 94, 0.15)' }}>
+            <div style={{ color: '#4ade80', fontWeight: 'bold' }}>👑 5.0x Boost</div>
+            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ 1M PSAI</div>
+          </div>
+        </div>
+      </div>
+
+
       {loading && leaderboard.length === 0 ? (
         <div style={{ textAlign: "center", color: "var(--text-tertiary)", fontSize: "0.8rem", padding: "20px" }}>
           ⏳ Scanning {isMainnet ? "Mainnet" : "Testnet"} blocks for participants...
