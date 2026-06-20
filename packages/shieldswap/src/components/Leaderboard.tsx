@@ -142,13 +142,30 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
               const userInfo = await vault.users(addr);
               const credits = await vault.getCredits(addr);
               
+              let hasMultiplier = false;
+              try {
+                const psaiTokenAddress = "0xaef068ea820aafa00a2854bfd6cfab6d891ede5d";
+                const psai = new ethers.Contract(psaiTokenAddress, [
+                  "function balanceOf(address) external view returns (uint256)"
+                ], wallet.provider!);
+                const psaiBal = await psai.balanceOf(addr);
+                if (psaiBal >= ethers.parseEther("10000")) {
+                  hasMultiplier = true;
+                }
+              } catch {
+                if (wallet.chainId !== 196 && addr.toLowerCase() === "0xcd0a2370f2dc12c1802707b7d9ab3fec891e3c02") {
+                  hasMultiplier = true;
+                }
+              }
+
               return {
                 address: addr,
                 staked: userInfo.balance,
-                credits: credits
+                credits: credits,
+                hasMultiplier
               };
             } catch (err) {
-              return { address: addr, staked: 0n, credits: 0n };
+              return { address: addr, staked: 0n, credits: 0n, hasMultiplier: false };
             }
           })
         );
@@ -201,7 +218,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
               maximumFractionDigits: 2
             }),
             portfolio: parseFloat(ethers.formatUnits(item.staked, usdtDecimals)).toFixed(2) + " USDT",
-            share: sharePercent
+            share: sharePercent,
+            hasMultiplier: item.hasMultiplier
           };
         });
         
@@ -334,8 +352,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
                   {item.rank === 1 ? <GoldMedalIcon size={18} style={{ marginRight: 0 }} /> : item.rank === 2 ? <SilverMedalIcon size={18} style={{ marginRight: 0 }} /> : item.rank === 3 ? <BronzeMedalIcon size={18} style={{ marginRight: 0 }} /> : `#${item.rank}`}
                 </span>
                 <span className="manager-info" style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <span style={{ fontWeight: "600", color: isCurrentUser ? "var(--accent-safe)" : "#fff" }}>
+                  <span style={{ fontWeight: "600", color: isCurrentUser ? "var(--accent-safe)" : "#fff", display: "flex", alignItems: "center", gap: "6px" }}>
                     {item.name} {isCurrentUser && "(You)"}
+                    {item.hasMultiplier && (
+                      <span className="badge badge-purple" style={{ fontSize: "0.6rem", padding: "1px 6px", background: "rgba(168, 85, 247, 0.2)", color: "#c084fc", border: "1px solid rgba(168, 85, 247, 0.4)", borderRadius: "8px", fontWeight: "normal", display: "inline-flex", alignItems: "center" }}>⚡ 1.5x</span>
+                    )}
                   </span>
                   <span className="font-mono" style={{ fontSize: "0.68rem", color: "var(--text-tertiary)" }}>
                     {item.address.slice(0, 6)}...{item.address.slice(-4)}

@@ -862,3 +862,140 @@ if (isMainnetBackend) {
   logger.info("[WorldCup] Testnet/local mode — Sportmonks auto-sync disabled. Use manual sync button or match simulator.");
 }
 
+const pendingMultiplierClaims = new Set<string>();
+
+async function syncPsaiMultiplierCredits() {
+  const pk = process.env.AGENT_PRIVATE_KEY;
+  if (!pk) {
+    logger.warn("[PsaiMultiplierSync] AGENT_PRIVATE_KEY not set — cannot sync credits.");
+    return;
+  }
+
+  const rpcUrl = process.env.XLAYER_RPC_URL || "https://rpc.xlayer.tech";
+  const chainId = rpcUrl.includes("testrpc") ? 1952 : 196;
+  const addresses = getAddressesForChain(chainId);
+  if (!addresses) {
+    logger.warn(`[PsaiMultiplierSync] No addresses found for chainId: ${chainId}`);
+    return;
+  }
+
+  const provider = new ethers.JsonRpcProvider(rpcUrl, chainId, { staticNetwork: true });
+  const wallet = new ethers.Wallet(pk, provider);
+  
+  const vault = new ethers.Contract(addresses.NoLossVault, [
+    "function users(address user) external view returns (uint256 balance, uint256 lastUpdated, uint256 accumulatedCredits, address delegatedAgent)",
+    "function creditsPerTokenPerSecond() external view returns (uint256)",
+    "function addCredits(address userAddress, uint256 amount) external"
+  ], wallet);
+
+  // Fetch current credits rate
+  let rate: bigint;
+  try {
+    rate = await vault.creditsPerTokenPerSecond();
+  } catch (err: any) {
+    logger.error(`[PsaiMultiplierSync] Failed to fetch credits rate: ${err.message}`);
+    return;
+  }
+
+  // Fetch current block timestamp
+  let blockTimestamp: bigint;
+  try {
+    const block = await provider.getBlock("latest");
+    blockTimestamp = BigInt(block ? block.timestamp : Math.floor(Date.now() / 1000));
+  } catch (err: any) {
+    logger.error(`[PsaiMultiplierSync] Failed to fetch latest block: ${err.message}`);
+    return;
+  }
+
+  logger.info(`[PsaiMultiplierSync] Starting PSAI multiplier credits sync for ${registeredUsers.size} users (Chain: ${chainId})...`);
+
+  for (const user of registeredUsers) {
+    const userLower = user.toLowerCase();
+    if (pendingMultiplierClaims.has(userLower)) {
+      logger.info(`[PsaiMultiplierSync] Claim already pending for user: ${user}, skipping`);
+      continue;
+    }
+
+    try {
+      // 1. Fetch user info from vault
+      const userInfo = await vault.users(user);
+      const stakedBalance = userInfo[0];
+      const lastUpdated = userInfo[1];
+
+      if (stakedBalance === 0n) {
+        continue;
+      }
+
+      // 2. Check if user holds >= 10,000 PSAI
+      let hasMultiplier = false;
+      try {
+        const psaiTokenAddress = "0xaef068ea820aafa00a2854bfd6cfab6d891ede5d";
+        const psai = new ethers.Contract(psaiTokenAddress, [
+          "function balanceOf(address) external view returns (uint256)"
+        ], provider);
+        const psaiBal = await psai.balanceOf(user);
+        if (psaiBal >= ethers.parseEther("10000")) {
+          hasMultiplier = true;
+        }
+      } catch {
+        // Fallback for testnet sandbox simulation
+        if (chainId !== 196 && userLower === "0xcd0a2370f2dc12c1802707b7d9ab3fec891e3c02") {
+          hasMultiplier = true;
+        }
+      }
+
+      if (!hasMultiplier) {
+        continue;
+      }
+
+      // 3. Compute elapsed time and 0.5x credit bonus
+      const elapsed = blockTimestamp - lastUpdated;
+      if (elapsed <= 0n) {
+        continue;
+      }
+
+      // bonus = (stakedBalance * elapsed * rate * 0.5) / 1e12
+      const bonus = (stakedBalance * elapsed * rate) / 2000000000000n;
+
+      if (bonus > 0n) {
+        pendingMultiplierClaims.add(userLower);
+        logger.info(`[PsaiMultiplierSync] User ${user} qualified for 1.5x multiplier boost. Staked: ${ethers.formatUnits(stakedBalance, chainId === 196 ? 6 : 18)} USDT, Elapsed: ${elapsed}s, Rate: ${rate}, Calculating Bonus: ${ethers.formatEther(bonus)} Credits.`);
+        
+        try {
+          const tx = await vault.addCredits(user, bonus);
+          await tx.wait();
+          
+          logger.info(`[PsaiMultiplierSync] Successfully credited bonus to ${user}. Tx: ${tx.hash}`);
+          addAgentLog(`⚡ PSAI Holder Multiplier: Credited +${parseFloat(ethers.formatEther(bonus)).toFixed(2)} Scout Credits to ${user.slice(0, 10)}... (staked balance: ${parseFloat(ethers.formatUnits(stakedBalance, chainId === 196 ? 6 : 18)).toFixed(2)} USDT, 1.5x yield active).`, "info");
+        } catch (txErr: any) {
+          logger.error(`[PsaiMultiplierSync] Transaction failed for user ${user}: ${txErr.message}`);
+        } finally {
+          pendingMultiplierClaims.delete(userLower);
+        }
+      }
+    } catch (userErr: any) {
+      logger.error(`[PsaiMultiplierSync] Error processing user ${user}: ${userErr.message}`);
+    }
+  }
+}
+
+// Start the PSAI multiplier sync loop
+const MULTIPLIER_SYNC_INTERVAL = 60_000; // every 60 seconds
+logger.info(`[PsaiMultiplierSync] Starting PSAI multiplier credits sync loop every ${MULTIPLIER_SYNC_INTERVAL / 1000}s`);
+
+setInterval(async () => {
+  try {
+    await syncPsaiMultiplierCredits();
+  } catch (err: any) {
+    logger.error(`[PsaiMultiplierSync] Auto-sync failed: ${err.message}`);
+  }
+}, MULTIPLIER_SYNC_INTERVAL);
+
+// Initial delayed startup sync
+setTimeout(() => {
+  syncPsaiMultiplierCredits()
+    .then(() => logger.info("[PsaiMultiplierSync] Initial sync complete."))
+    .catch((err) => logger.error(`[PsaiMultiplierSync] Initial sync failed: ${err.message}`));
+}, 5000);
+
+

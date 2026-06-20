@@ -52,6 +52,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
   const [creditsRate, setCreditsRate] = useState(158440000000n); // default scaled
   const [activeAgentAddress, setActiveAgentAddress] = useState("");
   const [usdtDecimals, setUsdtDecimals] = useState(18);
+  const [hasMultiplier, setHasMultiplier] = useState(false);
   const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "";
 
   // ─── Success Modal State ────────────────────────────────────────────────────
@@ -136,6 +137,27 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
         const currentAllowance = await usdt.allowance(wallet.address, DEPLOYED_ADDRESSES.NoLossVault);
         setAllowance(currentAllowance);
 
+        // Fetch PSAI balance to check if multiplier applies
+        try {
+          const psaiTokenAddress = "0xaef068ea820aafa00a2854bfd6cfab6d891ede5d";
+          const psai = new ethers.Contract(psaiTokenAddress, [
+            "function balanceOf(address) external view returns (uint256)"
+          ], wallet.provider!);
+          const psaiBal = await psai.balanceOf(wallet.address);
+          if (psaiBal >= ethers.parseEther("10000")) {
+            setHasMultiplier(true);
+          } else {
+            setHasMultiplier(false);
+          }
+        } catch {
+          // Fallback: on testnet simulate for default test address
+          if (wallet.chainId !== 196 && wallet.address?.toLowerCase() === "0xcd0a2370f2dc12c1802707b7d9ab3fec891e3c02") {
+            setHasMultiplier(true);
+          } else {
+            setHasMultiplier(false);
+          }
+        }
+
         // ── Fetch vault's actual aToken balance (to cap withdrawals correctly)
         // On mainnet the aToken is 0xF356ae412... , on testnet there's no aToken so we skip
         try {
@@ -166,15 +188,14 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
     if (parseFloat(stakedBalance) <= 0) return;
 
     const interval = setInterval(() => {
-      // Credits rate is credits per token per second (scaled by 1e12)
-      // Credits earned per 100ms = balance * 0.1 * rate / 1e12
       const balanceRaw = ethers.parseUnits(stakedBalance, usdtDecimals);
-      const earnedPerTick = (balanceRaw * creditsRate * 100n) / 1000n / 1000000000000n;
+      const activeRate = hasMultiplier ? (creditsRate * 15n) / 10n : creditsRate;
+      const earnedPerTick = (balanceRaw * activeRate * 100n) / 1000n / 1000000000000n;
       setCredits((prev) => prev + earnedPerTick);
     }, 100);
 
     return () => clearInterval(interval);
-  }, [stakedBalance, creditsRate, usdtDecimals]);
+  }, [stakedBalance, creditsRate, usdtDecimals, hasMultiplier]);
 
   // 3. Faucet claim
   const handleFaucet = async () => {
@@ -365,12 +386,42 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
         <div className="vault-content">
           {/* Credits Box */}
           <div className="credits-display glass-card">
-            <div className="credits-title">YOUR SCOUT CREDITS (VIRTUAL YIELD)</div>
+            <div className="credits-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>YOUR SCOUT CREDITS (VIRTUAL YIELD)</span>
+              {hasMultiplier && (
+                <span className="badge badge-purple" style={{ fontSize: "0.65rem", padding: "2px 8px", background: "rgba(168, 85, 247, 0.2)", color: "#c084fc", border: "1px solid rgba(168, 85, 247, 0.4)", borderRadius: "10px" }}>⚡ 1.5x Boost Active</span>
+              )}
+            </div>
             <div className="credits-value">{formattedCredits}</div>
             <div className="credits-sub">
-              Accumulating at <span className="text-green font-mono">5% APY</span> (Simulated Fast APY)
+              Accumulating at <span className="text-green font-mono">{hasMultiplier ? "7.5% APY" : "5% APY"}</span> (Simulated Fast APY)
             </div>
           </div>
+
+          {!hasMultiplier && (
+            <div style={{
+              margin: "0 0 16px",
+              padding: "12px 16px",
+              borderRadius: "10px",
+              border: "1px solid rgba(168, 85, 247, 0.25)",
+              background: "rgba(168, 85, 247, 0.05)",
+              fontSize: "0.8rem",
+              color: "var(--text-secondary)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center"
+            }}>
+              <span>⚡ Hold 10,000 $PSAI to boost your credit yield by 1.5x!</span>
+              <a 
+                href="https://web3.okx.com/dex-swap?chain=x-layer,x-layer&token=0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee,0xaef068ea820aafa00a2854bfd6cfab6d891ede5d"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "#a855f7", fontWeight: "bold", textDecoration: "none" }}
+              >
+                Buy PSAI ↗
+              </a>
+            </div>
+          )}
 
           {/* Staking Details */}
           <div className="staking-balances">
