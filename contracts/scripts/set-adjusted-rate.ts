@@ -41,7 +41,7 @@ async function main() {
   console.log(`NoLossVault Address: ${targetAddress}`);
 
   // Base rate set to target exactly 200 credits per day per 1 USDT
-  let newRate = 2314814814810n;
+  let newRate = 2314814814n;
   if (decimals === 6) {
     // scale up by 1e12 for 6-decimal USDT to yield 18-decimal virtual credits on mainnet
     newRate = newRate * 1000000000000n;
