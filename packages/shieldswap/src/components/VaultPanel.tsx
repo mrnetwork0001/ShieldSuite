@@ -419,7 +419,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
               alignItems: "center"
             }}>
               <span>
-                {multiplier === 1.0 && "⚡ Hold 10,000 $PSAI to boost your credit yield by 1.5x!"}
+                {multiplier === 1.0 && "⚡ Hold 10,000+ $PSAI to activate a yield multiplier boost (up to 5.0x)!"}
                 {multiplier === 1.5 && "⚡ Hold 50,000 $PSAI to upgrade to 2.0x Scout Specialist yield!"}
                 {multiplier === 2.0 && "⚡ Hold 250,000 $PSAI to upgrade to 3.0x Elite Scout Master yield!"}
                 {multiplier === 3.0 && "⚡ Hold 1,000,000 $PSAI to upgrade to 5.0x Legendary Director yield!"}
