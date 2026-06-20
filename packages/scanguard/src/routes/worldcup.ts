@@ -926,47 +926,63 @@ async function syncPsaiMultiplierCredits() {
         continue;
       }
 
-      // 2. Check if user holds >= 10,000 PSAI
-      let hasMultiplier = false;
+      // 2. Determine multiplier tier based on PSAI balance
+      let multiplier = 1.0;
+      let bonusFactor = 0n; // scaled by 10 (e.g. 5 for 0.5x, 10 for 1.0x, 20 for 2.0x, 40 for 4.0x)
+
       try {
         const psaiTokenAddress = "0xaef068ea820aafa00a2854bfd6cfab6d891ede5d";
         const psai = new ethers.Contract(psaiTokenAddress, [
           "function balanceOf(address) external view returns (uint256)"
         ], provider);
         const psaiBal = await psai.balanceOf(user);
-        if (psaiBal >= ethers.parseEther("10000")) {
-          hasMultiplier = true;
+        
+        if (psaiBal >= ethers.parseEther("1000000")) {
+          multiplier = 5.0;
+          bonusFactor = 40n;
+        } else if (psaiBal >= ethers.parseEther("250000")) {
+          multiplier = 3.0;
+          bonusFactor = 20n;
+        } else if (psaiBal >= ethers.parseEther("50000")) {
+          multiplier = 2.0;
+          bonusFactor = 10n;
+        } else if (psaiBal >= ethers.parseEther("10000")) {
+          multiplier = 1.5;
+          bonusFactor = 5n;
         }
       } catch {
         // Fallback for testnet sandbox simulation
         if (chainId !== 196 && userLower === "0xcd0a2370f2dc12c1802707b7d9ab3fec891e3c02") {
-          hasMultiplier = true;
+          // Mock 250,000 PSAI -> 3.0x multiplier (2.0x bonus)
+          multiplier = 3.0;
+          bonusFactor = 20n;
         }
       }
 
-      if (!hasMultiplier) {
+      if (bonusFactor === 0n) {
         continue;
       }
 
-      // 3. Compute elapsed time and 0.5x credit bonus
+      // 3. Compute elapsed time and credit bonus
       const elapsed = blockTimestamp - lastUpdated;
       if (elapsed <= 0n) {
         continue;
       }
 
-      // bonus = (stakedBalance * elapsed * rate * 0.5) / 1e12
-      const bonus = (stakedBalance * elapsed * rate) / 2000000000000n;
+      // base_earned = (stakedBalance * elapsed * rate) / 1e12
+      // bonus = base_earned * bonusFactor / 10 = (stakedBalance * elapsed * rate * bonusFactor) / 10 / 1e12
+      const bonus = (stakedBalance * elapsed * rate * bonusFactor) / 10000000000000n;
 
       if (bonus > 0n) {
         pendingMultiplierClaims.add(userLower);
-        logger.info(`[PsaiMultiplierSync] User ${user} qualified for 1.5x multiplier boost. Staked: ${ethers.formatUnits(stakedBalance, chainId === 196 ? 6 : 18)} USDT, Elapsed: ${elapsed}s, Rate: ${rate}, Calculating Bonus: ${ethers.formatEther(bonus)} Credits.`);
+        logger.info(`[PsaiMultiplierSync] User ${user} qualified for ${multiplier}x multiplier boost. Staked: ${ethers.formatUnits(stakedBalance, chainId === 196 ? 6 : 18)} USDT, Elapsed: ${elapsed}s, Rate: ${rate}, Calculating Bonus: ${ethers.formatEther(bonus)} Credits.`);
         
         try {
           const tx = await vault.addCredits(user, bonus);
           await tx.wait();
           
           logger.info(`[PsaiMultiplierSync] Successfully credited bonus to ${user}. Tx: ${tx.hash}`);
-          addAgentLog(`⚡ PSAI Holder Multiplier: Credited +${parseFloat(ethers.formatEther(bonus)).toFixed(2)} Scout Credits to ${user.slice(0, 10)}... (staked balance: ${parseFloat(ethers.formatUnits(stakedBalance, chainId === 196 ? 6 : 18)).toFixed(2)} USDT, 1.5x yield active).`, "info");
+          addAgentLog(`⚡ PSAI Holder Multiplier: Credited +${parseFloat(ethers.formatEther(bonus)).toFixed(2)} Scout Credits to ${user.slice(0, 10)}... (staked balance: ${parseFloat(ethers.formatUnits(stakedBalance, chainId === 196 ? 6 : 18)).toFixed(2)} USDT, ${multiplier}x yield active).`, "info");
         } catch (txErr: any) {
           logger.error(`[PsaiMultiplierSync] Transaction failed for user ${user}: ${txErr.message}`);
         } finally {

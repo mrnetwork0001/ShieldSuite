@@ -52,7 +52,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
   const [creditsRate, setCreditsRate] = useState(158440000000n); // default scaled
   const [activeAgentAddress, setActiveAgentAddress] = useState("");
   const [usdtDecimals, setUsdtDecimals] = useState(18);
-  const [hasMultiplier, setHasMultiplier] = useState(false);
+  const [multiplier, setMultiplier] = useState(1.0);
   const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "";
 
   // ─── Success Modal State ────────────────────────────────────────────────────
@@ -144,17 +144,23 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
             "function balanceOf(address) external view returns (uint256)"
           ], wallet.provider!);
           const psaiBal = await psai.balanceOf(wallet.address);
-          if (psaiBal >= ethers.parseEther("10000")) {
-            setHasMultiplier(true);
+          if (psaiBal >= ethers.parseEther("1000000")) {
+            setMultiplier(5.0);
+          } else if (psaiBal >= ethers.parseEther("250000")) {
+            setMultiplier(3.0);
+          } else if (psaiBal >= ethers.parseEther("50000")) {
+            setMultiplier(2.0);
+          } else if (psaiBal >= ethers.parseEther("10000")) {
+            setMultiplier(1.5);
           } else {
-            setHasMultiplier(false);
+            setMultiplier(1.0);
           }
         } catch {
           // Fallback: on testnet simulate for default test address
           if (wallet.chainId !== 196 && wallet.address?.toLowerCase() === "0xcd0a2370f2dc12c1802707b7d9ab3fec891e3c02") {
-            setHasMultiplier(true);
+            setMultiplier(3.0); // Mock Elite Scout Master (3.0x multiplier)
           } else {
-            setHasMultiplier(false);
+            setMultiplier(1.0);
           }
         }
 
@@ -189,13 +195,14 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
 
     const interval = setInterval(() => {
       const balanceRaw = ethers.parseUnits(stakedBalance, usdtDecimals);
-      const activeRate = hasMultiplier ? (creditsRate * 15n) / 10n : creditsRate;
+      const multScaled = BigInt(Math.round(multiplier * 10));
+      const activeRate = (creditsRate * multScaled) / 10n;
       const earnedPerTick = (balanceRaw * activeRate * 100n) / 1000n / 1000000000000n;
       setCredits((prev) => prev + earnedPerTick);
     }, 100);
 
     return () => clearInterval(interval);
-  }, [stakedBalance, creditsRate, usdtDecimals, hasMultiplier]);
+  }, [stakedBalance, creditsRate, usdtDecimals, multiplier]);
 
   // 3. Faucet claim
   const handleFaucet = async () => {
@@ -388,17 +395,17 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
           <div className="credits-display glass-card">
             <div className="credits-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>YOUR SCOUT CREDITS (VIRTUAL YIELD)</span>
-              {hasMultiplier && (
-                <span className="badge badge-purple" style={{ fontSize: "0.65rem", padding: "2px 8px", background: "rgba(168, 85, 247, 0.2)", color: "#c084fc", border: "1px solid rgba(168, 85, 247, 0.4)", borderRadius: "10px" }}>⚡ 1.5x Boost Active</span>
+              {multiplier > 1.0 && (
+                <span className="badge badge-purple" style={{ fontSize: "0.65rem", padding: "2px 8px", background: "rgba(168, 85, 247, 0.2)", color: "#c084fc", border: "1px solid rgba(168, 85, 247, 0.4)", borderRadius: "10px" }}>⚡ {multiplier.toFixed(1)}x Boost Active</span>
               )}
             </div>
             <div className="credits-value">{formattedCredits}</div>
             <div className="credits-sub">
-              Accumulating at <span className="text-green font-mono">{hasMultiplier ? "7.5% APY" : "5% APY"}</span> (Simulated Fast APY)
+              Accumulating at <span className="text-green font-mono">{(5.0 * multiplier).toFixed(1)}% APY</span> (Simulated Fast APY)
             </div>
           </div>
 
-          {!hasMultiplier && (
+          {multiplier < 5.0 ? (
             <div style={{
               margin: "0 0 16px",
               padding: "12px 16px",
@@ -411,7 +418,12 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
               justifyContent: "space-between",
               alignItems: "center"
             }}>
-              <span>⚡ Hold 10,000 $PSAI to boost your credit yield by 1.5x!</span>
+              <span>
+                {multiplier === 1.0 && "⚡ Hold 10,000 $PSAI to boost your credit yield by 1.5x!"}
+                {multiplier === 1.5 && "⚡ Hold 50,000 $PSAI to upgrade to 2.0x Scout Specialist yield!"}
+                {multiplier === 2.0 && "⚡ Hold 250,000 $PSAI to upgrade to 3.0x Elite Scout Master yield!"}
+                {multiplier === 3.0 && "⚡ Hold 1,000,000 $PSAI to upgrade to 5.0x Legendary Director yield!"}
+              </span>
               <a 
                 href="https://web3.okx.com/dex-swap?chain=x-layer,x-layer&token=0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee,0xaef068ea820aafa00a2854bfd6cfab6d891ede5d"
                 target="_blank"
@@ -420,6 +432,20 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
               >
                 Buy PSAI ↗
               </a>
+            </div>
+          ) : (
+            <div style={{
+              margin: "0 0 16px",
+              padding: "12px 16px",
+              borderRadius: "10px",
+              border: "1px solid rgba(34, 197, 94, 0.25)",
+              background: "rgba(34, 197, 94, 0.05)",
+              fontSize: "0.8rem",
+              color: "#4ade80",
+              fontWeight: "600",
+              textAlign: "center"
+            }}>
+              👑 You have reached the Maximum Legendary Director Tier! 5.0x Yield Boost Active!
             </div>
           )}
 

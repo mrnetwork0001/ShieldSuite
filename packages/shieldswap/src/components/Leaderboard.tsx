@@ -142,19 +142,25 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
               const userInfo = await vault.users(addr);
               const credits = await vault.getCredits(addr);
               
-              let hasMultiplier = false;
+              let multiplier = 1.0;
               try {
                 const psaiTokenAddress = "0xaef068ea820aafa00a2854bfd6cfab6d891ede5d";
                 const psai = new ethers.Contract(psaiTokenAddress, [
                   "function balanceOf(address) external view returns (uint256)"
                 ], wallet.provider!);
                 const psaiBal = await psai.balanceOf(addr);
-                if (psaiBal >= ethers.parseEther("10000")) {
-                  hasMultiplier = true;
+                if (psaiBal >= ethers.parseEther("1000000")) {
+                  multiplier = 5.0;
+                } else if (psaiBal >= ethers.parseEther("250000")) {
+                  multiplier = 3.0;
+                } else if (psaiBal >= ethers.parseEther("50000")) {
+                  multiplier = 2.0;
+                } else if (psaiBal >= ethers.parseEther("10000")) {
+                  multiplier = 1.5;
                 }
               } catch {
                 if (wallet.chainId !== 196 && addr.toLowerCase() === "0xcd0a2370f2dc12c1802707b7d9ab3fec891e3c02") {
-                  hasMultiplier = true;
+                  multiplier = 3.0; // Mock Elite Scout Master (3.0x multiplier)
                 }
               }
 
@@ -162,10 +168,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
                 address: addr,
                 staked: userInfo.balance,
                 credits: credits,
-                hasMultiplier
+                multiplier
               };
             } catch (err) {
-              return { address: addr, staked: 0n, credits: 0n, hasMultiplier: false };
+              return { address: addr, staked: 0n, credits: 0n, multiplier: 1.0 };
             }
           })
         );
@@ -219,7 +225,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
             }),
             portfolio: parseFloat(ethers.formatUnits(item.staked, usdtDecimals)).toFixed(2) + " USDT",
             share: sharePercent,
-            hasMultiplier: item.hasMultiplier
+            multiplier: item.multiplier
           };
         });
         
@@ -354,8 +360,33 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
                 <span className="manager-info" style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                   <span style={{ fontWeight: "600", color: isCurrentUser ? "var(--accent-safe)" : "#fff", display: "flex", alignItems: "center", gap: "6px" }}>
                     {item.name} {isCurrentUser && "(You)"}
-                    {item.hasMultiplier && (
-                      <span className="badge badge-purple" style={{ fontSize: "0.6rem", padding: "1px 6px", background: "rgba(168, 85, 247, 0.2)", color: "#c084fc", border: "1px solid rgba(168, 85, 247, 0.4)", borderRadius: "8px", fontWeight: "normal", display: "inline-flex", alignItems: "center" }}>⚡ 1.5x</span>
+                    {item.multiplier > 1.0 && (
+                      <span className="badge" style={{ 
+                        fontSize: "0.6rem", 
+                        padding: "1px 6px", 
+                        borderRadius: "8px", 
+                        fontWeight: item.multiplier >= 3.0 ? "bold" : "normal", 
+                        display: "inline-flex", 
+                        alignItems: "center",
+                        gap: "2px",
+                        background: 
+                          item.multiplier === 5.0 ? "rgba(34, 197, 94, 0.2)" :
+                          item.multiplier === 3.0 ? "rgba(245, 158, 11, 0.2)" :
+                          item.multiplier === 2.0 ? "rgba(14, 165, 233, 0.2)" :
+                          "rgba(168, 85, 247, 0.2)",
+                        color: 
+                          item.multiplier === 5.0 ? "#4ade80" :
+                          item.multiplier === 3.0 ? "#fbbf24" :
+                          item.multiplier === 2.0 ? "#38bdf8" :
+                          "#c084fc",
+                        border: 
+                          item.multiplier === 5.0 ? "1px solid rgba(34, 197, 94, 0.4)" :
+                          item.multiplier === 3.0 ? "1px solid rgba(245, 158, 11, 0.4)" :
+                          item.multiplier === 2.0 ? "1px solid rgba(14, 165, 233, 0.4)" :
+                          "1px solid rgba(168, 85, 247, 0.4)"
+                      }}>
+                        {item.multiplier === 5.0 ? "👑 5.0x" : `⚡ ${item.multiplier.toFixed(1)}x`}
+                      </span>
                     )}
                   </span>
                   <span className="font-mono" style={{ fontSize: "0.68rem", color: "var(--text-tertiary)" }}>
