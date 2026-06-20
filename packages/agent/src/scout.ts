@@ -191,7 +191,9 @@ async function runScoutLoop() {
 
   // 3. Process match events
   for (const match of matchesData) {
+    if (!match.events || !Array.isArray(match.events)) continue;
     for (const event of match.events) {
+      if (!event || !event.description || event.tokenId === undefined) continue;
       const eventKey = `${match.id}-${event.tokenId}-${event.minute}-${event.description}`;
       if (processedEvents.has(eventKey)) continue;
 

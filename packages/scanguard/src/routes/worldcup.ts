@@ -54,8 +54,8 @@ let matches: Match[] = [
       {
         type: "GOAL",
         minute: 41,
-        player: "Vinicius Junior", // Vinicius is Brazil, wait, Argentina vs France? Let's say Mbappe.
-        tokenId: 2,
+        player: "Kylian Mbappe",
+        tokenId: 16,
         description: "Kylian Mbappe scores an equalizer for France!",
       },
       {
@@ -79,7 +79,7 @@ let matches: Match[] = [
         type: "GOAL",
         minute: 38,
         player: "Bukayo Saka",
-        tokenId: 3,
+        tokenId: 33,
         description: "Bukayo Saka scores a clinical volley!",
       },
     ],
@@ -101,10 +101,10 @@ let registeredUsers = new Set<string>([
 
 const SPORTMONKS_PLAYER_MAP: Record<number, { tokenId: number; name: string }> = {
   184798: { tokenId: 1, name: "Lionel Messi" },
-  96611: { tokenId: 2, name: "Kylian Mbappe" },
-  16827155: { tokenId: 3, name: "Bukayo Saka" },
-  154421: { tokenId: 4, name: "Erling Haaland" },
-  600687: { tokenId: 5, name: "Vinicius Junior" }
+  96611: { tokenId: 16, name: "Kylian Mbappe" },
+  16827155: { tokenId: 33, name: "Bukayo Saka" },
+  154421: { tokenId: 9999, name: "Erling Haaland" },
+  600687: { tokenId: 46, name: "Vinicius Junior" }
 };
 
 // ─── Inline Agent Processing ─────────────────────────────────────────────────
@@ -357,10 +357,10 @@ async function processEventInline(
 
 const BASE_RATINGS: Record<number, number> = {
   1: 90, // Messi
-  2: 91, // Mbappe
-  3: 87, // Saka
-  4: 90, // Haaland
-  5: 89  // Vinicius Jr
+  16: 91, // Mbappe
+  33: 87, // Saka
+  9999: 90, // Haaland
+  46: 89  // Vinicius Jr
 };
 
 async function syncCumulativePlayerStats(fixtures: any[], chainId: number) {
@@ -568,60 +568,55 @@ worldCupRouter.post("/agent-logs", (req: Request, res: Response) => {
 });
 
 // GET /api/worldcup/metadata/:id — metadata endpoint for ERC-1155 tokens
-worldCupRouter.get("/metadata/:id", (req: Request, res: Response) => {
+worldCupRouter.get("/metadata/:id", async (req: Request, res: Response) => {
   const id = Number(req.params.id);
-  
-  const playerMetadata: Record<number, { name: string; description: string; image: string; country: string; position: string }> = {
-    1: {
-      name: "Lionel Messi",
-      description: "Pitchside AI Player Index Share. EOV rating-backed, virtual-yield ERC-1155 token on X Layer.",
-      image: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=500&auto=format&fit=crop",
-      country: "Argentina",
-      position: "Forward"
-    },
-    2: {
-      name: "Kylian Mbappe",
-      description: "Pitchside AI Player Index Share. EOV rating-backed, virtual-yield ERC-1155 token on X Layer.",
-      image: "https://images.unsplash.com/photo-1544698310-74ea9d1c8258?w=500&auto=format&fit=crop",
-      country: "France",
-      position: "Forward"
-    },
-    3: {
-      name: "Bukayo Saka",
-      description: "Pitchside AI Player Index Share. EOV rating-backed, virtual-yield ERC-1155 token on X Layer.",
-      image: "https://images.unsplash.com/photo-1518063319789-7217e6706b04?w=500&auto=format&fit=crop",
-      country: "England",
-      position: "Midfielder"
-    },
-    4: {
-      name: "Erling Haaland",
-      description: "Pitchside AI Player Index Share. EOV rating-backed, virtual-yield ERC-1155 token on X Layer.",
-      image: "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=500&auto=format&fit=crop",
-      country: "Norway",
-      position: "Forward"
-    },
-    5: {
-      name: "Vinicius Junior",
-      description: "Pitchside AI Player Index Share. EOV rating-backed, virtual-yield ERC-1155 token on X Layer.",
-      image: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=500&auto=format&fit=crop",
-      country: "Brazil",
-      position: "Forward"
-    }
-  };
 
-  const meta = playerMetadata[id];
-  if (!meta) {
+  const rpcUrl = process.env.XLAYER_RPC_URL || "https://rpc.xlayer.tech";
+  const targetChainId = rpcUrl.includes("testrpc") ? 1952 : 196;
+  const addresses = getAddressesForChain(targetChainId);
+
+  let name = "";
+  let country = "";
+
+  if (addresses) {
+    try {
+      const provider = new ethers.JsonRpcProvider(rpcUrl, targetChainId, { staticNetwork: true });
+      const shares = new ethers.Contract(addresses.PlayerShares, SHARES_ABI, provider);
+      const playerData = await shares.players(id);
+      name = playerData[0] || playerData.nameString || playerData.name;
+      country = playerData[1] || playerData.country;
+    } catch (err: any) {
+      logger.warn(`[Metadata] Failed to fetch player info from contract: ${err.message}`);
+    }
+  }
+
+  // Fallback to static meta mapping if name not found in contract
+  if (!name) {
+    const playerMetadata: Record<number, { name: string; country: string }> = {
+      1: { name: "Lionel Messi", country: "Argentina" },
+      16: { name: "Kylian Mbappe", country: "France" },
+      33: { name: "Bukayo Saka", country: "England" },
+      9999: { name: "Erling Haaland", country: "Norway" },
+      46: { name: "Vinicius Junior", country: "Brazil" }
+    };
+    const meta = playerMetadata[id];
+    if (meta) {
+      name = meta.name;
+      country = meta.country;
+    }
+  }
+
+  if (!name) {
     res.status(404).json({ success: false, error: "Player metadata not found" });
     return;
   }
 
   res.json({
-    name: `${meta.name} (XCPS #${id})`,
-    description: meta.description,
-    image: meta.image,
+    name: `${name} (XCPS #${id})`,
+    description: "Pitchside AI Player Index Share. EOV rating-backed, virtual-yield ERC-1155 token on X Layer.",
+    image: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=500&auto=format&fit=crop",
     attributes: [
-      { trait_type: "Country", value: meta.country },
-      { trait_type: "Position", value: meta.position },
+      { trait_type: "Country", value: country || "Unknown" },
       { trait_type: "TokenID", value: id }
     ]
   });

@@ -30,6 +30,7 @@ export interface PlayerDexInterface extends Interface {
       | "buyShares"
       | "buySharesFor"
       | "getSharePrice"
+      | "getSharePrices"
       | "owner"
       | "renounceOwnership"
       | "sellShares"
@@ -62,6 +63,10 @@ export interface PlayerDexInterface extends Interface {
     functionFragment: "getSharePrice",
     values: [BigNumberish]
   ): string;
+  encodeFunctionData(
+    functionFragment: "getSharePrices",
+    values: [BigNumberish[]]
+  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
@@ -93,6 +98,10 @@ export interface PlayerDexInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "getSharePrice",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getSharePrices",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
@@ -235,6 +244,12 @@ export interface PlayerDex extends BaseContract {
 
   getSharePrice: TypedContractMethod<[tokenId: BigNumberish], [bigint], "view">;
 
+  getSharePrices: TypedContractMethod<
+    [tokenIds: BigNumberish[]],
+    [bigint[]],
+    "view"
+  >;
+
   owner: TypedContractMethod<[], [string], "view">;
 
   renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
@@ -285,6 +300,9 @@ export interface PlayerDex extends BaseContract {
   getFunction(
     nameOrSignature: "getSharePrice"
   ): TypedContractMethod<[tokenId: BigNumberish], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "getSharePrices"
+  ): TypedContractMethod<[tokenIds: BigNumberish[]], [bigint[]], "view">;
   getFunction(
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;

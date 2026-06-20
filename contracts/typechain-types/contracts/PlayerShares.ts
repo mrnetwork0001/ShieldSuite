@@ -23,6 +23,30 @@ import type {
   TypedContractMethod,
 } from "../common";
 
+export declare namespace PlayerShares {
+  export type PlayerStatsStruct = {
+    nameString: string;
+    country: string;
+    rating: BigNumberish;
+    goals: BigNumberish;
+    assists: BigNumberish;
+  };
+
+  export type PlayerStatsStructOutput = [
+    nameString: string,
+    country: string,
+    rating: bigint,
+    goals: bigint,
+    assists: bigint
+  ] & {
+    nameString: string;
+    country: string;
+    rating: bigint;
+    goals: bigint;
+    assists: bigint;
+  };
+}
+
 export interface PlayerSharesInterface extends Interface {
   getFunction(
     nameOrSignature:
@@ -30,11 +54,14 @@ export interface PlayerSharesInterface extends Interface {
       | "balanceOf"
       | "balanceOfBatch"
       | "burn"
+      | "getPlayers"
       | "isApprovedForAll"
       | "mint"
       | "name"
       | "owner"
       | "players"
+      | "registerPlayer"
+      | "registerPlayers"
       | "renounceOwnership"
       | "safeBatchTransferFrom"
       | "safeTransferFrom"
@@ -76,6 +103,10 @@ export interface PlayerSharesInterface extends Interface {
     values: [AddressLike, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "getPlayers",
+    values: [BigNumberish[]]
+  ): string;
+  encodeFunctionData(
     functionFragment: "isApprovedForAll",
     values: [AddressLike, AddressLike]
   ): string;
@@ -88,6 +119,14 @@ export interface PlayerSharesInterface extends Interface {
   encodeFunctionData(
     functionFragment: "players",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "registerPlayer",
+    values: [BigNumberish, string, string, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "registerPlayers",
+    values: [BigNumberish[], string[], string[], BigNumberish[]]
   ): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
@@ -144,6 +183,7 @@ export interface PlayerSharesInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "burn", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "getPlayers", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "isApprovedForAll",
     data: BytesLike
@@ -152,6 +192,14 @@ export interface PlayerSharesInterface extends Interface {
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "players", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "registerPlayer",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "registerPlayers",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
@@ -404,6 +452,12 @@ export interface PlayerShares extends BaseContract {
     "nonpayable"
   >;
 
+  getPlayers: TypedContractMethod<
+    [ids: BigNumberish[]],
+    [PlayerShares.PlayerStatsStructOutput[]],
+    "view"
+  >;
+
   isApprovedForAll: TypedContractMethod<
     [account: AddressLike, operator: AddressLike],
     [boolean],
@@ -432,6 +486,23 @@ export interface PlayerShares extends BaseContract {
       }
     ],
     "view"
+  >;
+
+  registerPlayer: TypedContractMethod<
+    [id: BigNumberish, _name: string, _country: string, _rating: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
+  registerPlayers: TypedContractMethod<
+    [
+      ids: BigNumberish[],
+      names: string[],
+      countries: string[],
+      ratings: BigNumberish[]
+    ],
+    [void],
+    "nonpayable"
   >;
 
   renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
@@ -531,6 +602,13 @@ export interface PlayerShares extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "getPlayers"
+  ): TypedContractMethod<
+    [ids: BigNumberish[]],
+    [PlayerShares.PlayerStatsStructOutput[]],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "isApprovedForAll"
   ): TypedContractMethod<
     [account: AddressLike, operator: AddressLike],
@@ -564,6 +642,25 @@ export interface PlayerShares extends BaseContract {
       }
     ],
     "view"
+  >;
+  getFunction(
+    nameOrSignature: "registerPlayer"
+  ): TypedContractMethod<
+    [id: BigNumberish, _name: string, _country: string, _rating: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "registerPlayers"
+  ): TypedContractMethod<
+    [
+      ids: BigNumberish[],
+      names: string[],
+      countries: string[],
+      ratings: BigNumberish[]
+    ],
+    [void],
+    "nonpayable"
   >;
   getFunction(
     nameOrSignature: "renounceOwnership"

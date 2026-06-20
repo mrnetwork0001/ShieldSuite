@@ -29,12 +29,12 @@ contract PlayerShares is ERC1155, Ownable {
     event MinterAuthorized(address indexed minter, bool status);
     
     constructor() ERC1155("") Ownable(msg.sender) {
-        // Initialize top 5 players for the demo
+        // Initialize top 5 players for the demo using their roster IDs
         _registerPlayer(1, "Lionel Messi", "Argentina", 90);
-        _registerPlayer(2, "Kylian Mbappe", "France", 91);
-        _registerPlayer(3, "Bukayo Saka", "England", 87);
-        _registerPlayer(4, "Erling Haaland", "Norway", 90);
-        _registerPlayer(5, "Vinicius Junior", "Brazil", 89);
+        _registerPlayer(16, "Kylian Mbappe", "France", 91);
+        _registerPlayer(33, "Bukayo Saka", "England", 87);
+        _registerPlayer(9999, "Erling Haaland", "Norway", 90);
+        _registerPlayer(46, "Vinicius Junior", "Brazil", 89);
     }
     
     function setAuthorizedMinter(address minter, bool status) external onlyOwner {
@@ -45,6 +45,30 @@ contract PlayerShares is ERC1155, Ownable {
     function _registerPlayer(uint256 id, string memory _name, string memory _country, uint256 _rating) internal {
         players[id] = PlayerStats(_name, _country, _rating, 0, 0);
         _tokenURIs[id] = string(abi.encodePacked("https://api.pitchside.ai/metadata/", id.toString()));
+    }
+
+    function registerPlayer(uint256 id, string calldata _name, string calldata _country, uint256 _rating) external onlyOwner {
+        _registerPlayer(id, _name, _country, _rating);
+    }
+
+    function registerPlayers(
+        uint256[] calldata ids,
+        string[] calldata names,
+        string[] calldata countries,
+        uint256[] calldata ratings
+    ) external onlyOwner {
+        require(ids.length == names.length && ids.length == countries.length && ids.length == ratings.length, "Length mismatch");
+        for (uint256 i = 0; i < ids.length; i++) {
+            _registerPlayer(ids[i], names[i], countries[i], ratings[i]);
+        }
+    }
+
+    function getPlayers(uint256[] calldata ids) external view returns (PlayerStats[] memory) {
+        PlayerStats[] memory result = new PlayerStats[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) {
+            result[i] = players[ids[i]];
+        }
+        return result;
     }
     
     function updatePlayer(

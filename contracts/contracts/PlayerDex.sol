@@ -31,6 +31,22 @@ contract PlayerDex is Ownable {
         
         return (rating * 10**18) + premium;
     }
+
+    function getSharePrices(uint256[] calldata tokenIds) external view returns (uint256[] memory) {
+        uint256[] memory prices = new uint256[](tokenIds.length);
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            (,, uint256 rating,,) = shares.players(tokenIds[i]);
+            if (rating == 0) {
+                prices[i] = 0;
+            } else {
+                uint256 supply = shares.totalSupply(tokenIds[i]);
+                uint256 slope = 5 * 10**16;
+                uint256 premium = (supply * slope) / 10**18;
+                prices[i] = (rating * 10**18) + premium;
+            }
+        }
+        return prices;
+    }
     
     function buyShares(uint256 tokenId, uint256 amount) external {
         buySharesFor(msg.sender, tokenId, amount);

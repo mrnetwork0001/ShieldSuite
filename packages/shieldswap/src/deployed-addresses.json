@@ -7,10 +7,10 @@
     "deployer": "0xDAce8445a5bD576111cCC8e598B67965252023C2"
   },
   "xlayerMainnet": {
-    "MockUSDT": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "NoLossVault": "0xe8a63b4a905d9c1c2262f261dee90478d6ffd3de",
-    "PlayerShares": "0xb1cc05dc0a0b70fabc6bbb1b3043ba386c86d7e1",
-    "PlayerDex": "0xf2338b4ba18373070cdfd9f53da321fa12aa591b",
-    "deployer": "0xdace8445a5bd576111ccc8e598b67965252023c2"
+    "MockUSDT": "0x1e4a5963abfd975d8c9021ce480b42188849d41d",
+    "NoLossVault": "0x3fAd298012AB620c2E967ad24680D7211e1A1678",
+    "PlayerShares": "0x12dFcc37cBbc1A26660183668e26F0A631725055",
+    "PlayerDex": "0x9283f73A4479157d89F9F2c6E37fAd348360976D",
+    "deployer": "0xDAce8445a5bD576111cCC8e598B67965252023C2"
   }
 }

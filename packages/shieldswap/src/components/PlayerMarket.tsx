@@ -5,11 +5,14 @@ import { WalletState } from "../lib/wallet";
 
 const SHARES_ABI = [
   "function balanceOf(address account, uint256 id) external view returns (uint256)",
-  "function players(uint256 id) external view returns (string name, string country, uint256 rating, uint256 goals, uint256 assists)"
+  "function players(uint256 id) external view returns (string name, string country, uint256 rating, uint256 goals, uint256 assists)",
+  "function getPlayers(uint256[] ids) view returns (tuple(string nameString, string country, uint256 rating, uint256 goals, uint256 assists)[])",
+  "function balanceOfBatch(address[] accounts, uint256[] ids) view returns (uint256[])"
 ];
 
 const DEX_ABI = [
   "function getSharePrice(uint256 tokenId) public view returns (uint256)",
+  "function getSharePrices(uint256[] tokenIds) view returns (uint256[])",
   "function buyShares(uint256 tokenId, uint256 amount) external",
   "function sellShares(uint256 tokenId, uint256 amount) external"
 ];
@@ -55,7 +58,7 @@ const getInitialPlayers = (): PlayerRosterItem[] => {
       assists: 0,
       price: "90",
       balance: "0",
-      tokenId: 4,
+      tokenId: 9999,
       isTradeable: true
     });
   }
@@ -117,47 +120,37 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
         const shares = new ethers.Contract(DEPLOYED_ADDRESSES.PlayerShares, SHARES_ABI, provider);
         const dex = new ethers.Contract(DEPLOYED_ADDRESSES.PlayerDex, DEX_ABI, provider);
 
-        const onChainIds = [1, 2, 3, 4, 5];
-        const onChainDataList = await Promise.all(
-          onChainIds.map(async (id) => {
-            try {
-              const data = await shares.players(id).catch(() => null);
-              const priceWei = await dex.getSharePrice(id).catch(() => null);
-              let bal = "0";
-              if (wallet.connected && wallet.address) {
-                const balWei = await shares.balanceOf(wallet.address, id).catch(() => null);
-                if (balWei !== null) {
-                  bal = ethers.formatEther(balWei);
-                }
-              }
-              return {
-                id,
-                data,
-                price: priceWei ? ethers.formatEther(priceWei) : null,
-                balance: bal
-              };
-            } catch (err) {
-              return { id, data: null, price: null, balance: "0" };
-            }
-          })
-        );
+        const onChainIds = INITIAL_PLAYERS.map(p => p.id);
+
+        // Fetch stats and prices in batch
+        const [playersStats, pricesRaw] = await Promise.all([
+          shares.getPlayers(onChainIds).catch(() => []),
+          dex.getSharePrices(onChainIds).catch(() => [])
+        ]);
+
+        let balancesRaw: bigint[] = [];
+        if (wallet.connected && wallet.address) {
+          const accounts = onChainIds.map(() => wallet.address);
+          balancesRaw = await shares.balanceOfBatch(accounts, onChainIds).catch(() => []);
+        }
 
         const onChainMap: Record<string, { tokenId: number; rating: number; goals: number; assists: number; price: string; balance: string }> = {};
 
-        onChainDataList.forEach(item => {
-          if (item.data) {
-            const rawName = item.data.name || item.data.nameString || item.data[0];
-            if (rawName) {
-              const nameKey = String(rawName).trim().toLowerCase();
-              onChainMap[nameKey] = {
-                tokenId: item.id,
-                rating: Number(item.data.rating || item.data[2] || 0),
-                goals: Number(item.data.goals || item.data[3] || 0),
-                assists: Number(item.data.assists || item.data[4] || 0),
-                price: item.price || String(Number(item.data.rating || item.data[2] || 90)),
-                balance: item.balance
-              };
-            }
+        onChainIds.forEach((id, i) => {
+          const stats = playersStats[i];
+          if (stats && stats.nameString && stats.nameString.trim() !== "") {
+            const nameKey = stats.nameString.trim().toLowerCase();
+            const priceWei = pricesRaw[i] || 0n;
+            const balanceWei = balancesRaw[i] || 0n;
+
+            onChainMap[nameKey] = {
+              tokenId: id,
+              rating: Number(stats.rating || 0),
+              goals: Number(stats.goals || 0),
+              assists: Number(stats.assists || 0),
+              price: priceWei > 0n ? ethers.formatEther(priceWei) : String(Number(stats.rating || 90)),
+              balance: ethers.formatEther(balanceWei)
+            };
           }
         });
 

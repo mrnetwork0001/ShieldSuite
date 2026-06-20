@@ -306,8 +306,8 @@
       ]
     },
     "C:\\Users\\IFEANYICHUKWU\\OneDrive\\Desktop\\shield-suite\\contracts\\contracts\\PlayerDex.sol": {
-      "lastModificationDate": 1781878109313,
-      "contentHash": "dc737de44eb21e9bf577b3a4d752a706",
+      "lastModificationDate": 1781956558293,
+      "contentHash": "ee7197cbb5a117c541e9ef6892dc14d3",
       "sourceName": "contracts/PlayerDex.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -346,8 +346,8 @@
       ]
     },
     "C:\\Users\\IFEANYICHUKWU\\OneDrive\\Desktop\\shield-suite\\contracts\\contracts\\PlayerShares.sol": {
-      "lastModificationDate": 1781878084520,
-      "contentHash": "1bb1744cf71de386db554e6599acb9e7",
+      "lastModificationDate": 1781956546955,
+      "contentHash": "2cb65e2bae8d7b67d453221427dcb3fc",
       "sourceName": "contracts/PlayerShares.sol",
       "solcConfig": {
         "version": "0.8.24",
