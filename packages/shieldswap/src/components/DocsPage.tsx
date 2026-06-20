@@ -31,9 +31,9 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
 
   const mainnetContracts = [
     { name: "USDT Token", address: "0x779Ded0c9e1022225f8E0630b35a9b54bE713736" },
-    { name: "NoLossVault", address: "0xe8a63b4a905d9c1c2262f261dee90478d6ffd3de" },
+    { name: "NoLossVault", address: "0x758ec85fc3047afff7977ec6edab43d21e9538ac" },
     { name: "PlayerShares ERC-1155", address: "0xb1cc05dc0a0b70fabc6bbb1b3043ba386c86d7e1" },
-    { name: "PlayerDex AMM", address: "0xf2338b4ba18373070cdfd9f53da321fa12aa591b" },
+    { name: "PlayerDex AMM", address: "0xeacae6d1031194f2681b07cbcd50ee0f9c88aeee" },
     { name: "TEE Agent Wallet", address: "0xDAce8445a5bD576111cCC8e598B67965252023C2" },
   ];
 

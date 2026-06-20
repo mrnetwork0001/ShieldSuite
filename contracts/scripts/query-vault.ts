@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const vaultAddress = "0xe8a63b4a905d9c1c2262f261dee90478d6ffd3de";
+  const vaultAddress = "0x758ec85fc3047afff7977ec6edab43d21e9538ac";
   const userAddress = "0xCd0a2370F2dC12c1802707B7d9aB3fec891E3c02";
 
   const vault = await ethers.getContractAt([

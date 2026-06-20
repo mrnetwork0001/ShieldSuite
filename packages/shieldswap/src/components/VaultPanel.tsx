@@ -401,7 +401,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
             </div>
             <div className="credits-value">{formattedCredits}</div>
             <div className="credits-sub">
-              Accumulating at <span className="text-green font-mono">{(5.0 * multiplier).toFixed(1)}% APY</span> (Simulated Fast APY)
+              Accumulating at <span className="text-green font-mono">{(5.0 * multiplier).toFixed(1)}% APY</span> via Aave V3
             </div>
           </div>
 

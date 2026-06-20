@@ -188,9 +188,9 @@ function getAddressesForChain(chainId: number) {
     },
     xlayerMainnet: {
       MockUSDT: "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-      NoLossVault: "0xe8a63b4a905d9c1c2262f261dee90478d6ffd3de",
+      NoLossVault: "0x758ec85fc3047afff7977ec6edab43d21e9538ac",
       PlayerShares: "0xb1cc05dc0a0b70fabc6bbb1b3043ba386c86d7e1",
-      PlayerDex: "0xf2338b4ba18373070cdfd9f53da321fa12aa591b",
+      PlayerDex: "0xeacae6d1031194f2681b07cbcd50ee0f9c88aeee",
       deployer: "0xdace8445a5bd576111ccc8e598b67965252023c2",
     },
   };
