@@ -88,6 +88,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [liveMatches, setLiveMatches] = useState<any[]>([]);
   const [currentFixtureIndex, setCurrentFixtureIndex] = useState(0);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyAddress = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText("0xaef068ea820aafa00a2854bfd6cfab6d891ede5d");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   // ── Auto-slide Timer ────────────────────────────────────────────────
   useEffect(() => {
@@ -206,6 +214,50 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
       {/* Stadium Pitch Background Grid Overlay */}
       <div className="pitch-overlay" />
       <div className="stadium-glow" />
+
+      {/* $PSAI Token Live Banner */}
+      <motion.div
+        className="token-banner-glow"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="token-banner-content">
+          <div className="token-banner-left">
+            <span className="token-banner-badge font-mono">LIVE NOW</span>
+            <span className="token-banner-title font-mono">$PSAI</span>
+            <span className="token-banner-desc">
+              ShieldSuite Token is officially LIVE on X Layer!
+            </span>
+            <div className="token-banner-ca-box" onClick={handleCopyAddress}>
+              <span className="ca-label font-mono">CA:</span>
+              <span className="ca-address font-mono">0xaef0...ede5d</span>
+              <button className="btn-copy-ca font-mono">
+                {copied ? "Copied" : "Copy"}
+              </button>
+            </div>
+          </div>
+          <div className="token-banner-right">
+            <a
+              href="https://web3.okx.com/dex-swap?chain=x-layer,x-layer&token=0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee,0xaef068ea820aafa00a2854bfd6cfab6d891ede5d"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary btn-banner-swap font-mono"
+            >
+              Swap on Web
+            </a>
+            <a
+              href="https://web3.okx.com/download?deeplink=okx%3A%2F%2Fwallet%2Fdapp%2Furl%3FdappUrl%3Dhttps%253A%252F%252Fweb3.okx.com%252Fdex-swap%253Fchain%253Dx-layer%252Cx-layer%2526token%253D0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee%252C0xaef068ea820aafa00a2854bfd6cfab6d891ede5d"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-ghost btn-banner-swap font-mono"
+              style={{ background: "rgba(255,255,255,0.05)" }}
+            >
+              Swap on Mobile App
+            </a>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Hero Section Split Layout */}
       <section className="landing-hero-split">
@@ -1389,6 +1441,161 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           }
           100% {
             transform: translateX(15px) rotate(360deg);
+          }
+        }
+
+        /* $PSAI Token Live Banner Styling */
+        .token-banner-glow {
+          position: relative;
+          width: 100%;
+          background: rgba(168, 85, 247, 0.04);
+          border: 1px solid rgba(168, 85, 247, 0.25);
+          box-shadow: 0 0 25px rgba(168, 85, 247, 0.1), inset 0 0 20px rgba(168, 85, 247, 0.05);
+          border-radius: var(--radius-lg);
+          overflow: hidden;
+          margin-top: 24px;
+          backdrop-filter: blur(12px);
+          transition: all 0.3s ease;
+          z-index: 10;
+        }
+
+        .token-banner-glow::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 50%;
+          height: 100%;
+          background: linear-gradient(
+            to right,
+            transparent,
+            rgba(168, 85, 247, 0.15) 50%,
+            transparent
+          );
+          animation: banner-shine 8s infinite linear;
+        }
+
+        @keyframes banner-shine {
+          0% { left: -100%; }
+          100% { left: 200%; }
+        }
+
+        .token-banner-glow:hover {
+          border-color: rgba(168, 85, 247, 0.45);
+          box-shadow: 0 0 30px rgba(168, 85, 247, 0.15), inset 0 0 20px rgba(168, 85, 247, 0.1);
+        }
+
+        .token-banner-content {
+          padding: 16px 24px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 24px;
+        }
+
+        .token-banner-left {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          flex-wrap: wrap;
+        }
+
+        .token-banner-badge {
+          background: var(--accent-purple);
+          color: #000;
+          font-weight: 800;
+          font-size: 0.65rem;
+          padding: 3px 8px;
+          border-radius: 4px;
+          letter-spacing: 0.08em;
+          box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+        }
+
+        .token-banner-title {
+          font-weight: 900;
+          font-size: 1.15rem;
+          color: var(--accent-purple);
+          text-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+        }
+
+        .token-banner-desc {
+          font-size: 0.9rem;
+          color: var(--text-secondary);
+        }
+
+        .token-banner-ca-box {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(0, 0, 0, 0.25);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          padding: 4px 10px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .token-banner-ca-box:hover {
+          background: rgba(168, 85, 247, 0.08);
+          border-color: rgba(168, 85, 247, 0.3);
+        }
+
+        .ca-label {
+          font-size: 0.72rem;
+          color: var(--text-tertiary);
+          font-weight: 700;
+        }
+
+        .ca-address {
+          font-size: 0.8rem;
+          color: #fff;
+          font-weight: 700;
+          letter-spacing: 0.03em;
+        }
+
+        .btn-copy-ca {
+          background: transparent;
+          border: none;
+          color: var(--accent-purple);
+          font-size: 0.7rem;
+          font-weight: 700;
+          padding: 0 4px;
+          cursor: pointer;
+          text-transform: uppercase;
+        }
+
+        .token-banner-right {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-shrink: 0;
+        }
+
+        .btn-banner-swap {
+          padding: 8px 16px;
+          font-size: 0.82rem;
+        }
+
+        @media (max-width: 900px) {
+          .token-banner-content {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 16px;
+            padding: 20px;
+          }
+          
+          .token-banner-left {
+            justify-content: flex-start;
+          }
+
+          .token-banner-right {
+            justify-content: stretch;
+          }
+
+          .btn-banner-swap {
+            flex: 1;
+            text-align: center;
+            justify-content: center;
           }
         }
       `}</style>
