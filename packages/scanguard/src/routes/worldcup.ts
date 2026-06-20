@@ -95,9 +95,44 @@ let agentLogs: AgentLog[] = [
   },
 ];
 
+const USERS_FILE = path.join(__dirname, "../../data/worldcup_users.json");
+
 let registeredUsers = new Set<string>([
   "0xCd0a2370F2dC12c1802707B7d9aB3fec891E3c02" // default test user
 ]);
+
+// Load registered users on startup
+try {
+  const dataDir = path.dirname(USERS_FILE);
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+  if (fs.existsSync(USERS_FILE)) {
+    const raw = fs.readFileSync(USERS_FILE, "utf-8");
+    if (raw.trim()) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        arr.forEach((addr) => {
+          if (typeof addr === "string") {
+            registeredUsers.add(addr.toLowerCase());
+          }
+        });
+        logger.info(`[WorldCup] Loaded ${registeredUsers.size} registered users from disk.`);
+      }
+    }
+  }
+} catch (err: any) {
+  logger.error(`[WorldCup] Failed to load registered users: ${err.message}`);
+}
+
+function saveRegisteredUsers() {
+  try {
+    const arr = Array.from(registeredUsers);
+    fs.writeFileSync(USERS_FILE, JSON.stringify(arr, null, 2), "utf-8");
+  } catch (err: any) {
+    logger.error(`[WorldCup] Failed to save registered users: ${err.message}`);
+  }
+}
 
 const SPORTMONKS_PLAYER_MAP: Record<number, { tokenId: number; name: string }> = {
   184798: { tokenId: 1, name: "Lionel Messi" },
@@ -512,8 +547,13 @@ worldCupRouter.post("/register-user", (req: Request, res: Response) => {
   }
   
   const normalized = address.toLowerCase();
+  const isNew = !registeredUsers.has(normalized);
   registeredUsers.add(normalized);
-  logger.info(`[WorldCup] Registered candidate user address: ${normalized}`);
+  
+  if (isNew) {
+    logger.info(`[WorldCup] Registered candidate user address: ${normalized}`);
+    saveRegisteredUsers();
+  }
   
   res.json({
     success: true,
@@ -738,15 +778,30 @@ async function syncFromSportmonks() {
           logger.error(`[WorldCupSync] Error in cron stats sync: ${err.message}`);
         });
 
-        syncedMatches = matchesData.map((m, idx) => ({
-          id: `sportmonks-${idx}`,
-          homeTeam: m.home,
-          awayTeam: m.away,
-          status: m.status,
-          score: m.score,
-          minute: m.status === "LIVE" ? 45 : 0,
-          events: m.events || []
-        }));
+        syncedMatches = matchesData.map((m, idx) => {
+          let minNum = 0;
+          if (m.minute) {
+            const parsed = parseInt(m.minute.replace("'", ""), 10);
+            if (!isNaN(parsed)) {
+              minNum = parsed;
+            } else if (m.minute === "HT") {
+              minNum = 45;
+            } else if (m.status === "LIVE") {
+              minNum = 45;
+            }
+          } else if (m.status === "LIVE") {
+            minNum = 45;
+          }
+          return {
+            id: `sportmonks-${idx}`,
+            homeTeam: m.home,
+            awayTeam: m.away,
+            status: m.status,
+            score: m.score,
+            minute: minNum,
+            events: m.events || []
+          };
+        });
         logger.info(`[WorldCup] Synced ${syncedMatches.length} World Cup matches from Sportmonks.`);
       }
     } catch (err: any) {
@@ -767,7 +822,7 @@ async function syncFromSportmonks() {
   syncedMatches.forEach((synced: any) => {
     const idx = matches.findIndex(m => m.homeTeam.toLowerCase() === synced.homeTeam.toLowerCase() && m.awayTeam.toLowerCase() === synced.awayTeam.toLowerCase());
     if (idx !== -1) {
-      matches[idx] = { ...matches[idx], score: synced.score, status: synced.status };
+      matches[idx] = { ...matches[idx], score: synced.score, status: synced.status, minute: synced.minute, events: synced.events };
     } else {
       matches.push(synced);
     }

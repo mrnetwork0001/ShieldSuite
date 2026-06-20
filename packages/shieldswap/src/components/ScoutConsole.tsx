@@ -539,7 +539,11 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
                               animation: 'pulse-live 1.5s ease-in-out infinite',
                               boxShadow: '0 0 4px #ff3b5c',
                             }} />
-                            LIVE{m.minute ? ` ${String(m.minute).replace(':00', "'").replace(/(\d+):(\d+)/, "$1'")}` : ''}
+                            LIVE{m.minute ? ` ${(() => {
+                              const minStr = String(m.minute).replace(':00', "'").replace(/(\d+):(\d+)/, "$1'");
+                              if (minStr.endsWith("'") || isNaN(Number(minStr))) return minStr;
+                              return `${minStr}'`;
+                            })()}` : ''}
                           </span>
                         </div>
                       ) : (

@@ -536,7 +536,12 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
   };
 
   const getStatusText = (match: Match) => {
-    if (match.status === "LIVE") return `LIVE ${match.minute ? match.minute : ""}'`;
+    if (match.status === "LIVE") {
+      const min = match.minute ? String(match.minute) : "";
+      if (!min) return "LIVE";
+      if (min.endsWith("'") || isNaN(Number(min))) return `LIVE ${min}`;
+      return `LIVE ${min}'`;
+    }
     if (match.status === "FINISHED" || match.status === "FT") return "FT";
     return "UPCOMING";
   };

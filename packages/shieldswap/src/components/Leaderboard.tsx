@@ -21,8 +21,10 @@ interface LeaderboardProps {
 }
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
-  const isMainnet = true;
-  const DEPLOYED_ADDRESSES = (STATIC_DEPLOYED_ADDRESSES as any).xlayerMainnet || STATIC_DEPLOYED_ADDRESSES;
+  const isMainnet = wallet.chainId !== 1952;
+  const DEPLOYED_ADDRESSES = isMainnet
+    ? ((STATIC_DEPLOYED_ADDRESSES as any).xlayerMainnet || STATIC_DEPLOYED_ADDRESSES)
+    : ((STATIC_DEPLOYED_ADDRESSES as any).xlayerTestnet || STATIC_DEPLOYED_ADDRESSES);
 
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -90,6 +92,20 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         })();
 
         const userAddresses = new Set<string>(cachedStakers);
+
+        // Load registered users from backend API
+        const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "";
+        try {
+          const res = await fetch(`${API_BASE}/api/worldcup/users`);
+          const data = await res.json();
+          if (data.success && Array.isArray(data.data)) {
+            data.data.forEach((addr: string) => {
+              if (addr) userAddresses.add(addr.toLowerCase());
+            });
+          }
+        } catch (e) {
+          console.error("Failed to fetch registered users from backend:", e);
+        }
         
         // Always include default participants to ensure leaderboard layout is full
         if (wallet.address) userAddresses.add(wallet.address);

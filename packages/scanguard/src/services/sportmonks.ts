@@ -144,6 +144,38 @@ function extractScores(scores: any[] | undefined, homeParticipant: any, awayPart
   return { home: 0, away: 0 };
 }
 
+function formatDeveloperName(devName: string | undefined): string {
+  if (!devName) return "";
+  const name = devName.toUpperCase();
+  if (name === "INPLAY_1ST_HALF") return "1st Half";
+  if (name === "INPLAY_2ND_HALF") return "2nd Half";
+  if (name === "HT") return "HT";
+  if (name === "FT") return "FT";
+  if (name === "NS") return "NS";
+  if (/^\d+$/.test(name)) return name;
+  return devName
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function getMatchMinute(item: any): string | undefined {
+  const devName = (item.state?.developer_name || "").toUpperCase();
+  if (devName === "HT") return "HT";
+  if (devName === "FT") return "FT";
+  if (devName === "NS") return "NS";
+
+  if (item.periods && Array.isArray(item.periods) && item.periods.length > 0) {
+    const tickingPeriod = item.periods.find((p: any) => p.ticking === true);
+    const activePeriod = tickingPeriod || item.periods[item.periods.length - 1];
+    if (activePeriod && typeof activePeriod.minutes === 'number') {
+      return String(activePeriod.minutes);
+    }
+  }
+
+  return devName ? formatDeveloperName(devName) : undefined;
+}
+
 /** Fetch World Cup 2026 fixtures (Tries Premium Season 26618 first, falls back to Free Leagues 271/501 mapped to World Cup) */
 export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
   const now = Date.now();
@@ -162,7 +194,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
   try {
     logger.info("[Sportmonks] Attempting to fetch real World Cup Season 26618 fixtures with cursor pagination URL traversal...");
     let allData: any[] = [];
-    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureSeasons:26618&include=participants;scores;venue;state;events";
+    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureSeasons:26618&include=participants;scores;venue;state;events;periods";
     let pageCount = 0;
 
     while (nextUrl && pageCount < 8) {
@@ -235,7 +267,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
           status,
           venue: item.venue?.name || "FIFA World Cup Arena",
           date: item.starting_at || new Date().toISOString(),
-          minute: item.state?.developer_name || undefined,
+          minute: getMatchMinute(item),
           events: item.events || []
         };
       });
@@ -253,7 +285,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
   try {
     logger.info("[Sportmonks] Falling back to Free Plan Leagues (271, 501) with World Cup mapping...");
     let allFallbackData: any[] = [];
-    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureLeagues:271,501&include=participants;scores;venue;state;events";
+    let nextUrl = "https://api.sportmonks.com/v3/football/fixtures?filters=fixtureLeagues:271,501&include=participants;scores;venue;state;events;periods";
     let pageCount = 0;
 
     while (nextUrl && pageCount < 4) {
@@ -308,7 +340,7 @@ export async function fetchWorldCupFixtures(): Promise<SportmonksMatch[]> {
         status,
         venue: item.venue?.name || "FIFA World Cup Arena",
         date: item.starting_at || new Date().toISOString(),
-        minute: item.state?.developer_name || undefined,
+        minute: getMatchMinute(item),
         events: item.events || []
       };
     });

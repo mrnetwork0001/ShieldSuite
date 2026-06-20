@@ -187,7 +187,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
                 awayTeam: m.away,
                 homeScore: parseInt(scores[0]) || 0,
                 awayScore: parseInt(scores[1]) || 0,
-                minute: m.minute ? `${m.minute}'` : "LIVE",
+                minute: m.minute ? (m.minute.endsWith("'") || isNaN(Number(m.minute)) ? m.minute : `${m.minute}'`) : "LIVE",
                 status: "LIVE",
                 event: `Match in progress at ${m.venue || 'Stadium'}`
               };
