@@ -40,9 +40,8 @@ async function main() {
 
   console.log(`NoLossVault Address: ${targetAddress}`);
 
-  // Base rate divided by 10,000 to avoid credit hyperinflation
-  // Original base: 158440000000 -> New base: 15844000
-  let newRate = 15844000n;
+  // Base rate set to target exactly 200 credits per day per 1 USDT
+  let newRate = 2314814814810n;
   if (decimals === 6) {
     // scale up by 1e12 for 6-decimal USDT to yield 18-decimal virtual credits on mainnet
     newRate = newRate * 1000000000000n;

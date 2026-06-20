@@ -71,8 +71,8 @@ async function main() {
   console.log("PlayerDex authorized in PlayerShares");
 
   // 6. Set 18-decimal credit yield rate for 6-decimal USDT
-  // Adjusted Rate on Mainnet is 15844000 * 10^12 = 15844000000000000000
-  const rate = 15844000n * 1000000000000n;
+  // Targeted rate: 200 credits per day per 1 USDT = 2314814814810 * 10^12 = 2314814814810000000000
+  const rate = 2314814814810n * 1000000000000n;
   console.log("Setting 18-decimal synchronized yield rate...");
   tx = await vault.setCreditsPerTokenPerSecond(rate);
   await tx.wait();
