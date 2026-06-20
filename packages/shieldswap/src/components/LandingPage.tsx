@@ -95,11 +95,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
   // ── Protocol Statistics Hooks ─────────────────────────────────────
   const [tvl, setTvl] = useState<string>("0.00");
   const [activeUsersCount, setActiveUsersCount] = useState<number>(4); // default mock/starter count
-  const [scansCount, setScansCount] = useState<number>(14832);
-  const [agentsCount, setAgentsCount] = useState<number>(12);
+  const [psaiHeld, setPsaiHeld] = useState<string>("0");
 
   useEffect(() => {
     const fetchProtocolStats = async () => {
+      let usersList: string[] = [];
       try {
         // 1. Fetch users count from backend
         const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "";
@@ -107,13 +107,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         const json = await res.json();
         if (json.success && json.data && Array.isArray(json.data)) {
           setActiveUsersCount(json.data.length);
+          usersList = json.data;
         }
       } catch (err) {
         console.error("Failed to fetch registered users count:", err);
       }
 
       try {
-        // 2. Fetch TVL from NoLossVault on-chain
+        // 2. Fetch TVL and Speculator PSAI Holdings from X Layer Mainnet
         const rpcUrl = "https://rpc.xlayer.tech";
         const provider = new ethers.JsonRpcProvider(rpcUrl, undefined, { staticNetwork: true });
         const vaultAddress = DEPLOYED_ADDRESSES.xlayerMainnet.NoLossVault;
@@ -124,15 +125,38 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           provider
         );
         const stakedRaw = await vaultContract.totalStaked();
-        // USDT0 is 6 decimals on X Layer mainnet
         const stakedFormatted = parseFloat(ethers.formatUnits(stakedRaw, 6)).toLocaleString(undefined, {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2
         });
         setTvl(stakedFormatted);
+
+        // Fetch speculator $PSAI holdings
+        if (usersList.length > 0) {
+          const psaiTokenAddress = "0xaef068ea820aafa00a2854bfd6cfab6d891ede5d";
+          const psaiContract = new ethers.Contract(
+            psaiTokenAddress,
+            ["function balanceOf(address) external view returns (uint256)"],
+            provider
+          );
+          const balances = await Promise.all(
+            usersList.map(async (user: string) => {
+              try {
+                return await psaiContract.balanceOf(user);
+              } catch {
+                return 0n;
+              }
+            })
+          );
+          const total = balances.reduce((sum, bal) => sum + bal, 0n);
+          const formattedPsai = parseFloat(ethers.formatEther(total)).toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+          });
+          setPsaiHeld(formattedPsai);
+        }
       } catch (err) {
-        console.error("Failed to fetch TVL from chain:", err);
-        // Do not overwrite with 0.00 if it was loaded previously
+        console.error("Failed to fetch stats from chain:", err);
         setTvl((prev) => prev === "0.00" ? "0.00" : prev);
       }
     };
@@ -507,7 +531,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
               <span className="metric-label font-mono">TOTAL VALUE LOCKED</span>
             </div>
             <div className="metric-value font-mono" style={{ color: "var(--accent-blue)" }}>
-              ${tvl} <span style={{ fontSize: "0.85rem", color: "var(--text-tertiary)" }}>USDT₮0</span>
+              ${tvl}
             </div>
           </div>
 
@@ -523,21 +547,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
 
           <div className="glass-card metric-card">
             <div className="metric-header">
-              <span className="metric-icon">🛡️</span>
-              <span className="metric-label font-mono">BYTECODE SAFETY SCANS</span>
+              <span className="metric-icon">🪙</span>
+              <span className="metric-label font-mono">SPECULATOR $PSAI HELD</span>
             </div>
             <div className="metric-value font-mono" style={{ color: "var(--accent-safe)" }}>
-              {scansCount.toLocaleString()} <span style={{ fontSize: "0.85rem", color: "var(--text-tertiary)" }}>Contracts</span>
-            </div>
-          </div>
-
-          <div className="glass-card metric-card">
-            <div className="metric-header">
-              <span className="metric-icon">🤖</span>
-              <span className="metric-label font-mono">TEE AI SCOUTS ACTIVE</span>
-            </div>
-            <div className="metric-value font-mono" style={{ color: "#ffbd2e" }}>
-              {agentsCount} <span style={{ fontSize: "0.85rem", color: "var(--text-tertiary)" }}>Enclaves</span>
+              {psaiHeld} <span style={{ fontSize: "0.85rem", color: "var(--text-tertiary)" }}>$PSAI</span>
             </div>
           </div>
         </div>
