@@ -8,6 +8,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldIcon, CrossIcon, RobotIcon } from "./Icons";
+import { useLanguage } from "../context/LanguageContext";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -123,15 +124,36 @@ function parseIntent(input: string): ParsedIntent {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => {
+  const { language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
       id: "welcome",
       role: "agent",
-      text: "✦ ScanGuard Agent ready. Try: \"Is USDT safe?\" or \"Scan 0x...\" or type **help**.",
+      text: language === "zh"
+        ? "✦ ScanGuard 助理就绪。请尝试输入：“Is USDT safe?” 或 “Scan 0x...” 或输入 **help** 寻求帮助。"
+        : "✦ ScanGuard Agent ready. Try: \"Is USDT safe?\" or \"Scan 0x...\" or type **help**.",
       timestamp: Date.now(),
     },
   ]);
+
+  // Sync welcome message on language change
+  useEffect(() => {
+    setMessages(prev => {
+      const idx = prev.findIndex(m => m.id === "welcome");
+      if (idx !== -1) {
+        const updated = [...prev];
+        updated[idx] = {
+          ...updated[idx],
+          text: language === "zh"
+            ? "✦ ScanGuard 助理就绪。请尝试输入：“Is USDT safe?” 或 “Scan 0x...” 或输入 **help** 寻求帮助。"
+            : "✦ ScanGuard Agent ready. Try: \"Is USDT safe?\" or \"Scan 0x...\" or type **help**."
+        };
+        return updated;
+      }
+      return prev;
+    });
+  }, [language]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -173,14 +195,16 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
         case "help":
           addMessage(
             "agent",
-            `✦ **Available commands:**\n\n• **Scan a token:** "Is USDT safe?" or "Scan 0x..."\n• **Swap tokens:** "Swap 10 USDC to OKB"\n• **Check status:** "status"\n• **Supported tokens:** USDT, USDC, WETH, OKB, DAI\n\nYou can also paste any contract address to scan it.`
+            language === "zh"
+              ? `✦ **可用指令：**\n\n• **扫描代币：** “Is USDT safe?” 或 “Scan 0x...”\n• **兑换代币：** “Swap 10 USDC to OKB”\n• **检查状态：** “status”\n• **支持代币：** USDT, USDC, WETH, OKB, DAI\n\n您也可以直接粘贴合约地址进行扫描。`
+              : `✦ **Available commands:**\n\n• **Scan a token:** "Is USDT safe?" or "Scan 0x..."\n• **Swap tokens:** "Swap 10 USDC to OKB"\n• **Check status:** "status"\n• **Supported tokens:** USDT, USDC, WETH, OKB, DAI\n\nYou can also paste any contract address to scan it.`
           );
           break;
 
         case "scan":
           if (intent.tokenAddress) {
             const label = intent.tokenName || `${intent.tokenAddress.slice(0, 10)}...`;
-            addMessage("agent", `✦ Initiating security scan for **${label}**...\n\n_Querying OKX Security API + bytecode analysis + Uniswap V3 liquidity..._`);
+            addMessage("agent", language === "zh" ? `✦ 正在为 **${label}** 进行安全扫描...` : `✦ Initiating security scan for **${label}**...`);
             
             // Also notify the parent (App -> SwapCard) so it updates the main UI
             if (onScanToken) onScanToken(intent.tokenAddress);
@@ -197,16 +221,18 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
               if (data.success && data.data) {
                 const sr = data.data;
                 const riskBadge = sr.riskLevel === "SAFE" ? "[SAFE]" : sr.riskLevel === "HIGH" || sr.riskLevel === "CRITICAL" ? "[CRITICAL]" : "[WARNING]";
-                const reply = `✓ **Scan Complete: ${label}**\n\n**Status:** ${riskBadge}\n**Risk Level:** ${sr.riskLevel} (${sr.riskScore}/100)\n\n**Flags:** ${sr.flags.length}\n**Uniswap V3:** ${sr.uniswapHasPool ? "Active Pool" : "No Liquidity"}\n\n_${sr.flags.length > 0 ? "Check the main Risk Report panel for full alert details." : "Token looks clean. Safe to swap!"}_`;
+                const reply = language === "zh"
+                  ? `✓ **扫描完成：${label}**\n\n**状态：** ${riskBadge === "[SAFE]" ? "[安全]" : riskBadge === "[CRITICAL]" ? "[高危]" : "[警告]"}\n**风险等级：** ${sr.riskLevel === "SAFE" ? "安全" : sr.riskLevel === "HIGH" || sr.riskLevel === "CRITICAL" ? "高危" : "中度警告"} (${sr.riskScore}/100)\n\n**警告标记：** ${sr.flags.length} 个\n**Uniswap V3：** ${sr.uniswapHasPool ? "活跃流动性池" : "无流动性"}\n\n_${sr.flags.length > 0 ? "请在主界面的“ScanGuard 安全威胁报告”面板中查看详细警告细节。" : "代币暂无异常。可以安全进行兑换！"}_`
+                  : `✓ **Scan Complete: ${label}**\n\n**Status:** ${riskBadge}\n**Risk Level:** ${sr.riskLevel} (${sr.riskScore}/100)\n\n**Flags:** ${sr.flags.length}\n**Uniswap V3:** ${sr.uniswapHasPool ? "Active Pool" : "No Liquidity"}\n\n_${sr.flags.length > 0 ? "Check the main Risk Report panel for full alert details." : "Token looks clean. Safe to swap!"}_`;
                 addMessage("agent", reply);
               } else {
-                addMessage("agent", "✕ Scan failed to retrieve risk metadata.");
+                addMessage("agent", language === "zh" ? "✕ 扫描失败，未能获取风险元数据。" : "✕ Scan failed to retrieve risk metadata.");
               }
             } catch (e) {
-              addMessage("agent", "✕ Scan timed out or encountered an error.");
+              addMessage("agent", language === "zh" ? "✕ 扫描超时或遇到错误。" : "✕ Scan timed out or encountered an error.");
             }
           } else {
-            addMessage("agent", "✕ Couldn't identify the token. Try: \"Scan USDT\" or paste a contract address.");
+            addMessage("agent", language === "zh" ? "✕ 无法识别代币。请尝试：“Scan USDT”或粘贴代币合约地址。" : "✕ Couldn't identify the token. Try: \"Scan USDT\" or paste a contract address.");
           }
           break;
 
@@ -214,18 +240,22 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
           if (intent.fromToken && intent.toToken && intent.amount && onSwapCommand) {
             addMessage(
               "agent",
-              `✦ Setting up swap: **${intent.amount} ${intent.fromToken} → ${intent.toToken}**\n\n_Fetching quotes from OKX DEX + Uniswap V3..._`
+              language === "zh"
+                ? `✦ 正在设置兑换：**${intent.amount} ${intent.fromToken} → ${intent.toToken}**\n\n_正在获取 OKX DEX 与 Uniswap V3 报价..._`
+                : `✦ Setting up swap: **${intent.amount} ${intent.fromToken} → ${intent.toToken}**\n\n_Fetching quotes from OKX DEX + Uniswap V3..._`
             );
             onSwapCommand(intent.fromToken, intent.toToken, intent.amount);
           } else {
-            addMessage("agent", "✦ Try: \"Swap 10 USDC to OKB\"");
+            addMessage("agent", language === "zh" ? "✦ 请尝试输入：“Swap 10 USDC to OKB”" : "✦ Try: \"Swap 10 USDC to OKB\"");
           }
           break;
 
         case "status":
           addMessage(
             "agent",
-            `✓ **ScanGuard Status:**\n• Agent: Online\n• Chain: XLayer Mainnet (#196)\n• Skills: OKX Security, OKX DEX, Uniswap V3, x402\n• MCP: Ready\n• Scans: Free (demo mode)`
+            language === "zh"
+              ? `✓ **ScanGuard 运行状态：**\n• 助理状态：在线\n• 目标网络：XLayer 主网 (#196)\n• 绑定技能：OKX 安全、OKX DEX、Uniswap V3、x402\n• MCP 服务：就绪\n• 扫描模式：免费 (Demo 演示模式)`
+              : `✓ **ScanGuard Status:**\n• Agent: Online\n• Chain: XLayer Mainnet (#196)\n• Skills: OKX Security, OKX DEX, Uniswap V3, x402\n• MCP: Ready\n• Scans: Free (demo mode)`
           );
           break;
 
@@ -234,15 +264,19 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
           addMessage(
             "agent",
             hasPartialAddr
-              ? `That address looks incomplete - I need the full 42-character address (0x + 40 hex chars).\n\nPaste the complete address or try:\n• "Scan USDT"\n• "Is USDC safe?"`
-              : `I didn't understand that. Try:\n• "Is USDT safe?"\n• "Scan USDC"\n• "Swap 10 USDC to OKB"\n• "help"`
+              ? (language === "zh"
+                  ? `该地址看起来不完整 - 我需要一个完整的 42 位合约地址 (0x 开头的 40 位十六进制字符)。\n\n请粘贴完整地址或尝试：\n• “Scan USDT”\n• “Is USDC safe?”`
+                  : `That address looks incomplete - I need the full 42-character address (0x + 40 hex chars).\n\nPaste the complete address or try:\n• "Scan USDT"\n• "Is USDC safe?"`)
+              : (language === "zh"
+                  ? `我不太明白您的意思。请尝试：\n• “Is USDT safe?”\n• “Scan USDC”\n• “Swap 10 USDC to OKB”\n• “help”`
+                  : `I didn't understand that. Try:\n• "Is USDT safe?"\n• "Scan USDC"\n• "Swap 10 USDC to OKB"\n• "help"`)
           );
         }
       }
 
       setIsTyping(false);
     },
-    [input, addMessage, onScanToken, onSwapCommand]
+    [input, addMessage, onScanToken, onSwapCommand, language]
   );
 
   return (
@@ -253,7 +287,7 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
         onClick={() => setIsOpen(!isOpen)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        title="ScanGuard Agent Chat"
+        title={language === "zh" ? "ScanGuard 安全特工聊天" : "ScanGuard Agent Chat"}
       >
         {isOpen ? <CrossIcon size={20} style={{ marginRight: 0 }} /> : <RobotIcon size={24} style={{ marginRight: 0 }} />}
       </motion.button>
@@ -272,7 +306,7 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
             <div className="agent-chat-header">
               <div className="agent-chat-title">
                 <span className="agent-status-dot" />
-                <span>ScanGuard Agent</span>
+                <span>{language === "zh" ? "ScanGuard 安全助理" : "ScanGuard Agent"}</span>
               </div>
               <span className="badge badge-safe font-mono" style={{ fontSize: '0.65rem' }}>AI</span>
             </div>
@@ -311,7 +345,7 @@ const AgentChat: React.FC<AgentChatProps> = ({ onScanToken, onSwapCommand }) => 
                 ref={inputRef}
                 type="text"
                 className="agent-chat-input"
-                placeholder='Try "Is USDT safe?" or "help"'
+                placeholder={language === "zh" ? "询问代币安全性，或者输入 “help”..." : 'Try "Is USDT safe?" or "help"'}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 autoComplete="off"

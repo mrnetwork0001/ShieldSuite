@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { BookIcon, ShieldIcon, CardIcon, SwapIcon, AnchorIcon, CopyIcon, CheckIcon, TrophyIcon, IdeaIcon, GreenDotIcon, MessageIcon } from "./Icons";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "../context/LanguageContext";
 
 interface DocsPageProps {
   setActiveTab: (tab: "home" | "docs" | "swap" | "pitchside") => void;
@@ -11,6 +12,7 @@ type SectionId = "overview" | "scanguard" | "x402" | "shieldswap" | "pitchside" 
 export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
   const [activeSection, setActiveSection] = useState<SectionId>("overview");
   const [copiedText, setCopiedText] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -21,12 +23,12 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
   };
 
   const sections = [
-    { id: "overview" as const, title: <><BookIcon /> Overview</>, label: "Overview" },
-    { id: "scanguard" as const, title: <><ShieldIcon /> ScanGuard Tech</>, label: "ScanGuard Core" },
-    { id: "x402" as const, title: <><CardIcon /> x402 Economy</>, label: "x402 Protocol" },
-    { id: "shieldswap" as const, title: <><SwapIcon /> ShieldSwap DEX</>, label: "DEX Aggregator" },
-    { id: "pitchside" as const, title: <><span style={{ marginRight: "6px" }}>⚽</span> Pitchside AI Loop</>, label: "Pitchside Speculation" },
-    { id: "contracts" as const, title: <><AnchorIcon /> Deployments</>, label: "Smart Contracts" },
+    { id: "overview" as const, title: <><BookIcon /> {t("docs_sec_overview_title")}</>, label: t("docs_sec_overview_label") },
+    { id: "scanguard" as const, title: <><ShieldIcon /> {t("docs_sec_scanguard_title")}</>, label: t("docs_sec_scanguard_label") },
+    { id: "x402" as const, title: <><CardIcon /> {t("docs_sec_x402_title")}</>, label: t("docs_sec_x402_label") },
+    { id: "shieldswap" as const, title: <><SwapIcon /> {t("docs_sec_shieldswap_title")}</>, label: t("docs_sec_shieldswap_label") },
+    { id: "pitchside" as const, title: <><span style={{ marginRight: "6px" }}>⚽</span> {t("docs_sec_pitchside_title")}</>, label: t("docs_sec_pitchside_label") },
+    { id: "contracts" as const, title: <><AnchorIcon /> {t("docs_sec_contracts_title")}</>, label: t("docs_sec_contracts_label") },
   ];
 
   const mainnetContracts = [
@@ -37,7 +39,20 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
     { name: "TEE Agent Wallet", address: "0xDAce8445a5bD576111cCC8e598B67965252023C2" },
   ];
 
+  const lifecycleSteps = [
+    { step: "01", title: t("docs_x402_step1_title"), desc: t("docs_x402_step1_desc") },
+    { step: "02", title: t("docs_x402_step2_title"), desc: t("docs_x402_step2_desc") },
+    { step: "03", title: t("docs_x402_step3_title"), desc: t("docs_x402_step3_desc") },
+    { step: "04", title: t("docs_x402_step4_title"), desc: t("docs_x402_step4_desc") },
+    { step: "05", title: t("docs_x402_step5_title"), desc: t("docs_x402_step5_desc") },
+  ];
 
+  const loopSteps = [
+    { step: 1, title: t("docs_ps_step1_title"), desc: t("docs_ps_step1_desc") },
+    { step: 2, title: t("docs_ps_step2_title"), desc: t("docs_ps_step2_desc") },
+    { step: 3, title: t("docs_ps_step3_title"), desc: t("docs_ps_step3_desc") },
+    { step: 4, title: t("docs_ps_step4_title"), desc: t("docs_ps_step4_desc") },
+  ];
 
   const renderCopyButton = (address: string) => {
     const isCopied = copiedText === address;
@@ -46,7 +61,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
         onClick={() => handleCopy(address)}
         className={`copy-btn font-mono ${isCopied ? "copied" : ""}`}
       >
-        {isCopied ? <><CheckIcon size={12} /> Copied</> : <><CopyIcon size={12} style={{ marginRight: "6px" }} /> Copy</>}
+        {isCopied ? <><CheckIcon size={12} /> {t("docs_copied")}</> : <><CopyIcon size={12} style={{ marginRight: "6px" }} /> {t("docs_copy")}</>}
       </button>
     );
   };
@@ -58,7 +73,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
 
       <div className="docs-container">
         <aside className="docs-sidebar">
-          <h3 className="sidebar-title font-mono">DOCUMENTATION</h3>
+          <h3 className="sidebar-title font-mono">{t("docs_sidebar_title")}</h3>
           <nav className="sidebar-nav">
             {sections.map((sec) => (
               <button
@@ -73,14 +88,14 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
 
           {/* Quick Launch CTA */}
           <div className="sidebar-cta glass-card">
-            <h4>Launch App</h4>
-            <p>Ready to secure your trades or stake risk-free?</p>
+            <h4>{t("docs_cta_launch")}</h4>
+            <p>{t("docs_cta_desc")}</p>
             <div className="sidebar-cta-btns">
               <button className="btn btn-primary btn-sm" onClick={() => setActiveTab("pitchside")}>
-                <TrophyIcon /> Pitchside
+                <TrophyIcon /> {t("docs_cta_pitchside")}
               </button>
               <button className="btn btn-ghost btn-sm" onClick={() => setActiveTab("swap")}>
-                <SwapIcon /> Swap
+                <SwapIcon /> {t("docs_cta_swap")}
               </button>
             </div>
           </div>
@@ -98,85 +113,75 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
             >
               {activeSection === "overview" && (
                 <>
-                  <h1 className="docs-section-title">Overview: ShieldSuite & Pitchside AI</h1>
-                  <p className="docs-para">
-                    <strong>ShieldSuite</strong> is a dual-purpose Web3 security infrastructure and speculation ecosystem deployed on <strong>X Layer</strong>. Designed for both retail users and automated autonomous agents, ShieldSuite solves two critical modern DeFi challenges:
-                  </p>
+                  <h1 className="docs-section-title">{t("docs_ov_title")}</h1>
+                  <p className="docs-para" dangerouslySetInnerHTML={{ __html: t("docs_ov_desc") }} />
 
                   <div className="features-grid">
                     <div className="glass-card feature-box-card">
                       <div className="feature-box-icon"><ShieldIcon size={24} style={{ marginRight: 0 }} /></div>
-                      <h3>DEX Aggregator Security Gates</h3>
-                      <p>
-                        Token transactions are scanned on-chain at bytecode level in real-time, blocking malicious interactions (honeypots, blacklists, tax modifications) before they hit the ledger.
-                      </p>
+                      <h3>{t("docs_ov_feat1_title")}</h3>
+                      <p>{t("docs_ov_feat1_desc")}</p>
                     </div>
 
                     <div className="glass-card feature-box-card">
                       <div className="feature-box-icon">⚽</div>
-                      <h3>No-Loss Sports Speculation</h3>
-                      <p>
-                        Users stake stablecoins risk-free to generate virtual yield, which is delegated to TEE-isolated AI agents to trade ERC-1155 player index shares based on live World Cup match data.
-                      </p>
+                      <h3>{t("docs_ov_feat2_title")}</h3>
+                      <p>{t("docs_ov_feat2_desc")}</p>
                     </div>
                   </div>
 
                   <div className="glass-card docs-info-box">
-                    <h4><IdeaIcon /> Evolving for World Cup 2026</h4>
-                    <p>
-                      With the upcoming FIFA World Cup 2026, Pitchside AI shifts prediction markets from high-risk betting where users lose their principal to a 100% capital-protected speculation network powered by Aave V3 yield loops and Trusted Execution Environments (TEEs).
-                    </p>
+                    <h4><IdeaIcon /> {t("docs_ov_info_title")}</h4>
+                    <p>{t("docs_ov_info_desc")}</p>
                   </div>
                 </>
               )}
 
               {activeSection === "scanguard" && (
                 <>
-                  <h1 className="docs-section-title"><ShieldIcon size={28} /> ScanGuard: Bytecode Analysis & Heuristics</h1>
-                  <p className="docs-para">
-                    ScanGuard acts as the backend intelligence engine. Running as a REST API and Model Context Protocol (MCP) server, it performs deep on-chain bytecode scanning of smart contracts.
-                  </p>
-                  <h3>Security Check Specifications</h3>
+                  <h1 className="docs-section-title"><ShieldIcon size={28} /> {t("docs_sg_title")}</h1>
+                  <p className="docs-para">{t("docs_sg_desc")}</p>
+                  <h3>{t("docs_sg_table_title")}</h3>
                   <div className="docs-table-wrapper">
                     <table className="docs-table">
                       <thead>
                         <tr>
-                          <th>Check Name</th>
-                          <th>Scanning Method</th>
-                          <th>Risk Severity</th>
+                          <th>{t("docs_sg_th_name")}</th>
+                          <th>{t("docs_sg_th_method")}</th>
+                          <th>{t("docs_sg_th_severity")}</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td><strong>EOA Detection</strong></td>
-                          <td>Validates if code at target address is `0x`</td>
+                          <td><strong>{t("docs_sg_row_eoa_name")}</strong></td>
+                          <td>{t("docs_sg_row_eoa_method")}</td>
                           <td className="text-danger font-mono">CRITICAL (100)</td>
                         </tr>
                         <tr>
-                          <td><strong>Honeypot Codes</strong></td>
-                          <td>Checks absence of standard `transfer`/`transferFrom` selectors</td>
+                          <td><strong>{t("docs_sg_row_hp_name")}</strong></td>
+                          <td>{t("docs_sg_row_hp_method")}</td>
                           <td className="text-danger font-mono">CRITICAL (100)</td>
                         </tr>
                         <tr>
-                          <td><strong>Proxy Delegations</strong></td>
-                          <td>Detects delegatecall opcode `0xF4` indicating upgradability</td>
+                          <td><strong>{t("docs_sg_row_proxy_name")}</strong></td>
+                          <td>{t("docs_sg_row_proxy_method")}</td>
                           <td className="text-warning font-mono">MEDIUM (50)</td>
                         </tr>
                         <tr>
-                          <td><strong>Blacklist Functions</strong></td>
-                          <td>Matches bytecode signatures for `blacklist` and `freeze` methods</td>
+                          <td><strong>{t("docs_sg_row_bl_name")}</strong></td>
+                          <td>{t("docs_sg_row_bl_method")}</td>
                           <td className="text-danger font-mono">HIGH (80)</td>
                         </tr>
                         <tr>
-                          <td><strong>Hidden Fee Taxes</strong></td>
-                          <td>Detects dynamically adjustable tax code sequences in bytecode</td>
+                          <td><strong>{t("docs_sg_row_tax_name")}</strong></td>
+                          <td>{t("docs_sg_row_tax_method")}</td>
                           <td className="text-warning font-mono">MEDIUM (60)</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
 
-                  <h3>Example MCP JSON API Response</h3>
+                  <h3>{t("docs_sg_json_title")}</h3>
                   <pre className="docs-code font-mono">
                     <span style={{ color: "#f8f8f2" }}>{"{"}</span>{"\n"}
                     <span style={{ color: "#f92672" }}>  "success"</span><span style={{ color: "#f8f8f2" }}>: </span><span style={{ color: "#ae81ff" }}>true</span><span style={{ color: "#f8f8f2" }}>,</span>{"\n"}
@@ -195,26 +200,16 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
 
               {activeSection === "x402" && (
                 <>
-                  <h1 className="docs-section-title"><CardIcon size={28} /> x402 Pay-Per-Scan Agent Economy</h1>
-                  <p className="docs-para">
-                    ScanGuard implements the <strong>x402 Protocol</strong> to establish a monetized, decentralized API pipeline. In an environment where AI trading agents require automated security checks, they make stablecoin micro-payments on-chain to access ScanGuard intelligence.
-                  </p>
+                  <h1 className="docs-section-title"><CardIcon size={28} /> {t("docs_x402_title")}</h1>
+                  <p className="docs-para" dangerouslySetInnerHTML={{ __html: t("docs_x402_desc") }} />
                   <div className="glass-card docs-info-box border-purple">
-                    <h4><IdeaIcon /> Why x402 is Revolutionary</h4>
-                    <p>
-                      Rather than relying on legacy SaaS API keys, credit cards, or centralized subscriptions, the x402 protocol allows TEE enclaves and autonomous bots to transact natively in stablecoins directly with the security nodes.
-                    </p>
+                    <h4><IdeaIcon /> {t("docs_x402_info_title")}</h4>
+                    <p>{t("docs_x402_info_desc")}</p>
                   </div>
 
-                  <h3>x402 Protocol Lifecycle Flow</h3>
+                  <h3>{t("docs_x402_flow_title")}</h3>
                   <div className="lifecycle-flow">
-                    {[
-                      { step: "01", title: "Request", desc: "Agent makes a POST /api/scan request without payment headers." },
-                      { step: "02", title: "Denial", desc: "Server returns HTTP 402 Payment Required detailing the cost ($0.005 USDC)." },
-                      { step: "03", title: "Payment", desc: "Agent signs and broadcasts the transfer transaction on X Layer." },
-                      { step: "04", title: "Verification", desc: "Agent retries the request with X-402-Payment transaction hash header." },
-                      { step: "05", title: "Response", desc: "Node verifies transaction on-chain and returns the full security report." },
-                    ].map((item) => (
+                    {lifecycleSteps.map((item) => (
                       <div key={item.step} className="flow-card glass-card">
                         <div className="flow-step font-mono">{item.step}</div>
                         <h4>{item.title}</h4>
@@ -227,89 +222,54 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
 
               {activeSection === "shieldswap" && (
                 <>
-                  <h1 className="docs-section-title"><SwapIcon size={28} /> ShieldSwap: Security-Gated Aggregator</h1>
-                  <p className="docs-para">
-                    ShieldSwap is the frontend gateway. Integrating the <strong>OKX DEX Aggregator API</strong>, it searches over 500+ decentralized liquidity pools on X Layer to route swaps at the lowest slippage and gas rates.
-                  </p>
-                  <h3>Security-Interceptor Mechanism</h3>
-                  <p className="docs-para">
-                    When a user types in a custom token address to execute a swap, ShieldSwap automatically holds the transaction in a pending state. It calls the ScanGuard API to evaluate the token bytecode. 
-                    If a honeypot code pattern or malicious blacklist logic is found, the transaction is <strong>force-blocked</strong>, and an interactive threat report displays the exact warning flags.
-                  </p>
+                  <h1 className="docs-section-title"><SwapIcon size={28} /> {t("docs_ss_title")}</h1>
+                  <p className="docs-para" dangerouslySetInnerHTML={{ __html: t("docs_ss_desc") }} />
+                  <h3>{t("docs_ss_interceptor_title")}</h3>
+                  <p className="docs-para" dangerouslySetInnerHTML={{ __html: t("docs_ss_interceptor_desc") }} />
                   <div className="glass-card docs-info-box">
-                    <h4><MessageIcon /> Conversational AI Assistant</h4>
-                    <p>
-                      ShieldSwap features an inline AI chat panel that wraps `okx-dex-token` and `okx-security`. Users can command the agent: <em>"Scan contract 0x779d... and buy 10 WOKB if safe."</em> The chatbot scans, reports threat diagnostics, and populates the swap card dynamically.
-                    </p>
+                    <h4><MessageIcon /> {t("docs_ss_chat_title")}</h4>
+                    <p dangerouslySetInnerHTML={{ __html: t("docs_ss_chat_desc") }} />
                   </div>
                 </>
               )}
 
               {activeSection === "pitchside" && (
                 <>
-                  <h1 className="docs-section-title">⚽ Pitchside AI: No-Loss Speculation Loop</h1>
-                  <p className="docs-para">
-                    Pitchside AI is our flagship World Cup 2026 prediction sandbox. It allows stakers to speculate on player shares index tokens without any risk to their principal stablecoins.
-                  </p>
+                  <h1 className="docs-section-title">{t("docs_ps_title")}</h1>
+                  <p className="docs-para">{t("docs_ps_desc")}</p>
 
                   <div className="pitchside-loop-steps">
-                    <div className="loop-step glass-card">
-                      <div className="loop-step-header">
-                        <span className="step-badge">1</span>
-                        <h5>Staking Vault & Aave V3 Pools</h5>
+                    {loopSteps.map((item) => (
+                      <div key={item.step} className="loop-step glass-card">
+                        <div className="loop-step-header">
+                          <span className="step-badge">{item.step}</span>
+                          <h5>{item.title}</h5>
+                        </div>
+                        <p dangerouslySetInnerHTML={{ __html: item.desc }} />
                       </div>
-                      <p>USDT/USDC deposited into `NoLossVault.sol` is supplied directly to X Layer's <strong>Aave V3 pools</strong>. The principal remains 100% safe and can be pulled out by the staker at any time.</p>
-                    </div>
-
-                    <div className="loop-step glass-card">
-                      <div className="loop-step-header">
-                        <span className="step-badge">2</span>
-                        <h5>Scout Credits Yield Generation</h5>
-                      </div>
-                      <p>The yield generated from Aave is harvested. Stakers accrue virtual <strong>Scout Credits</strong> in real-time proportional to their staking volume and duration. Credits act as the virtual gas for speculations.</p>
-                    </div>
-
-                    <div className="loop-step glass-card">
-                      <div className="loop-step-header">
-                        <span className="step-badge">3</span>
-                        <h5>TEE Scout Agent Delegation</h5>
-                      </div>
-                      <p>Stakers delegate their credits to our <strong>Trusted Execution Environment (TEE)</strong> scout agent. The agent uses the `okx-agentic-wallet` SDK, sealing its private keys inside hardware enclaves. The TEE agent parses live match data to trade Player Index Shares (`PlayerShares.sol` ERC-1155 tokens) dynamically on our zero-slippage custom AMM (`PlayerDex.sol`).</p>
-                    </div>
-
-                    <div className="loop-step glass-card">
-                      <div className="loop-step-header">
-                        <span className="step-badge">4</span>
-                        <h5>Onchain Dynamic Rating Updates</h5>
-                      </div>
-                      <p>When the TEE agent detects a positive player event (e.g., a goal or assist), it submits an on-chain transaction calling `PlayerShares.updatePlayer(...)` to increase the player rating. Because the AMM pricing depends directly on the on-chain rating, share prices shift in real-time, allowing stakers to lock in profits.</p>
-                    </div>
+                    ))}
                   </div>
 
                   <div className="glass-card docs-info-box" style={{ marginTop: '24px', border: '1px solid rgba(75, 123, 245, 0.3)', background: 'rgba(75, 123, 245, 0.03)' }}>
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 8px 0', color: '#fff' }}>
-                      <span style={{ fontSize: '1.2rem' }}>📡</span> Live Data Feed & Future Roadmap
+                      <span style={{ fontSize: '1.2rem' }}>📡</span> {t("docs_ps_live_title")}
                     </h4>
-                    <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', lineHeight: '1.4' }}>
-                      Pitchside AI integrates professional-grade live data pipelines from the <strong>Sportmonks Football API</strong>. This provides real-time fixtures, lineups, and match event updates directly to our Trusted Execution Environment (TEE) scout agent.
-                    </p>
-                    <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.4', color: 'var(--text-secondary)' }}>
-                      <strong>Future Roadmap:</strong> We plan to expand the data feed integration to process global football news sentiment, prediction market/odds fluctuations, and advanced xG analytics. This will allow the TEE Scout Agent to perform 24/7 autonomous speculation, even between live match windows.
-                    </p>
+                    <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', lineHeight: '1.4' }} dangerouslySetInnerHTML={{ __html: t("docs_ps_live_desc1") }} />
+                    <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.4', color: 'var(--text-secondary)' }} dangerouslySetInnerHTML={{ __html: t("docs_ps_live_desc2") }} />
                   </div>
                 </>
               )}
 
               {activeSection === "contracts" && (
                 <>
-                  <h1 className="docs-section-title"><AnchorIcon size={28} /> Smart Contract Deployments</h1>
+                  <h1 className="docs-section-title"><AnchorIcon size={28} /> {t("docs_dep_title")}</h1>
                   <p className="docs-para">
-                    ShieldSuite is actively deployed on X Layer Mainnet:
+                    {t("docs_dep_desc")}
                   </p>
 
                   <div className="contracts-grid" style={{ gridTemplateColumns: '1fr' }}>
                     <div className="contracts-card glass-card">
-                      <h3><GreenDotIcon /> X Layer Mainnet (Chain ID 196)</h3>
+                      <h3><GreenDotIcon /> {t("docs_dep_network")}</h3>
                       <div className="contracts-list">
                         {mainnetContracts.map((c) => (
                           <div key={c.name} className="contract-item">

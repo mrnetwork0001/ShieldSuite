@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignalIcon, CalendarIcon, CheckIcon } from "./Icons";
+import { useLanguage } from "../context/LanguageContext";
 
 interface Match {
   home: string;
@@ -424,6 +425,7 @@ const shortenName = (name: string): string => {
 };
 
 export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivityLog }) => {
+  const { language, t } = useLanguage();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -496,7 +498,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
       id: `manual-match-sync-${Date.now()}`,
       timestamp: Date.now(),
       type: "info",
-      message: "Manually synchronized live World Cup match feeds."
+      message: language === "zh" ? "已手动同步实时世界杯赛事数据。" : "Manually synchronized live World Cup match feeds."
     });
   };
 
@@ -535,15 +537,49 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
     });
   };
 
+  const getTranslatedTeamName = (teamName: string) => {
+    if (language === "zh") {
+      const map: Record<string, string> = {
+        "Argentina": "阿根廷",
+        "France": "法国",
+        "England": "英格兰",
+        "Brazil": "巴西",
+        "Spain": "西班牙",
+        "Germany": "德国",
+        "United States": "美国",
+        "Mexico": "墨西哥",
+        "Portugal": "葡萄牙",
+        "Netherlands": "荷兰",
+        "Belgium": "比利时",
+        "Uruguay": "乌拉圭",
+        "Japan": "日本",
+        "Morocco": "摩洛哥",
+        "Canada": "加拿大",
+        "Norway": "挪威",
+        "China": "中国",
+        "Italy": "意大利",
+        "Croatia": "克罗地亚",
+        "Poland": "波兰",
+        "Sweden": "瑞典",
+        "Switzerland": "瑞士",
+        "Senegal": "塞内加尔",
+        "South Korea": "韩国"
+      };
+      const pretty = getPrettyName(teamName);
+      return map[pretty] || pretty;
+    }
+    return getPrettyName(teamName);
+  };
+
   const getStatusText = (match: Match) => {
     if (match.status === "LIVE") {
       const min = match.minute ? String(match.minute) : "";
-      if (!min) return "LIVE";
-      if (min.endsWith("'") || isNaN(Number(min))) return `LIVE ${min}`;
-      return `LIVE ${min}'`;
+      if (!min) return language === "zh" ? "进行中" : "LIVE";
+      if (min.endsWith("'") || isNaN(Number(min))) return `${language === "zh" ? "进行中" : "LIVE"} ${min}`;
+      return `${language === "zh" ? "进行中" : "LIVE"} ${min}'`;
     }
-    if (match.status === "FINISHED" || match.status === "FT") return "FT";
-    return "UPCOMING";
+    if (match.status === "FINISHED" || match.status === "FT") return language === "zh" ? "已完场" : "FT";
+    return language === "zh" ? "未开始" : "UPCOMING";
   };
 
   const renderPagination = (currentPage: number, totalPages: number, onPageChange: (page: number) => void) => {
@@ -562,7 +598,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
           className="btn btn-secondary"
           style={{ padding: '6px 12px', fontSize: '0.72rem', cursor: 'pointer' }}
         >
-          ← Prev
+          {language === "zh" ? "← 上一页" : "← Prev"}
         </button>
         {pages.map(page => (
           <button
@@ -587,7 +623,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
           className="btn btn-secondary"
           style={{ padding: '6px 12px', fontSize: '0.72rem', cursor: 'pointer' }}
         >
-          Next →
+          {language === "zh" ? "下一页 →" : "Next →"}
         </button>
       </div>
     );
@@ -621,15 +657,15 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
       {/* Page Header */}
       <div className="matches-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: '800', margin: 0, color: '#fff' }}>⚽ World Cup Matches Hub</h2>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: '800', margin: 0, color: '#fff' }}>⚽ {language === "zh" ? "世界杯赛事中心" : "World Cup Matches Hub"}</h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Real-time Sportmonks Live Data Feed (Auto-syncs every 30 seconds)
+            {language === "zh" ? "实时 Sportmonks 比赛数据流（每 30 秒自动同步）" : "Real-time Sportmonks Live Data Feed (Auto-syncs every 30 seconds)"}
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {lastRefreshed && (
             <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-              Refreshed: {lastRefreshed.toLocaleTimeString()}
+              {language === "zh" ? "已同步:" : "Refreshed:"} {lastRefreshed.toLocaleTimeString()}
             </span>
           )}
           <button
@@ -638,7 +674,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
             disabled={loading}
             style={{ padding: '8px 16px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            {loading ? "Syncing..." : "🔄 Force Sync"}
+            {loading ? (language === "zh" ? "同步中..." : "Syncing...") : (language === "zh" ? "🔄 强制同步" : "🔄 Force Sync")}
           </button>
         </div>
       </div>
@@ -652,7 +688,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
       {loading && matches.length === 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '16px' }}>
           <span className="spin-continuous" style={{ fontSize: '2rem' }}>⚽</span>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Connecting to Sportmonks feed...</span>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{language === "zh" ? "正在连接 Sportmonks 数据源..." : "Connecting to Sportmonks feed..."}</span>
         </div>
       ) : (
         <div className="matches-catalog-grid" style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
@@ -661,11 +697,11 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
           <section className="matches-section">
             <h3 style={{ fontSize: '1rem', fontWeight: '700', color: '#00ff88', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00ff88', display: 'inline-block', animation: 'glow-pulse 1.5s ease-in-out infinite' }} />
-              LIVE MATCHES ({liveMatches.length})
+              {language === "zh" ? "进行中的比赛" : "LIVE MATCHES"} ({liveMatches.length})
             </h3>
             {liveMatches.length === 0 ? (
               <div className="glass-card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.85rem', border: '1px dashed var(--border-default)' }}>
-                No matches are currently in play. Speculators can simulate live updates in the Scout Console.
+                {language === "zh" ? "当前暂无进行中的比赛。特工可以在特工控制台中模拟实时数据更新。" : "No matches are currently in play. Speculators can simulate live updates in the Scout Console."}
               </div>
             ) : showMarquee ? (
               // Marquee Slider Container
@@ -711,7 +747,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
                           <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {renderTeamFlag(m.home, "md")}
                             <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#fff' }}>
-                              {shortenName(getPrettyName(m.home))}
+                              {language === "zh" ? getTranslatedTeamName(m.home) : shortenName(getPrettyName(m.home))}
                             </span>
                           </span>
                           <span style={{ fontSize: '1.1rem', fontWeight: '800', color: '#00ff88', fontFamily: 'monospace' }}>
@@ -722,7 +758,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
                           <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {renderTeamFlag(m.away, "md")}
                             <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#fff' }}>
-                              {shortenName(getPrettyName(m.away))}
+                              {language === "zh" ? getTranslatedTeamName(m.away) : shortenName(getPrettyName(m.away))}
                             </span>
                           </span>
                           <span style={{ fontSize: '1.1rem', fontWeight: '800', color: '#00ff88', fontFamily: 'monospace' }}>
@@ -778,7 +814,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
                           <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {renderTeamFlag(m.home, "md")}
                             <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#fff' }}>
-                              {shortenName(getPrettyName(m.home))}
+                              {language === "zh" ? getTranslatedTeamName(m.home) : shortenName(getPrettyName(m.home))}
                             </span>
                           </span>
                           <span style={{ fontSize: '1.2rem', fontWeight: '800', color: '#00ff88', fontFamily: 'monospace' }}>
@@ -789,7 +825,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
                           <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {renderTeamFlag(m.away, "md")}
                             <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#fff' }}>
-                              {shortenName(getPrettyName(m.away))}
+                              {language === "zh" ? getTranslatedTeamName(m.away) : shortenName(getPrettyName(m.away))}
                             </span>
                           </span>
                           <span style={{ fontSize: '1.2rem', fontWeight: '800', color: '#00ff88', fontFamily: 'monospace' }}>
@@ -802,7 +838,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
                       <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '16px', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>
                         <span>📍 {m.venue}</span>
                         {m.events && m.events.length > 0 && (
-                          <span style={{ color: '#00ff88', fontWeight: 'bold' }}>⚡ Active updates processing</span>
+                          <span style={{ color: '#00ff88', fontWeight: 'bold' }}>{language === "zh" ? "⚡ 特工正在处理实时更新" : "⚡ Active updates processing"}</span>
                         )}
                       </div>
                     </motion.div>
@@ -816,11 +852,11 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
           <section className="matches-section">
             <h3 style={{ fontSize: '1rem', fontWeight: '700', color: '#4B7BF5', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ display: 'inline-block', color: '#4B7BF5' }}><CalendarIcon size={16} /></span>
-              UPCOMING FIXTURES ({scheduledMatches.length})
+              {language === "zh" ? "即将开始的赛程" : "UPCOMING FIXTURES"} ({scheduledMatches.length})
             </h3>
             {scheduledMatches.length === 0 ? (
               <div className="glass-card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.85rem', border: '1px dashed var(--border-default)' }}>
-                No upcoming scheduled fixtures.
+                {language === "zh" ? "暂无即将开始的赛程。" : "No upcoming scheduled fixtures."}
               </div>
             ) : (
               <>
@@ -850,15 +886,15 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginTop: '12px', marginBottom: '14px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, gap: '6px', textAlign: 'center' }}>
                           {renderTeamFlag(m.home, "md")}
-                          <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={getPrettyName(m.home)}>
-                            {shortenName(getPrettyName(m.home))}
+                          <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={getTranslatedTeamName(m.home)}>
+                            {language === "zh" ? getTranslatedTeamName(m.home) : shortenName(getPrettyName(m.home))}
                           </span>
                         </div>
                         <span style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--text-tertiary)', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)', alignSelf: 'center', marginBottom: '16px' }}>VS</span>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, gap: '6px', textAlign: 'center' }}>
                           {renderTeamFlag(m.away, "md")}
-                          <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={getPrettyName(m.away)}>
-                            {shortenName(getPrettyName(m.away))}
+                          <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={getTranslatedTeamName(m.away)}>
+                            {language === "zh" ? getTranslatedTeamName(m.away) : shortenName(getPrettyName(m.away))}
                           </span>
                         </div>
                       </div>
@@ -880,11 +916,11 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
           <section className="matches-section">
             <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ display: 'inline-block', color: 'var(--text-secondary)' }}><CheckIcon size={16} /></span>
-              COMPLETED MATCHES ({finishedMatches.length})
+              {language === "zh" ? "已结束的比赛" : "COMPLETED MATCHES"} ({finishedMatches.length})
             </h3>
             {finishedMatches.length === 0 ? (
               <div className="glass-card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.85rem', border: '1px dashed var(--border-default)' }}>
-                No completed matches.
+                {language === "zh" ? "暂无已完场的比赛。" : "No completed matches."}
               </div>
             ) : (
               <>
@@ -916,7 +952,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
                           <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {renderTeamFlag(m.home, "md")}
                             <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
-                              {shortenName(getPrettyName(m.home))}
+                              {language === "zh" ? getTranslatedTeamName(m.home) : shortenName(getPrettyName(m.home))}
                             </span>
                           </span>
                           <span style={{ fontFamily: 'monospace', fontSize: '1rem', fontWeight: '700', color: 'var(--text-secondary)' }}>
@@ -927,7 +963,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
                           <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {renderTeamFlag(m.away, "md")}
                             <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
-                              {shortenName(getPrettyName(m.away))}
+                              {language === "zh" ? getTranslatedTeamName(m.away) : shortenName(getPrettyName(m.away))}
                             </span>
                           </span>
                           <span style={{ fontFamily: 'monospace', fontSize: '1rem', fontWeight: '700', color: 'var(--text-secondary)' }}>
@@ -939,7 +975,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
                       {/* Venue & FT status */}
                       <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>
                         <span>📍 {m.venue.length > 22 ? `${m.venue.slice(0, 20)}...` : m.venue}</span>
-                        <span style={{ color: 'var(--text-tertiary)' }}>✓ FT</span>
+                        <span style={{ color: 'var(--text-tertiary)' }}>✓ {language === "zh" ? "完场" : "FT"}</span>
                       </div>
                     </div>
                   ))}

@@ -3,6 +3,7 @@ import { TrophyIcon, ClockIcon, GreenDotIcon, FlagIcon, DumbbellIcon, GoldMedalI
 import { ethers } from "ethers";
 import { WalletState } from "../lib/wallet";
 import STATIC_DEPLOYED_ADDRESSES from "../deployed-addresses.json";
+import { useLanguage } from "../context/LanguageContext";
 
 const VAULT_ABI = [
   "function getCredits(address user) external view returns (uint256)",
@@ -21,6 +22,7 @@ interface LeaderboardProps {
 }
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
+  const { language, t } = useLanguage();
   const isMainnet = wallet.chainId !== 1952;
   const DEPLOYED_ADDRESSES = isMainnet
     ? ((STATIC_DEPLOYED_ADDRESSES as any).xlayerMainnet || STATIC_DEPLOYED_ADDRESSES)
@@ -201,12 +203,12 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         
         // 4. Map to display formats
         const mapped = sorted.map((item, index) => {
-          let name = `Scout Manager #${index + 1}`;
+          let name = language === "zh" ? `特工经理 #${index + 1}` : `Scout Manager #${index + 1}`;
           
           if (item.address.toLowerCase() === DEPLOYED_ADDRESSES.deployer.toLowerCase()) {
-            name = "Deployer Admin";
+            name = language === "zh" ? "部署者管理员" : "Deployer Admin";
           } else if (wallet.address && item.address.toLowerCase() === wallet.address.toLowerCase()) {
-            name = "You";
+            name = language === "zh" ? "您" : "You";
           }
           
           let sharePercent = "0%";
@@ -248,7 +250,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
       <div className="panel-header" style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
         <span className="panel-icon" style={{ display: "flex", alignItems: "center" }}><TrophyIcon size={20} style={{ marginRight: 0 }} /></span>
         <h3 className="panel-title" style={{ fontSize: "1.15rem", fontWeight: "700", color: "#fff", margin: 0 }}>
-          Global Scout Leaderboard ({isMainnet ? "Mainnet" : "Testnet Sandbox"})
+          {language === "zh" ? "全球特工积分排行榜" : "Global Scout Leaderboard"} ({isMainnet ? (language === "zh" ? "主网" : "Mainnet") : (language === "zh" ? "测试网沙盒" : "Testnet Sandbox")})
         </h3>
       </div>
 
@@ -265,7 +267,13 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         {/* Campaign Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {campaignTime.phase === 'pre' ? <><ClockIcon /> Campaign Starts In</> : campaignTime.phase === 'live' ? <>🟢 Campaign LIVE - Ends In</> : <><FlagIcon /> Campaign Ended</>}
+            {campaignTime.phase === 'pre' ? (
+              <><ClockIcon /> {language === "zh" ? "距离活动开始" : "Campaign Starts In"}</>
+            ) : campaignTime.phase === 'live' ? (
+              <>🟢 {language === "zh" ? "活动进行中 - 结束倒计时" : "Campaign LIVE - Ends In"}</>
+            ) : (
+              <><FlagIcon /> {language === "zh" ? "活动已结束" : "Campaign Ended"}</>
+            )}
           </span>
           <span style={{
             fontSize: '0.62rem', fontWeight: '700', padding: '2px 10px', borderRadius: '20px',
@@ -273,7 +281,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
             color: campaignTime.phase === 'live' ? '#00ff88' : '#FFD700',
             border: `1px solid ${campaignTime.phase === 'live' ? 'rgba(0,255,136,0.3)' : 'rgba(255,215,0,0.25)'}`,
           }}>
-            {isMainnet ? 'SEASON 1 · GROUP STAGE' : 'PRE-SEASON WARM-UP'}
+            {isMainnet ? (language === "zh" ? "第一赛季 · 小组赛" : "SEASON 1 · GROUP STAGE") : (language === "zh" ? "季前热身赛" : "PRE-SEASON WARM-UP")}
           </span>
         </div>
 
@@ -281,10 +289,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         {campaignTime.phase !== 'ended' && (
           <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
             {[
-              { v: campaignTime.days, l: 'D' },
-              { v: campaignTime.hours, l: 'H' },
-              { v: campaignTime.minutes, l: 'M' },
-              { v: campaignTime.seconds, l: 'S' },
+              { v: campaignTime.days, l: language === "zh" ? "天" : "D" },
+              { v: campaignTime.hours, l: language === "zh" ? "时" : "H" },
+              { v: campaignTime.minutes, l: language === "zh" ? "分" : "M" },
+              { v: campaignTime.seconds, l: language === "zh" ? "秒" : "S" },
             ].map((u, i) => (
               <React.Fragment key={u.l}>
                 {i > 0 && <span style={{ alignSelf: 'center', fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-tertiary)' }}>:</span>}
@@ -306,13 +314,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
           {isMainnet ? (
             <>
-              <strong style={{ color: '#FFD700', display: "inline-flex", alignItems: "center", gap: "4px" }}><TrophyIcon size={14} style={{ marginRight: 0 }} /> Prize Pool:</strong> 100% of Aave V3 USDT yield generated by all deposits during the 2-week campaign.
-              Top managers by Scout Credits win proportional shares. <strong style={{ color: '#fff' }}>Deposits are fully returnable - no loss.</strong>
+              <strong style={{ color: '#FFD700', display: "inline-flex", alignItems: "center", gap: "4px" }}><TrophyIcon size={14} style={{ marginRight: 0 }} /> {language === "zh" ? "奖金池:" : "Prize Pool:"}</strong> {language === "zh" ? "在为期两周的活动期间，所有存款产生的 Aave V3 USDT 收益将 100% 作为奖金。根据特工积分进行排名的顶级经理将赢得相应比例的分成。质押本金 100% 可随时赎回 - 零本金损失。" : "100% of Aave V3 USDT yield generated by all deposits during the 2-week campaign. Top managers by Scout Credits win proportional shares. Deposits are fully returnable - no loss."}
             </>
           ) : (
             <>
-              <strong style={{ color: 'var(--accent-blue)', display: "inline-flex", alignItems: "center", gap: "4px" }}><DumbbellIcon size={14} style={{ marginRight: 0 }} /> Pre-Season Campaign:</strong> Practice the full flow with testnet USDT before World Cup kicks off.
-              Top the leaderboard here to warm up - <strong style={{ color: '#fff' }}>mainnet Season 1 goes live on June 11!</strong>
+              <strong style={{ color: 'var(--accent-blue)', display: "inline-flex", alignItems: "center", gap: "4px" }}><DumbbellIcon size={14} style={{ marginRight: 0 }} /> {language === "zh" ? "季前热身活动:" : "Pre-Season Campaign:"}</strong> {language === "zh" ? "在世界杯开始前，使用测试网 USDT 体验完整的流程。在排行榜上争取名次来热身 —— 主网第一赛季将于 6 月 11 日正式上线！" : "Practice the full flow with testnet USDT before World Cup kicks off. Top the leaderboard here to warm up - mainnet Season 1 goes live on June 11!"}
             </>
           )}
         </div>
@@ -328,23 +334,23 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         fontSize: '0.75rem',
       }}>
         <div style={{ fontWeight: '700', color: '#fff', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span>⚡ Scout Multipliers (Hold $PSAI to Boost Virtual Yield)</span>
+          <span>{language === "zh" ? "⚡ 特工收益乘数 (持有 $PSAI 提升虚拟收益倍数)" : "⚡ Scout Multipliers (Hold $PSAI to Boost Virtual Yield)"}</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', textAlign: 'center' }}>
           <div style={{ padding: '6px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid rgba(168, 85, 247, 0.15)' }}>
-            <div style={{ color: '#c084fc', fontWeight: 'bold' }}>1.5x Boost</div>
+            <div style={{ color: '#c084fc', fontWeight: 'bold' }}>{language === "zh" ? "1.5倍加速" : "1.5x Boost"}</div>
             <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ 10k PSAI</div>
           </div>
           <div style={{ padding: '6px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid rgba(14, 165, 233, 0.15)' }}>
-            <div style={{ color: '#38bdf8', fontWeight: 'bold' }}>2.0x Boost</div>
+            <div style={{ color: '#38bdf8', fontWeight: 'bold' }}>{language === "zh" ? "2.0倍加速" : "2.0x Boost"}</div>
             <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ 50k PSAI</div>
           </div>
           <div style={{ padding: '6px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.15)' }}>
-            <div style={{ color: '#fbbf24', fontWeight: 'bold' }}>3.0x Boost</div>
+            <div style={{ color: '#fbbf24', fontWeight: 'bold' }}>{language === "zh" ? "3.0倍加速" : "3.0x Boost"}</div>
             <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ 250k PSAI</div>
           </div>
           <div style={{ padding: '6px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid rgba(34, 197, 94, 0.15)' }}>
-            <div style={{ color: '#4ade80', fontWeight: 'bold' }}>👑 5.0x Boost</div>
+            <div style={{ color: '#4ade80', fontWeight: 'bold' }}>{language === "zh" ? "👑 5.0倍加速" : "👑 5.0x Boost"}</div>
             <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ 1M PSAI</div>
           </div>
         </div>
@@ -353,15 +359,15 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
 
       {loading && leaderboard.length === 0 ? (
         <div style={{ textAlign: "center", color: "var(--text-tertiary)", fontSize: "0.8rem", padding: "20px" }}>
-          ⏳ Scanning {isMainnet ? "Mainnet" : "Testnet"} blocks for participants...
+          {language === "zh" ? `⏳ 正在扫描 ${isMainnet ? "主网" : "测试网"} 区块以寻找参与者...` : `⏳ Scanning ${isMainnet ? "Mainnet" : "Testnet"} blocks for participants...`}
         </div>
       ) : (
         <div className="leaderboard-table" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <div className="table-header" style={{ display: "grid", gridTemplateColumns: "0.55fr 2fr 1.65fr 1.1fr", fontSize: "0.72rem", color: "var(--text-tertiary)", fontWeight: "700", textTransform: "uppercase", paddingBottom: "8px", borderBottom: "1px solid var(--border-default)" }}>
-            <span>Rank</span>
-            <span>Manager</span>
-            <span style={{ textAlign: "right" }}>Scout Credits</span>
-            <span style={{ textAlign: "right" }}>Staked / Share</span>
+            <span>{language === "zh" ? "排名" : "Rank"}</span>
+            <span>{language === "zh" ? "经理" : "Manager"}</span>
+            <span style={{ textAlign: "right" }}>{language === "zh" ? "特工积分" : "Scout Credits"}</span>
+            <span style={{ textAlign: "right" }}>{language === "zh" ? "质押 / 份额" : "Staked / Share"}</span>
           </div>
 
           {leaderboard.map((item) => {
@@ -392,7 +398,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
                 </span>
                 <span className="manager-info" style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                   <span style={{ fontWeight: "600", color: isCurrentUser ? "var(--accent-safe)" : "#fff", display: "flex", alignItems: "center", gap: "6px" }}>
-                    {item.name} {isCurrentUser && "(You)"}
+                    {item.name} {isCurrentUser && (language === "zh" ? "(您)" : "(You)")}
                     {item.multiplier > 1.0 && (
                       <span className="badge" style={{ 
                         fontSize: "0.6rem", 
@@ -418,7 +424,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
                           item.multiplier === 2.0 ? "1px solid rgba(14, 165, 233, 0.4)" :
                           "1px solid rgba(168, 85, 247, 0.4)"
                       }}>
-                        {item.multiplier === 5.0 ? "👑 5.0x" : `⚡ ${item.multiplier.toFixed(1)}x`}
+                        {item.multiplier === 5.0 ? (language === "zh" ? "👑 5.0倍" : "👑 5.0x") : (language === "zh" ? `⚡ ${item.multiplier.toFixed(1)}倍` : `⚡ ${item.multiplier.toFixed(1)}x`)}
                       </span>
                     )}
                   </span>
@@ -431,7 +437,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
                 </span>
                 <span className="font-mono" style={{ textAlign: "right", color: "var(--text-secondary)", display: "flex", flexDirection: "column", gap: "1px", fontSize: "0.75rem" }}>
                   <span>{item.portfolio}</span>
-                  <span style={{ fontSize: "0.65rem", color: "var(--text-tertiary)" }}>Share: {item.share}</span>
+                  <span style={{ fontSize: "0.65rem", color: "var(--text-tertiary)" }}>{language === "zh" ? "份额: " : "Share: "}{item.share}</span>
                 </span>
               </div>
             );

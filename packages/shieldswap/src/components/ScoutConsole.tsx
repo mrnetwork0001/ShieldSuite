@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { TerminalIcon, ShoeIcon, NewsIcon, WarningOctagonIcon, TrophyIcon, SignalIcon, CrossIcon, CheckIcon, CalendarIcon } from "./Icons";
 import { motion } from "framer-motion";
 import { WalletState } from "../lib/wallet";
+import { useLanguage } from "../context/LanguageContext";
 
 interface AgentLog {
   id: string;
@@ -24,6 +25,7 @@ const PLAYERS_LIST = [
 ];
 
 export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLog }) => {
+  const { language, t } = useLanguage();
   const [logs, setLogs] = useState<AgentLog[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState("1");
   const [eventType, setEventType] = useState("GOAL");
@@ -172,7 +174,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
           id: `${Date.now()}`,
           timestamp: Date.now(),
           type: "info",
-          message: `Simulated event triggered: ${desc}`
+          message: language === "zh" ? `模拟事件已触发: ${desc}` : `Simulated event triggered: ${desc}`
         });
         setNewsText("");
         // Poll rapidly to pick up inline agent processing logs
@@ -192,26 +194,26 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
     <div className="scout-console glass-card">
       <div className="panel-header">
         <span className="panel-icon"><TerminalIcon /></span>
-        <h3 className="panel-title">AI Scout Autonomous Console</h3>
+        <h3 className="panel-title">{language === "zh" ? "AI 特工自治控制台" : "AI Scout Autonomous Console"}</h3>
       </div>
 
       {/* TEE Enclave Status */}
       <div className="tee-status-box glass-card">
         <div className="tee-status-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div className="tee-label">ENCLAVE ATTESTATION STATUS</div>
+            <div className="tee-label">{language === "zh" ? "隔离区加密证明状态 (ATTESTATION)" : "ENCLAVE ATTESTATION STATUS"}</div>
             <div className="tee-address font-mono">
-              Address: {agentAddress ? `${agentAddress.slice(0, 10)}...${agentAddress.slice(-8)}` : "Loading..."}
+              {language === "zh" ? "地址" : "Address"}: {agentAddress ? `${agentAddress.slice(0, 10)}...${agentAddress.slice(-8)}` : (language === "zh" ? "正在加载..." : "Loading...")}
             </div>
           </div>
-          <span className="tee-badge badge-safe" style={{ flexShrink: 0 }}>● TEE ACTIVE</span>
+          <span className="tee-badge badge-safe" style={{ flexShrink: 0 }}>● {language === "zh" ? "TEE 硬件隔离区已激活" : "TEE ACTIVE"}</span>
         </div>
       </div>
 
       {/* Terminal Logs */}
       <div ref={consoleLogsRef} className="console-logs font-mono">
         {logs.length === 0 ? (
-          <div className="console-loading">Awaiting agent execution pulse...</div>
+          <div className="console-loading">{language === "zh" ? "正在等待 AI 特工心跳包..." : "Awaiting agent execution pulse..."}</div>
         ) : (
           logs.slice().reverse().map((log) => {
             const timeStr = new Date(log.timestamp).toLocaleTimeString();
@@ -292,22 +294,22 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
       ) : (
         <div className="simulator-box glass-card" style={{ border: '1px solid rgba(0, 255, 136, 0.3)', background: 'rgba(0, 255, 136, 0.02)' }}>
           <div className="simulator-header" style={{ color: '#00ff88', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span><TrophyIcon /></span> FIFA World Cup 2026
+            <span><TrophyIcon /></span> {language === "zh" ? "2026 国际足联世界杯" : "FIFA World Cup 2026"}
           </div>
           
           {/* Live Status Indicator */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '16px 0', background: 'rgba(0, 255, 136, 0.1)', border: '1px solid rgba(0, 255, 136, 0.2)', padding: '8px 16px', borderRadius: '8px' }}>
             <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#00ff88', boxShadow: '0 0 8px #00ff88', display: 'inline-block', animation: 'glow-pulse 1.5s ease-in-out infinite' }} />
-            <span style={{ fontSize: '0.9rem', fontWeight: 'bold', letterSpacing: '0.05em', color: '#00ff88', fontFamily: 'monospace' }}>TOURNAMENT LIVE</span>
+            <span style={{ fontSize: '0.9rem', fontWeight: 'bold', letterSpacing: '0.05em', color: '#00ff88', fontFamily: 'monospace' }}>{language === "zh" ? "赛事进行中" : "TOURNAMENT LIVE"}</span>
           </div>
 
           <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.4', margin: '0 0 8px 0' }}>
-            On mainnet, match data auto-syncs every 60 seconds during live World Cup matches. Verify the Live Data integration below.
+            {language === "zh" ? "主网环境下，世界杯实时比赛数据每 60 秒自动同步一次。请点击下方按钮验证实时数据源集成。" : "On mainnet, match data auto-syncs every 60 seconds during live World Cup matches. Verify the Live Data integration below."}
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', fontSize: '0.72rem' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00ff88', boxShadow: '0 0 6px #00ff88', display: 'inline-block', flexShrink: 0, animation: 'glow-pulse 2s ease-in-out infinite' }} />
-            <span style={{ color: 'var(--text-secondary)' }}>Auto-Sync: <strong style={{ color: '#00ff88' }}>Active</strong> (every 60s on Mainnet)</span>
+            <span style={{ color: 'var(--text-secondary)' }}>{language === "zh" ? "自动同步:" : "Auto-Sync:"} <strong style={{ color: '#00ff88' }}>{language === "zh" ? "已激活" : "Active"}</strong> {language === "zh" ? "（主网每 60 秒）" : "(every 60s on Mainnet)"}</span>
           </div>
 
           {/* Sportmonks Plan & Roadmap Box */}
@@ -321,14 +323,14 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
             lineHeight: '1.4' 
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-              <span style={{ color: 'var(--text-tertiary)' }}>API Data Integration:</span>
+              <span style={{ color: 'var(--text-tertiary)' }}>{language === "zh" ? "API 数据集成:" : "API Data Integration:"}</span>
               <span style={{ color: '#00ff88', fontWeight: 'bold' }}>Sportmonks Live Feed</span>
             </div>
             <div style={{ color: 'var(--text-secondary)', fontSize: '0.68rem' }}>
-              <strong>Active Pipeline:</strong> Real-time match fixtures, lineups, scores, and live match events trigger TEE agent speculation.
+              <strong>{language === "zh" ? "活跃数据流:" : "Active Pipeline:"}</strong> {language === "zh" ? "实时赛程、首发阵容、比分以及赛场实时事件将自动触发 TEE 特工竞猜操盘。" : "Real-time match fixtures, lineups, scores, and live match events trigger TEE agent speculation."}
             </div>
             <div style={{ marginTop: '8px', borderTop: '1px dashed rgba(255, 255, 255, 0.08)', paddingTop: '6px', color: 'var(--text-tertiary)', fontSize: '0.68rem' }}>
-              🔮 <strong>Future Roadmap:</strong> Expanding feed to support global football news feeds, prediction/odds sentiment parsing, and advanced xG metrics.
+              🔮 <strong>{language === "zh" ? "未来路线图:" : "Future Roadmap:"}</strong> {language === "zh" ? "扩展数据源以支持全球足球新闻推送、赔率情感分析以及先进的 xG 数据指标。" : "Expanding feed to support global football news feeds, prediction/odds sentiment parsing, and advanced xG metrics."}
             </div>
           </div>
 
@@ -378,7 +380,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
                     id: `live-feed-${Date.now()}`,
                     timestamp: Date.now(),
                     type: "info",
-                    message: data.message || `Loaded ${totalMatches} matches from live feed.`
+                    message: language === "zh" ? `从实时数据源成功加载了 ${totalMatches} 场比赛。` : (data.message || `Loaded ${totalMatches} matches from live feed.`)
                   });
                 } else {
                   setLiveDataFeed(prev => ({ ...prev, loading: false }));
@@ -391,7 +393,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
             disabled={liveDataFeed.loading}
             style={{ background: 'linear-gradient(135deg, #4B7BF5 0%, #A855F7 100%)', borderColor: '#4B7BF5', color: '#fff' }}
           >
-            {liveDataFeed.loading ? "Fetching live match data..." : <><SignalIcon /> Verify Live Data Feed</>}
+            {liveDataFeed.loading ? (language === "zh" ? "正在获取实时比赛数据..." : "Fetching live match data...") : <><SignalIcon /> {language === "zh" ? "验证实时数据源" : "Verify Live Data Feed"}</>}
           </button>
         </div>
       )}
@@ -425,10 +427,10 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700', color: '#fff' }}>
-                  <SignalIcon /> Live Match Data Feed
+                  <SignalIcon /> {language === "zh" ? "实时比赛数据源" : "Live Match Data Feed"}
                 </h3>
                 <p style={{ margin: '4px 0 0', fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
-                  Verified at {safeFormatTime(liveDataFeed.timestamp)}
+                  {language === "zh" ? "验证于" : "Verified at"} {safeFormatTime(liveDataFeed.timestamp)}
                 </p>
               </div>
               <button
@@ -453,7 +455,11 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
             }}>
               <CheckIcon size={18} style={{ color: "var(--accent-safe)" }} />
               <span style={{ fontSize: '0.78rem', color: '#fff' }}>
-                <strong style={{ color: '#00ff88' }}>{liveDataFeed.totalMatches} matches</strong> fetched across <strong>{liveDataFeed.results.length} leagues</strong>
+                {language === "zh" ? (
+                  <>成功获取 <strong>{liveDataFeed.results.length} 个联赛</strong>的的 <strong style={{ color: '#00ff88' }}>{liveDataFeed.totalMatches} 场比赛</strong></>
+                ) : (
+                  <><strong style={{ color: '#00ff88' }}>{liveDataFeed.totalMatches} matches</strong> fetched across <strong>{liveDataFeed.results.length} leagues</strong></>
+                )}
               </span>
             </div>
 
@@ -482,7 +488,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
                             width: '5px', height: '5px', borderRadius: '50%', background: '#ff3b5c',
                             animation: 'pulse-live 1.5s ease-in-out infinite',
                           }} />
-                          {(league.matches || []).filter((m: any) => m.status === 'LIVE').length} LIVE
+                          {(league.matches || []).filter((m: any) => m.status === 'LIVE').length} {language === "zh" ? "场进行中" : "LIVE"}
                         </span>
                       )}
                       {/* Total count */}
@@ -492,12 +498,12 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
                         color: league.matchCount > 0 ? '#00ff88' : 'var(--text-tertiary)',
                         border: `1px solid ${league.matchCount > 0 ? 'rgba(0,255,136,0.2)' : 'transparent'}`,
                       }}>
-                        {league.matchCount > 0 ? `${league.matchCount} match${league.matchCount > 1 ? 'es' : ''}` : 'No active matches'}
+                        {league.matchCount > 0 ? (language === "zh" ? `${league.matchCount} 场比赛` : `${league.matchCount} match${league.matchCount > 1 ? 'es' : ''}`) : (language === "zh" ? "暂无活跃比赛" : "No active matches")}
                       </span>
                     </div>
                   </div>
 
-                  {/* Match Rows - show up to 5 for leagues with live matches */}
+                  {/* Match Rows - show up to 3 for leagues with live matches */}
                   {(league.matches || []).slice(0, 3).map((m: any, i: number) => (
                     <div key={i} style={{
                       display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'center',
@@ -539,7 +545,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
                               animation: 'pulse-live 1.5s ease-in-out infinite',
                               boxShadow: '0 0 4px #ff3b5c',
                             }} />
-                            LIVE{m.minute ? ` ${(() => {
+                            {language === "zh" ? "进行中" : "LIVE"}{m.minute ? ` ${(() => {
                               const minStr = String(m.minute).replace(':00', "'").replace(/(\d+):(\d+)/, "$1'");
                               if (minStr.endsWith("'") || isNaN(Number(minStr))) return minStr;
                               return `${minStr}'`;
@@ -552,7 +558,7 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
                           color: m.status === 'FINISHED' ? '#aaa' : 'var(--accent-blue)',
                           fontWeight: '500',
                         }}>
-                          {m.status === 'FINISHED' ? `✓ ${m.score} FT` : `${safeFormatShortDate(m.date)}`}
+                          {m.status === 'FINISHED' ? (language === "zh" ? `✓ ${m.score} 完场` : `✓ ${m.score} FT`) : `${safeFormatShortDate(m.date)}`}
                         </span>
                       )}
                     </div>
@@ -563,7 +569,11 @@ export const ScoutConsole: React.FC<ScoutConsoleProps> = ({ wallet, onActivityLo
 
             {/* Footer */}
             <div style={{ marginTop: '16px', padding: '10px 12px', background: 'rgba(75,123,245,0.05)', borderRadius: '8px', border: '1px solid rgba(75,123,245,0.1)', textAlign: 'center', fontSize: '0.68rem', color: 'var(--text-tertiary)', lineHeight: '1.5' }}>
-              <strong style={{ color: 'var(--accent-blue)' }}>Real-time Live Data Pipeline</strong> - professional-grade live World Cup 2026 match data.<br />During World Cup, live scores auto-sync every 60s and trigger onchain trades.
+              {language === "zh" ? (
+                <><strong>实时数据流水线</strong> - 专业级 2026 年世界杯实时比分数据。<br />在世界杯期间，实时比分每 60 秒自动同步并触发特工链上交易。</>
+              ) : (
+                <><strong>Real-time Live Data Pipeline</strong> - professional-grade live World Cup 2026 match data.<br />During World Cup, live scores auto-sync every 60s and trigger onchain trades.</>
+              )}
             </div>
           </div>
         </div>

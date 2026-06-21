@@ -8,6 +8,8 @@ import { WalletState, shortenAddress, formatBalance } from "../lib/wallet";
 import { XLAYER_CHAIN, XLAYER_TESTNET, getExplorerUrl, switchToChain } from "../lib/xlayer";
 import { ethers } from "ethers";
 import { DocsIcon, ShieldIcon, CopyIcon, HistoryIcon, DisconnectIcon, NetworkDot } from "./Icons";
+import { useLanguage } from "../context/LanguageContext";
+
 
 interface HeaderProps {
   wallet: WalletState;
@@ -25,6 +27,7 @@ interface TxHistoryItem {
 }
 
 const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, activeTab, setActiveTab, audioMuted, setAudioMuted }) => {
+  const { language, setLanguage, t } = useLanguage();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [txHistory, setTxHistory] = useState<TxHistoryItem[]>([]);
@@ -97,7 +100,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
           </div>
           <div>
             <h1 className="header-title">ShieldSuite</h1>
-            <span className="header-tagline">Scan. Verify. Stake & Speculate.</span>
+            <span className="header-tagline">{t("lp_tagline")}</span>
           </div>
         </div>
 
@@ -108,7 +111,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
               className={`tab-btn ${activeTab === "docs" ? "active" : ""}`}
               onClick={() => setActiveTab("docs")}
             >
-              <DocsIcon /> Docs
+              <DocsIcon /> {t("nav_docs")}
             </button>
           ) : (
             <>
@@ -116,162 +119,188 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                 className={`tab-btn ${activeTab === "swap" ? "active" : ""}`}
                 onClick={() => setActiveTab("swap")}
               >
-                <ShieldIcon /> ShieldSwap
+                <ShieldIcon /> {t("nav_shieldswap")}
               </button>
               <button
                 className={`tab-btn ${activeTab === "pitchside" ? "active" : ""}`}
                 onClick={() => setActiveTab("pitchside")}
               >
-                ⚽ Pitchside AI
+                {t("nav_pitchside")}
               </button>
             </>
           )}
         </div>
 
-        {/* Desktop Actions */}
-        {activeTab !== "home" && (
-          <div className="header-actions desktop-only">
-            {/* Chain switcher */}
-            <div className="chain-switcher-select font-mono" style={{ pointerEvents: 'none', background: 'rgba(75, 123, 245, 0.06)', border: '1px solid rgba(75, 123, 245, 0.2)' }}>
-              <NetworkDot /> XLayer Mainnet
-            </div>
+        {/* Right Actions Wrapper (contains Language Toggle, Desktop Actions, and Mobile Hamburger) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Language Toggle Button */}
+          <button
+            onClick={() => setLanguage(language === "en" ? "zh" : "en")}
+            className="lang-toggle-btn font-mono"
+            style={{
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-full)',
+              color: 'var(--text-secondary)',
+              padding: '6px 12px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              transition: 'all 0.2s',
+              zIndex: 9991
+            }}
+          >
+            <span>🌐</span>
+            <span>{language === "en" ? "EN" : "中"}</span>
+          </button>
 
-            {/* Mute toggle button (only on Pitchside AI) */}
-            {activeTab === "pitchside" && (
-              <button
-                onClick={() => setAudioMuted(!audioMuted)}
-                className="btn-mute-toggle"
-                title={audioMuted ? "Unmute music" : "Mute music"}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid var(--border-default)',
-                  borderRadius: '8px',
-                  color: 'var(--text-primary)',
-                  padding: '8px 12px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '0.8rem',
-                  fontWeight: 500,
-                  transition: 'all 0.2s'
-                }}
-              >
-                <span>{audioMuted ? "🔇" : "🔊"}</span>
-                <span className="desktop-only">{audioMuted ? "Unmute" : "Mute"}</span>
-              </button>
-            )}
-
-            {/* Wallet button / dropdown */}
-            {wallet.connected ? (
-              <div className="wallet-dropdown-wrapper" ref={dropdownRef}>
-                <button
-                  className="wallet-connected"
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                >
-                  <div className="wallet-info">
-                    <span className="wallet-balance font-mono">
-                      {formatBalance(wallet.balance || "0")} OKB
-                    </span>
-                    <span className="wallet-address font-mono">
-                      {shortenAddress(wallet.address || "")}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>▾</span>
-                </button>
-
-                <AnimatePresence>
-                  {dropdownOpen && (
-                    <motion.div
-                      className="wallet-dropdown glass-card"
-                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      <div className="wd-address">
-                        <span className="font-mono">{wallet.address}</span>
-                        <button
-                          className="wd-copy"
-                          onClick={() => {
-                            navigator.clipboard.writeText(wallet.address || "");
-                          }}
-                          title="Copy address"
-                        >
-                          <CopyIcon />
-                        </button>
-                      </div>
-                      <div className="wd-divider" />
-                      <div className="wd-section-title"><HistoryIcon /> Recent Transactions</div>
-                      {loadingTx ? (
-                        <div className="wd-loading">Loading...</div>
-                      ) : txHistory.length > 0 ? (
-                        <div className="wd-tx-list">
-                          {txHistory.map((tx) => (
-                            <a
-                              key={tx.hash}
-                              href={getExplorerUrl("tx", tx.hash, wallet.chainId || 196)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="wd-tx-item"
-                            >
-                              <span className="font-mono">
-                                {tx.hash.slice(0, 8)}...{tx.hash.slice(-6)}
-                              </span>
-                              <span className="wd-tx-block">Block {tx.blockNumber}</span>
-                            </a>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="wd-loading" style={{ color: 'var(--text-tertiary)' }}>
-                          No recent transactions found
-                        </div>
-                      )}
-                      <a
-                        href={getExplorerUrl("address", wallet.address || "", wallet.chainId || 196)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="wd-view-all"
-                      >
-                        View all on Explorer →
-                      </a>
-                      <div className="wd-divider" />
-                      <button
-                        className="wd-disconnect"
-                        onClick={() => {
-                          onDisconnect();
-                          setDropdownOpen(false);
-                        }}
-                      >
-                        <DisconnectIcon /> Disconnect Wallet
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+          {activeTab !== "home" && (
+            <div className="header-actions desktop-only">
+              {/* Chain switcher */}
+              <div className="chain-switcher-select font-mono" style={{ pointerEvents: 'none', background: 'rgba(75, 123, 245, 0.06)', border: '1px solid rgba(75, 123, 245, 0.2)' }}>
+                <NetworkDot /> {t("nav_xlayer_mainnet")}
               </div>
-            ) : (
-              <button className="btn btn-primary" onClick={onConnect}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M14 3H2a1 1 0 00-1 1v8a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1zm-2 7a1 1 0 110-2 1 1 0 010 2z" />
-                </svg>
-                Connect Wallet
-              </button>
-            )}
-          </div>
-        )}
 
-        {/* Mobile Hamburger Button */}
-        <button 
-          className="mobile-menu-btn mobile-only"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          <div className={`hamburger ${mobileMenuOpen ? 'active' : ''}`}>
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        </button>
+              {/* Mute toggle button (only on Pitchside AI) */}
+              {activeTab === "pitchside" && (
+                <button
+                  onClick={() => setAudioMuted(!audioMuted)}
+                  className="btn-mute-toggle"
+                  title={audioMuted ? t("nav_unmute") : t("nav_mute")}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid var(--border-default)',
+                    borderRadius: '8px',
+                    color: 'var(--text-primary)',
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '0.8rem',
+                    fontWeight: 500,
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <span>{audioMuted ? "🔇" : "🔊"}</span>
+                  <span className="desktop-only">{audioMuted ? t("nav_unmute") : t("nav_mute")}</span>
+                </button>
+              )}
+
+              {/* Wallet button / dropdown */}
+              {wallet.connected ? (
+                <div className="wallet-dropdown-wrapper" ref={dropdownRef}>
+                  <button
+                    className="wallet-connected"
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                  >
+                    <div className="wallet-info">
+                      <span className="wallet-balance font-mono">
+                        {formatBalance(wallet.balance || "0")} OKB
+                      </span>
+                      <span className="wallet-address font-mono">
+                        {shortenAddress(wallet.address || "")}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>▾</span>
+                  </button>
+
+                  <AnimatePresence>
+                    {dropdownOpen && (
+                      <motion.div
+                        className="wallet-dropdown glass-card"
+                        initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <div className="wd-address">
+                          <span className="font-mono">{wallet.address}</span>
+                          <button
+                            className="wd-copy"
+                            onClick={() => {
+                              navigator.clipboard.writeText(wallet.address || "");
+                            }}
+                            title={t("nav_copy")}
+                          >
+                            <CopyIcon />
+                          </button>
+                        </div>
+                        <div className="wd-divider" />
+                        <div className="wd-section-title"><HistoryIcon /> {t("nav_recent_txs")}</div>
+                        {loadingTx ? (
+                          <div className="wd-loading">Loading...</div>
+                        ) : txHistory.length > 0 ? (
+                          <div className="wd-tx-list">
+                            {txHistory.map((tx) => (
+                              <a
+                                key={tx.hash}
+                                href={getExplorerUrl("tx", tx.hash, wallet.chainId || 196)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="wd-tx-item"
+                              >
+                                <span className="font-mono">
+                                  {tx.hash.slice(0, 8)}...{tx.hash.slice(-6)}
+                                </span>
+                                <span className="wd-tx-block">Block {tx.blockNumber}</span>
+                              </a>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="wd-loading" style={{ color: 'var(--text-tertiary)' }}>
+                            {t("nav_no_recent_txs")}
+                          </div>
+                        )}
+                        <a
+                          href={getExplorerUrl("address", wallet.address || "", wallet.chainId || 196)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="wd-view-all"
+                        >
+                          {t("nav_view_explorer")}
+                        </a>
+                        <div className="wd-divider" />
+                        <button
+                          className="wd-disconnect"
+                          onClick={() => {
+                            onDisconnect();
+                            setDropdownOpen(false);
+                          }}
+                        >
+                          <DisconnectIcon /> {t("nav_disconnect")}
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <button className="btn btn-primary" onClick={onConnect}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M14 3H2a1 1 0 00-1 1v8a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1zm-2 7a1 1 0 110-2 1 1 0 010 2z" />
+                  </svg>
+                  {t("nav_connect")}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Mobile Hamburger Button */}
+          <button 
+            className="mobile-menu-btn mobile-only"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            <div className={`hamburger ${mobileMenuOpen ? 'active' : ''}`}>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu Overlay */}
@@ -315,12 +344,12 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                     {activeTab !== "home" && (
                       <>
                         <div className="chain-switcher-select font-mono" style={{ width: "100%", pointerEvents: 'none', textAlign: 'center', background: 'rgba(75, 123, 245, 0.06)', border: '1px solid rgba(75, 123, 245, 0.2)' }}>
-                          <NetworkDot /> XLayer Mainnet
+                          <NetworkDot /> {t("nav_xlayer_mainnet")}
                         </div>
 
                         {wallet.connected ? (
                           <div className="mobile-wallet-card glass-card">
-                            <div className="mw-label">Connected Wallet</div>
+                            <div className="mw-label">{t("nav_connect")}</div>
                             <div className="mw-address font-mono">{shortenAddress(wallet.address || "")}</div>
                             <div className="mw-balance font-mono">{formatBalance(wallet.balance || "0")} OKB</div>
                             <button 
@@ -331,7 +360,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                                 setMobileMenuOpen(false);
                               }}
                             >
-                              <DisconnectIcon /> Disconnect
+                              <DisconnectIcon /> {t("nav_disconnect")}
                             </button>
                           </div>
                         ) : (
@@ -343,7 +372,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                               setMobileMenuOpen(false);
                             }}
                           >
-                            Connect Wallet
+                            {t("nav_connect")}
                           </button>
                         )}
                       </>
@@ -355,19 +384,19 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                           className={`nav-link-item ${activeTab === 'docs' ? 'active' : ''}`}
                           onClick={() => { setActiveTab('docs'); setMobileMenuOpen(false); }}
                           style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
-                        ><DocsIcon /> Docs</button>
+                        ><DocsIcon /> {t("nav_docs")}</button>
                       ) : (
                         <>
                           <button 
                             className={`nav-link-item ${activeTab === 'swap' ? 'active' : ''}`}
                             onClick={() => { setActiveTab('swap'); setMobileMenuOpen(false); }}
                             style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
-                          ><ShieldIcon /> ShieldSwap</button>
+                          ><ShieldIcon /> {t("nav_shieldswap")}</button>
                           <button 
                             className={`nav-link-item ${activeTab === 'pitchside' ? 'active' : ''}`}
                             onClick={() => { setActiveTab('pitchside'); setMobileMenuOpen(false); }}
                             style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
-                          >⚽ Pitchside AI</button>
+                          >{t("nav_pitchside")}</button>
                         </>
                       )}
                        {activeTab === "pitchside" && (
@@ -379,9 +408,22 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                           className="nav-link-item"
                           style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%', color: 'var(--text-primary)' }}
                         >
-                          {audioMuted ? "🔇 Unmute Music" : "🔊 Mute Music"}
+                          {audioMuted ? t("nav_unmute_music") : t("nav_mute_music")}
                         </button>
                       )}
+                      
+                      {/* Mobile Language Toggle */}
+                      <button
+                        onClick={() => {
+                          setLanguage(language === "en" ? "zh" : "en");
+                          setMobileMenuOpen(false);
+                        }}
+                        className="nav-link-item"
+                        style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}
+                      >
+                        <span>🌐</span> {language === "en" ? "切换至 中文 (ZH)" : "Switch to English (EN)"}
+                      </button>
+
                       <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
                       <a href="https://x.com/ShieldSuite_" target="_blank" rel="noopener noreferrer" className="nav-link-item">Twitter / X</a>
                     </div>

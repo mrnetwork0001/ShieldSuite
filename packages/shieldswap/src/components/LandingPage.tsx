@@ -3,6 +3,8 @@ import { ShieldIcon, CalendarIcon, TrophyIcon, ScienceIcon, CardIcon, RobotIcon,
 import { motion, AnimatePresence } from "framer-motion";
 import { ethers } from "ethers";
 import DEPLOYED_ADDRESSES from "../deployed-addresses.json";
+import { useLanguage } from "../context/LanguageContext";
+
 
 interface LandingPageProps {
   setActiveTab: (tab: "home" | "swap" | "pitchside") => void;
@@ -87,6 +89,7 @@ function getFlagUrl(teamName: string): string {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
+  const { t, language } = useLanguage();
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [liveMatches, setLiveMatches] = useState<any[]>([]);
   const [currentFixtureIndex, setCurrentFixtureIndex] = useState(0);
@@ -300,16 +303,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
       >
         <div className="token-banner-content">
           <div className="token-banner-left">
-            <span className="token-banner-badge font-mono">LIVE NOW</span>
+            <span className="token-banner-badge font-mono">{language === "zh" ? "现已上线" : "LIVE NOW"}</span>
             <span className="token-banner-title font-mono">$PSAI</span>
             <span className="token-banner-desc">
-              ShieldSuite Token is officially LIVE on X Layer!
+              {language === "zh" ? "ShieldSuite 代币已在 X Layer 正式上线！" : "ShieldSuite Token is officially LIVE on X Layer!"}
             </span>
             <div className="token-banner-ca-box" onClick={handleCopyAddress}>
               <span className="ca-label font-mono">CA:</span>
               <span className="ca-address font-mono">0xaef0...ede5d</span>
               <button className="btn-copy-ca font-mono">
-                {copied ? "Copied" : "Copy"}
+                {copied ? (language === "zh" ? "已复制" : "Copied") : (language === "zh" ? "复制" : "Copy")}
               </button>
             </div>
           </div>
@@ -320,7 +323,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
               rel="noopener noreferrer"
               className="btn btn-primary btn-banner-swap font-mono"
             >
-              Swap on Web
+              {language === "zh" ? "在网页端兑换" : "Swap on Web"}
             </a>
             <a
               href="https://web3.okx.com/download?deeplink=okx%3A%2F%2Fwallet%2Fdapp%2Furl%3FdappUrl%3Dhttps%253A%252F%252Fweb3.okx.com%252Fdex-swap%253Fchain%253Dx-layer%252Cx-layer%2526token%253D0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee%252C0xaef068ea820aafa00a2854bfd6cfab6d891ede5d"
@@ -329,7 +332,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
               className="btn btn-ghost btn-banner-swap font-mono"
               style={{ background: "rgba(255,255,255,0.05)" }}
             >
-              Swap on Mobile App
+              {language === "zh" ? "在手机 App 兑换" : "Swap on Mobile App"}
             </a>
           </div>
         </div>
@@ -345,7 +348,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <span className="soccer-ball-emoji">⚽</span> ROAD TO WORLD CUP 2026
+            <span className="soccer-ball-emoji">⚽</span> {language === "zh" ? "世界杯 2026 之路" : "ROAD TO WORLD CUP 2026"}
           </motion.div>
 
           <motion.h1
@@ -354,8 +357,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.1 }}
           >
-            Secure DeFi Aggregator & <br />
-            <span className="glow-text text-purple">No-Loss Speculation Network</span>
+            {language === "zh" ? (
+              <>
+                安全优先的 DeFi 聚合 & <br />
+                <span className="glow-text text-purple">零本金损失竞猜网络</span>
+              </>
+            ) : (
+              <>
+                Secure DeFi Aggregator & <br />
+                <span className="glow-text text-purple">No-Loss Speculation Network</span>
+              </>
+            )}
           </motion.h1>
 
           <motion.p
@@ -364,24 +376,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            Protect your trades with ScanGuard MCP's bytecode scanning and speculate on player index shares using virtual yield backed by Aave V3. Zero principal risk, maximum security.
+            {t("lp_hero_desc")}
           </motion.p>
 
           {/* Workflow Pathway */}
           <div className="workflow-pathway">
             <div className="pathway-step active">
               <span className="step-num">1</span>
-              <span className="step-label">Scan & Verify</span>
+              <span className="step-label">{language === "zh" ? "扫描与验证" : "Scan & Verify"}</span>
             </div>
             <div className="pathway-arrow"><ArrowRightIcon /></div>
             <div className="pathway-step active-glow">
               <span className="step-num">2</span>
-              <span className="step-label">Stake USDT</span>
+              <span className="step-label">{language === "zh" ? "质押 USDT" : "Stake USDT"}</span>
             </div>
             <div className="pathway-arrow"><ArrowRightIcon /></div>
             <div className="pathway-step active-purple">
               <span className="step-num">3</span>
-              <span className="step-label">Speculate Risk-Free</span>
+              <span className="step-label">{language === "zh" ? "零风险竞猜" : "Speculate Risk-Free"}</span>
             </div>
           </div>
 
@@ -396,13 +408,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
               className="btn btn-primary btn-lg-cta hover-glow"
               onClick={() => setActiveTab("pitchside")}
             >
-              ⚽ Launch Pitchside AI
+              ⚽ {language === "zh" ? "运行赛场 AI" : "Launch Pitchside AI"}
             </button>
             <button
               className="btn btn-ghost btn-lg-cta"
               onClick={() => setActiveTab("swap")}
             >
-              <ShieldIcon /> Enter ShieldSwap DEX
+              <ShieldIcon /> {language === "zh" ? "进入防卫兑换" : "Enter ShieldSwap DEX"}
             </button>
           </motion.div>
         </div>
@@ -422,7 +434,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
                   className="fixture-slide-content"
                 >
                   <div className="fixtures-header">
-                    <span className="fixture-tag font-mono" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><CalendarIcon size={12} style={{ marginRight: 0 }} /> UPCOMING FIXTURE</span>
+                    <span className="fixture-tag font-mono" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><CalendarIcon size={12} style={{ marginRight: 0 }} /> {language === "zh" ? "即将开始的比赛" : "UPCOMING FIXTURE"}</span>
                     <span className="group-badge font-mono">{activeFixture.group}</span>
                   </div>
 
@@ -440,15 +452,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
 
                   <div className="fixture-details">
                     <div className="detail-row">
-                      <span className="detail-label">Stadium:</span>
+                      <span className="detail-label">{language === "zh" ? "场馆:" : "Stadium:"}</span>
                       <span className="detail-value">{activeFixture.stadium}</span>
                     </div>
                     <div className="detail-row">
-                      <span className="detail-label">Date:</span>
+                      <span className="detail-label">{language === "zh" ? "日期:" : "Date:"}</span>
                       <span className="detail-value">{activeFixture.date}</span>
                     </div>
                     <div className="detail-row">
-                      <span className="detail-label">Time:</span>
+                      <span className="detail-label">{language === "zh" ? "时间:" : "Time:"}</span>
                       <span className="detail-value">{activeFixture.time}</span>
                     </div>
                   </div>
@@ -473,7 +485,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
               className="speculate-card-btn font-mono"
               onClick={() => setActiveTab("pitchside")}
             >
-              <TrophyIcon /> Speculate on Match
+              <TrophyIcon /> {language === "zh" ? "对比赛进行竞猜" : "Speculate on Match"}
             </button>
           </div>
         </div>
@@ -483,7 +495,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
       <section className="live-ticker-section glass-card">
         <div className="live-ticker-header">
           <span className="live-pulse" />
-          <span className="live-ticker-title font-mono">LIVE WORLD CUP MATCHES</span>
+          <span className="live-ticker-title font-mono">{language === "zh" ? "世界杯实时赛事" : "LIVE WORLD CUP MATCHES"}</span>
         </div>
         <div className="live-ticker-scroll-container">
           {liveMatches.length > 0 ? (
@@ -491,7 +503,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
               {liveMatches.map((match) => (
                 <div key={match.id} className="live-match-card" onClick={() => setActiveTab("pitchside")}>
                   <div className="live-match-meta">
-                    <span className="live-badge font-mono">LIVE {match.minute}</span>
+                    <span className="live-badge font-mono">{language === "zh" ? "直播中" : "LIVE"} {match.minute}</span>
                   </div>
                   <div className="live-matchup-row">
                     <div className="live-team">
@@ -511,7 +523,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           ) : (
             <div className="no-live-matches-container">
               <span className="rolling-football">⚽</span>
-              <span className="no-live-text font-mono">No live match at the moment</span>
+              <span className="no-live-text font-mono">{language === "zh" ? "目前没有进行中的比赛" : "No live match at the moment"}</span>
             </div>
           )}
         </div>
@@ -525,10 +537,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             <line x1="12" y1="20" x2="12" y2="4" />
             <line x1="6" y1="20" x2="6" y2="14" />
           </svg>
-          ShieldSuite Live Protocol Activity
+          {language === "zh" ? "ShieldSuite 协议实时运行状态" : "ShieldSuite Live Protocol Activity"}
         </h2>
         <p className="section-subtitle text-center">
-          Real-time metrics monitored directly on X Layer mainnet.
+          {language === "zh" ? "数据直接从 X Layer 主网实时读取监测。" : "Real-time metrics monitored directly on X Layer mainnet."}
         </p>
 
         <div className="metrics-grid">
@@ -537,7 +549,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
               <span className="metric-icon">
                 <VaultIcon size={22} style={{ marginRight: 0, color: "var(--accent-blue)" }} />
               </span>
-              <span className="metric-label font-mono">TOTAL VALUE LOCKED</span>
+              <span className="metric-label font-mono">{t("lp_stats_tvl")}</span>
             </div>
             <div className="metric-value font-mono" style={{ color: "var(--accent-blue)" }}>
               ${tvl}
@@ -554,10 +566,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
                   <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
               </span>
-              <span className="metric-label font-mono">ACTIVE SPECULATORS</span>
+              <span className="metric-label font-mono">{language === "zh" ? "活跃竞猜玩家" : "ACTIVE SPECULATORS"}</span>
             </div>
             <div className="metric-value font-mono" style={{ color: "var(--accent-purple)" }}>
-              {activeUsersCount} <span style={{ fontSize: "0.85rem", color: "var(--text-tertiary)" }}>Scouts</span>
+              {activeUsersCount} <span style={{ fontSize: "0.85rem", color: "var(--text-tertiary)" }}>{language === "zh" ? "人" : "Scouts"}</span>
             </div>
           </div>
 
@@ -569,7 +581,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
                   <polygon points="12 6 18 10 18 14 12 18 6 14 6 10" fill="currentColor" fillOpacity="0.1" />
                 </svg>
               </span>
-              <span className="metric-label font-mono">SPECULATOR $PSAI HELD</span>
+              <span className="metric-label font-mono">{language === "zh" ? "持有的 $PSAI 代币" : "SPECULATOR $PSAI HELD"}</span>
             </div>
             <div className="metric-value font-mono" style={{ color: "var(--accent-safe)" }}>
               {psaiHeld} <span style={{ fontSize: "0.85rem", color: "var(--text-tertiary)" }}>$PSAI</span>
@@ -580,9 +592,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
 
       {/* The Ecosystem Loop Section */}
       <section className="landing-section">
-        <h2 className="section-title text-center">⚽ Pitchside AI: No-Loss Speculation Loop</h2>
+        <h2 className="section-title text-center">⚽ {language === "zh" ? "赛场 AI: 零损失竞猜循环" : "Pitchside AI: No-Loss Speculation Loop"}</h2>
         <p className="section-subtitle text-center">
-          How it works: Speculate on the World Cup 2026 risk-free using principal-protected staking.
+          {language === "zh" ? "工作原理：利用本金保护的质押，零风险竞猜 2026 年世界杯。" : "How it works: Speculate on the World Cup 2026 risk-free using principal-protected staking."}
         </p>
 
         <div className="loop-grid">
@@ -594,9 +606,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             transition={{ duration: 0.6 }}
           >
             <div className="step-num font-mono">01</div>
-            <h3>Principal-Protected Staking</h3>
+            <h3>{language === "zh" ? "本金受保护质押" : "Principal-Protected Staking"}</h3>
             <p>
-              Deposit stablecoins (USDT/USDC) into our <strong>No-Loss Vault</strong>. On mainnet, funds are securely supplied directly into <strong>Aave V3 Pools</strong> to generate interest. Your principal remains 100% safe and withdrawable at any moment.
+              {language === "zh" ? "将稳定币（USDT/USDC）存入我们的无损失保险库。在主网上，资金将直接存入 Aave V3 资金池以产生收益。您的本金 100% 安全，且随时可以赎回。" : "Deposit stablecoins (USDT/USDC) into our No-Loss Vault. On mainnet, funds are securely supplied directly into Aave V3 Pools to generate interest. Your principal remains 100% safe and withdrawable at any moment."}
             </p>
           </motion.div>
 
@@ -608,9 +620,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             transition={{ duration: 0.6, delay: 0.15 }}
           >
             <div className="step-num font-mono">02</div>
-            <h3>Earn Virtual Scout Credits</h3>
+            <h3>{language === "zh" ? "赚取虚拟特工积分" : "Earn Virtual Scout Credits"}</h3>
             <p>
-              Your staked stablecoins continuously earn virtual interest in the form of <strong>Scout Credits</strong>. These credits tick upward in real-time on your dashboard and represent your delegation and speculation power.
+              {language === "zh" ? "您质押的稳定币会持续以特工积分（Scout Credits）的形式赚取虚拟收益。这些积分会在您的控制面板上实时增长，代表着您的委托和竞猜额度。" : "Your staked stablecoins continuously earn virtual interest in the form of Scout Credits. These credits tick upward in real-time on your dashboard and represent your delegation and speculation power."}
             </p>
           </motion.div>
 
@@ -622,9 +634,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             transition={{ duration: 0.6, delay: 0.3 }}
           >
             <div className="step-num font-mono">03</div>
-            <h3>Delegate & Speculate</h3>
+            <h3>{language === "zh" ? "委托特工与竞猜" : "Delegate & Speculate"}</h3>
             <p>
-              Delegate your Scout Credits to our <strong>TEE-isolated AI Scout Agent</strong>. The agent reads real-time live match scores, parses sports sentiment, scans token bytecode, and trades player index shares on your behalf.
+              {language === "zh" ? "将您的特工积分委托给我们的 TEE 隔离 AI 特工。特工将自动读取实时比赛比分、分析体育新闻舆情、扫描代币字节码，并代表您交易球员指数份额。" : "Delegate your Scout Credits to our TEE-isolated AI Scout Agent. The agent reads real-time live match scores, parses sports sentiment, scans token bytecode, and trades player index shares on your behalf."}
             </p>
           </motion.div>
         </div>
@@ -633,33 +645,33 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
       {/* ScanGuard & Security Core Section */}
       <section className="landing-section layout-split">
         <div className="split-text">
-          <h2 className="section-title text-center" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}><ShieldIcon size={28} style={{ marginRight: 0 }} /> ScanGuard & ShieldSwap DEX Aggregator</h2>
+          <h2 className="section-title text-center" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}><ShieldIcon size={28} style={{ marginRight: 0 }} /> {language === "zh" ? "ScanGuard 与 ShieldSwap DEX 聚合器" : "ScanGuard & ShieldSwap DEX Aggregator"}</h2>
           <p className="section-desc-para">
-            Traditional DEX routers execute swaps blindly. ShieldSuite intercepts transactions with a native security guard before they can harm your wallet.
+            {language === "zh" ? "传统的 DEX 路由执行交易时是盲目的。ShieldSuite 在您的交易触链之前，使用原生安全网进行前置拦截，守卫您的钱包本金安全。" : "Traditional DEX routers execute swaps blindly. ShieldSuite intercepts transactions with a native security guard before they can harm your wallet."}
           </p>
 
           <div className="security-features">
             <div className="sec-feature">
               <span className="sec-icon"><ScienceIcon size={24} style={{ marginRight: 0 }} /></span>
               <div>
-                <h4>Dual-Layer Bytecode Scanning</h4>
-                <p>Combines OKX Security scanning with a custom heuristics engine to check for hidden taxes, proxy upgrades, blacklist functions, and honeypots.</p>
+                <h4>{t("lp_feat_security_title")}</h4>
+                <p>{t("lp_feat_security_desc")}</p>
               </div>
             </div>
 
             <div className="sec-feature">
               <span className="sec-icon"><CardIcon size={24} style={{ marginRight: 0 }} /></span>
               <div>
-                <h4>x402 Pay-Per-Scan Protocol</h4>
-                <p>A standard monetization loop where automated client agents stream micro-payments in stablecoins to access ScanGuard security reports in real-time.</p>
+                <h4>{language === "zh" ? "x402 按需支付扫描协议" : "x402 Pay-Per-Scan Protocol"}</h4>
+                <p>{language === "zh" ? "标准的商业变现闭环，自动化客户端特工可以流式小额支付稳定币，以实时访问 ScanGuard 字节码安全报告。" : "A standard monetization loop where automated client agents stream micro-payments in stablecoins to access ScanGuard security reports in real-time."}</p>
               </div>
             </div>
 
             <div className="sec-feature">
               <span className="sec-icon"><RobotIcon size={24} style={{ marginRight: 0 }} /></span>
               <div>
-                <h4>Conversational AI Chatbot</h4>
-                <p>Scan and stage swaps using natural language directly inside the swap terminal. Your personal agent parses the intent, scans safety, and populates the slip.</p>
+                <h4>{language === "zh" ? "对话式 AI 交易助理" : "Conversational AI Chatbot"}</h4>
+                <p>{language === "zh" ? "在交易终端内直接使用自然语言扫描并准备兑换。您的专属 AI 特工会解析意图、评估安全性并自动填写交易单据。" : "Scan and stage swaps using natural language directly inside the swap terminal. Your personal agent parses the intent, scans safety, and populates the slip."}</p>
               </div>
             </div>
           </div>
@@ -680,11 +692,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           </div>
           <div className="terminal-content font-mono">
             <div className="term-line prompt">&gt; scan --address 0x779d...3736</div>
-            <div className="term-line success" style={{ display: "flex", alignItems: "center", gap: "6px" }}><SignalIcon size={12} style={{ marginRight: 0 }} /> Resolving token metadata... Done. (WOKB/USDT)</div>
-            <div className="term-line success" style={{ display: "flex", alignItems: "center", gap: "6px" }}><RobotIcon size={12} style={{ marginRight: 0 }} /> Checking bytecode hashes against ScanGuard Core...</div>
-            <div className="term-line warning" style={{ display: "flex", alignItems: "center", gap: "6px" }}><WarningIcon size={12} style={{ marginRight: 0 }} /> Warning: Honeypot code snippet detected in proxy contract.</div>
-            <div className="term-line danger" style={{ display: "flex", alignItems: "center", gap: "6px" }}><CrossIcon size={12} style={{ marginRight: 0 }} /> RISK LEVEL: HIGH (89/100) - Blocked swap.</div>
-            <div className="term-line success" style={{ display: "flex", alignItems: "center", gap: "6px" }}><LockIcon size={12} style={{ marginRight: 0 }} /> User principal protected. Scan complete in 42ms.</div>
+            <div className="term-line success" style={{ display: "flex", alignItems: "center", gap: "6px" }}><SignalIcon size={12} style={{ marginRight: 0 }} /> {language === "zh" ? "正在解析代币元数据... 完成。 (WOKB/USDT)" : "Resolving token metadata... Done. (WOKB/USDT)"}</div>
+            <div className="term-line success" style={{ display: "flex", alignItems: "center", gap: "6px" }}><RobotIcon size={12} style={{ marginRight: 0 }} /> {language === "zh" ? "正在对比 ScanGuard 核心字节码哈希库..." : "Checking bytecode hashes against ScanGuard Core..."}</div>
+            <div className="term-line warning" style={{ display: "flex", alignItems: "center", gap: "6px" }}><WarningIcon size={12} style={{ marginRight: 0 }} /> {language === "zh" ? "警告：在代理合约中检测到蜜罐代码特征。" : "Warning: Honeypot code snippet detected in proxy contract."}</div>
+            <div className="term-line danger" style={{ display: "flex", alignItems: "center", gap: "6px" }}><CrossIcon size={12} style={{ marginRight: 0 }} /> {language === "zh" ? "风险等级：极高 (89/100) - 强行拦截兑换交易。" : "RISK LEVEL: HIGH (89/100) - Blocked swap."}</div>
+            <div className="term-line success" style={{ display: "flex", alignItems: "center", gap: "6px" }}><LockIcon size={12} style={{ marginRight: 0 }} /> {language === "zh" ? "用户本金安全。扫描完成，耗时 42 毫秒。" : "User principal protected. Scan complete in 42ms."}</div>
           </div>
         </motion.div>
       </section>
@@ -694,14 +706,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
       {/* Call to Action Footer */}
       <section className="landing-cta-bottom text-center">
         <div className="glass-card cta-card">
-          <h2>Ready to speculate on World Cup 2026?</h2>
-          <p>Join the next generation of security-gated DeFi. Stake stablecoins risk-free, earn credits, and delegate them to autonomous agents.</p>
+          <h2>{language === "zh" ? "准备好零风险竞猜 2026 世界杯了吗？" : "Ready to speculate on World Cup 2026?"}</h2>
+          <p>{language === "zh" ? "加入下一代安全受护的 DeFi 协议。零本金风险质押稳定币，赚取积分并委托给自治特工。" : "Join the next generation of security-gated DeFi. Stake stablecoins risk-free, earn credits, and delegate them to autonomous agents."}</p>
           <div className="cta-buttons">
             <button className="btn btn-primary hover-glow" onClick={() => setActiveTab("pitchside")}>
-              <TrophyIcon /> Open Pitchside AI
+              <TrophyIcon /> {language === "zh" ? "打开赛场 AI" : "Open Pitchside AI"}
             </button>
             <button className="btn btn-ghost" onClick={() => setActiveTab("swap")}>
-              <SwapIcon /> Swap Tokens Safely
+              <SwapIcon /> {language === "zh" ? "安全兑换代币" : "Swap Tokens Safely"}
             </button>
           </div>
         </div>

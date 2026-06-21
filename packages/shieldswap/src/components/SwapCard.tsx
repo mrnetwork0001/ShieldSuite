@@ -11,6 +11,8 @@ import { useScanGuard, ScanResult } from "../hooks/useScanGuard";
 import { useSwap, SwapQuote } from "../hooks/useSwap";
 import { WalletState } from "../lib/wallet";
 import { TOKEN_LIST, TokenInfo, findToken, XLAYER_TOKENS } from "../lib/xlayer";
+import { useLanguage } from "../context/LanguageContext";
+
 
 interface SwapCardProps {
   wallet: WalletState;
@@ -38,6 +40,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
   onScanResult,
   onActivityLog,
 }) => {
+  const { language, t } = useLanguage();
   const [fromToken, setFromToken] = useState<TokenInfo>(DEFAULT_FROM);
   const [toToken, setToToken] = useState<TokenInfo>(DEFAULT_TO);
   const [amount, setAmount] = useState("");
@@ -74,7 +77,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
     onScanResult(null);
     resetSwap();
 
-    addLog("scan", `Scanning ${fromToken.symbol} (${fromToken.address.slice(0, 10)}...)...`);
+    addLog("scan", `${language === "zh" ? "正在扫描" : "Scanning"} ${fromToken.symbol} (${fromToken.address.slice(0, 10)}...)...`);
 
     scan(fromToken.address).then((result) => {
       if (result) {
@@ -82,7 +85,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
         onScanResult(result);
         addLog(
           result.riskLevel === "SAFE" || result.riskLevel === "LOW" ? "info" : "warning",
-          `${result.tokenSymbol || fromToken.symbol}: Risk ${result.riskScore}/100 (${result.riskLevel})`
+          `${result.tokenSymbol || fromToken.symbol}: ${language === "zh" ? "风险评分" : "Risk"} ${result.riskScore}/100 (${result.riskLevel})`
         );
       } else {
         setStage("input");
@@ -241,7 +244,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
   const handleApprove = useCallback(async () => {
     if (!wallet.signer || !approveTarget) return;
     setIsApproving(true);
-    addLog("swap", `Approving ${fromToken.symbol} for trading...`);
+    addLog("swap", language === "zh" ? `正在授权 ${fromToken.symbol} 进行交易...` : `Approving ${fromToken.symbol} for trading...`);
 
     try {
       const erc20 = new ethers.Contract(
@@ -267,7 +270,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
       // If already has MaxUint256-level approval, skip
       if (currentAllowance >= MAX_THRESHOLD) {
         setNeedsApproval(false);
-        addLog("info", `✓ ${fromToken.symbol} already approved!`);
+        addLog("info", language === "zh" ? `✓ ${fromToken.symbol} 已获得授权！` : `✓ ${fromToken.symbol} already approved!`);
         return;
       }
 
@@ -276,10 +279,10 @@ const SwapCard: React.FC<SwapCardProps> = ({
         t => t.toLowerCase() === fromToken.address.toLowerCase()
       );
       if (needsReset && currentAllowance > 0n) {
-        addLog("info", `Resetting ${fromToken.symbol} approval to 0 first (required by token contract)...`);
+        addLog("info", language === "zh" ? `正在重置 ${fromToken.symbol} 授权额度为 0（代币合约安全设计要求）...` : `Resetting ${fromToken.symbol} allowance to 0 first (required by token contract)...`);
         const resetTx = await erc20.approve(approveTarget, 0);
         await resetTx.wait();
-        addLog("info", `Reset complete, now approving...`);
+        addLog("info", language === "zh" ? `重置完成，正在进行最终授权...` : `Reset complete, now approving...`);
       }
 
       // Now approve MaxUint256
@@ -287,9 +290,9 @@ const SwapCard: React.FC<SwapCardProps> = ({
       await approveTx.wait();
 
       setNeedsApproval(false);
-      addLog("info", `✓ ${fromToken.symbol} approved!`);
+      addLog("info", language === "zh" ? `✓ ${fromToken.symbol} 授权成功！` : `✓ ${fromToken.symbol} approved!`);
     } catch (err: any) {
-      addLog("warning", `Approval failed: ${err.message || "Unknown error"}`);
+      addLog("warning", language === "zh" ? `授权失败: ${err.message || "未知错误"}` : `Approval failed: ${err.message || "Unknown error"}`);
     } finally {
       setIsApproving(false);
     }
@@ -331,7 +334,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
     if (!wallet.signer || !quote) return;
 
     setStage("swapping");
-    addLog("swap", `Swapping ${amount} ${fromToken.symbol} → ${toToken.symbol}...`);
+    addLog("swap", language === "zh" ? `正在兑换 ${amount} ${fromToken.symbol} → ${toToken.symbol}...` : `Swapping ${amount} ${fromToken.symbol} → ${toToken.symbol}...`);
 
     const result = await executeSwap(
       {
@@ -349,12 +352,12 @@ const SwapCard: React.FC<SwapCardProps> = ({
 
     if (result) {
       setStage("complete");
-      addLog("swap", `✓ Swap confirmed! TX: ${result.txHash.slice(0, 14)}...`);
+      addLog("swap", language === "zh" ? `✓ 兑换确认！交易哈希: ${result.txHash.slice(0, 14)}...` : `✓ Swap confirmed! TX: ${result.txHash.slice(0, 14)}...`);
       // Refresh balances immediately after swap
       setBalanceRefreshKey((k) => k + 1);
     } else {
       setStage("ready");
-      addLog("warning", `Swap failed: ${swapError || "Unknown error"}`);
+      addLog("warning", language === "zh" ? `兑换失败: ${swapError || "未知错误"}` : `Swap failed: ${swapError || "Unknown error"}`);
     }
   }, [wallet, quote, amount, fromToken, toToken, slippage, executeSwap, addLog, swapError]);
 
@@ -374,13 +377,13 @@ const SwapCard: React.FC<SwapCardProps> = ({
       >
         {/* Card Header */}
         <div className="swap-card-header">
-          <h2 className="swap-card-title">Swap</h2>
+          <h2 className="swap-card-title">{t("swap_tab_swap")}</h2>
           <div className="swap-settings" style={{ position: "relative" }}>
             <button
               className="slippage-btn"
               onClick={() => setShowSlippage(!showSlippage)}
             >
-              <SettingsIcon size={12} /> {slippage}% slippage
+              <SettingsIcon size={12} /> {slippage}% {language === "zh" ? "滑点" : "slippage"}
             </button>
             <AnimatePresence>
               {showSlippage && (
@@ -407,7 +410,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
 
         {/* ─── From (Sell) ─────────────────────────────────────────── */}
         <div className="swap-token-box glass-card">
-          <div className="swap-token-label">You sell</div>
+          <div className="swap-token-label">{t("swap_from")}</div>
           <div className="swap-token-row">
             <input
               className="swap-amount-input"
@@ -433,7 +436,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
           <div className="swap-token-meta">
             {fromBalance !== null && wallet.connected && (
               <div className="swap-balance">
-                <span>Balance: {fromBalance} {fromToken.symbol}</span>
+                <span>{t("swap_balance")} {fromBalance} {fromToken.symbol}</span>
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                   <button
                     className="max-btn"
@@ -447,12 +450,17 @@ const SwapCard: React.FC<SwapCardProps> = ({
             {scanResult && (
               <div className="swap-token-scan-badge">
                 <span className={`scan-dot ${isSafe ? "safe" : isDangerous ? "danger" : "warn"}`} />
-                {scanResult.riskLevel} ({scanResult.riskScore}/100)
+                {scanResult.riskLevel === "SAFE" && (language === "zh" ? "安全" : "SAFE")}
+                {scanResult.riskLevel === "LOW" && (language === "zh" ? "安全" : "LOW")}
+                {scanResult.riskLevel === "MEDIUM" && (language === "zh" ? "中度风险" : "MEDIUM")}
+                {scanResult.riskLevel === "HIGH" && (language === "zh" ? "高危" : "HIGH")}
+                {scanResult.riskLevel === "CRITICAL" && (language === "zh" ? "高危" : "CRITICAL")}
+                {" "}({scanResult.riskScore}/100)
               </div>
             )}
             {isScanning && (
               <div className="swap-token-scan-badge">
-                <span className="scan-spinner-sm" /> Scanning...
+                <span className="scan-spinner-sm" /> {t("swap_btn_scanning")}
               </div>
             )}
           </div>
@@ -460,18 +468,18 @@ const SwapCard: React.FC<SwapCardProps> = ({
 
         {/* ─── Flip Arrow ─────────────────────────────────────────── */}
         <div className="swap-arrow-wrapper">
-          <button className="swap-arrow" onClick={handleFlip} title="Flip tokens">
+          <button className="swap-arrow" onClick={handleFlip} title={language === "zh" ? "反转代币" : "Flip tokens"}>
             ⇅
           </button>
         </div>
 
         {/* ─── To (Buy) ───────────────────────────────────────────── */}
         <div className="swap-token-box glass-card">
-          <div className="swap-token-label">You receive</div>
+          <div className="swap-token-label">{t("swap_to")}</div>
           <div className="swap-token-row">
             <span className="swap-amount-output">
               {isQuoting ? (
-                <span className="quote-loading">Quoting...</span>
+                <span className="quote-loading">{language === "zh" ? "正在获取报价..." : "Quoting..."}</span>
               ) : quote ? (
                 quote.amountOut
               ) : amount && parseFloat(amount) > 0 && isSafe ? (
@@ -493,11 +501,11 @@ const SwapCard: React.FC<SwapCardProps> = ({
           {toBalance !== null && wallet.connected && (
             <div className="swap-token-meta">
               <div className="swap-balance">
-                <span>Balance: {toBalance} {toToken.symbol}</span>
+                <span>{t("swap_balance")} {toBalance} {toToken.symbol}</span>
                 <button
                   className="refresh-btn"
                   onClick={() => setBalanceRefreshKey(k => k + 1)}
-                  title="Refresh balance"
+                  title={language === "zh" ? "刷新余额" : "Refresh balance"}
                 >
                   <SwapIcon />
                 </button>
@@ -516,11 +524,11 @@ const SwapCard: React.FC<SwapCardProps> = ({
               exit={{ height: 0, opacity: 0 }}
             >
               <div className="quote-row">
-                <span>Rate</span>
+                <span>{t("swap_rate")}</span>
                 <span className="font-mono">1 {fromToken.symbol} ≈ {quote.exchangeRate} {toToken.symbol}</span>
               </div>
               <div className="quote-row">
-                <span>Price Impact</span>
+                <span>{t("swap_price_impact")}</span>
                 <span className={`font-mono ${parseFloat(quote.priceImpact) > 1 ? "text-warning" : "text-safe"}`}>
                   {quote.priceImpact}%
                 </span>
@@ -528,13 +536,13 @@ const SwapCard: React.FC<SwapCardProps> = ({
               {/* ── Route Comparison ── */}
               <div className="route-comparison">
                 <div className="quote-row" style={{ marginBottom: '0.15rem' }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Route Comparison</span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{language === "zh" ? "兑换路径对比" : "Route Comparison"}</span>
                 </div>
                 <div className={`route-option ${!quote.uniswapAmountOut || parseFloat(quote.amountOut) >= parseFloat(quote.uniswapAmountOut) ? 'best' : ''}`}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <span className="font-mono" style={{ fontSize: '0.8rem' }}>OKX Aggregator</span>
                     {(!quote.uniswapAmountOut || parseFloat(quote.amountOut) >= parseFloat(quote.uniswapAmountOut)) && (
-                      <span className="best-route-badge"><CheckIcon size={12} /> Best</span>
+                      <span className="best-route-badge"><CheckIcon size={12} /> {language === "zh" ? "最佳" : "Best"}</span>
                     )}
                   </div>
                   <span className="font-mono" style={{ fontSize: '0.8rem' }}>{quote.amountOut} {toToken.symbol}</span>
@@ -543,11 +551,11 @@ const SwapCard: React.FC<SwapCardProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <span className="font-mono" style={{ fontSize: '0.8rem', opacity: quote.uniswapAmountOut ? 1 : 0.5 }}>Uniswap V3</span>
                     {quote.uniswapAmountOut && parseFloat(quote.uniswapAmountOut) > parseFloat(quote.amountOut) && (
-                      <span className="best-route-badge"><CheckIcon size={12} /> Best</span>
+                      <span className="best-route-badge"><CheckIcon size={12} /> {language === "zh" ? "最佳" : "Best"}</span>
                     )}
                   </div>
                   <span className="font-mono" style={{ fontSize: '0.8rem', opacity: quote.uniswapAmountOut ? 1 : 0.5 }}>
-                    {quote.uniswapAmountOut ? `${quote.uniswapAmountOut} ${toToken.symbol}` : 'No direct pool'}
+                    {quote.uniswapAmountOut ? `${quote.uniswapAmountOut} ${toToken.symbol}` : (language === "zh" ? "无直连池" : "No direct pool")}
                   </span>
                 </div>
               </div>
@@ -566,8 +574,8 @@ const SwapCard: React.FC<SwapCardProps> = ({
             >
               <span className="danger-icon"><WarningOctagonIcon size={24} style={{ color: "var(--accent-danger)" }} /></span>
               <div>
-                <strong>High Risk Token Detected</strong>
-                <p>This token has {scanResult!.flags.length} security threat(s). Swapping is blocked for your protection.</p>
+                <strong>{language === "zh" ? "检测到高风险代币" : "High Risk Token Detected"}</strong>
+                <p>{language === "zh" ? `该代币含有 ${scanResult!.flags.length} 个安全威胁特征。出于您的本金保护，兑换已被锁定拦截。` : `This token has ${scanResult!.flags.length} security threat(s). Swapping is blocked for your protection.`}</p>
               </div>
             </motion.div>
           )}
@@ -583,9 +591,9 @@ const SwapCard: React.FC<SwapCardProps> = ({
             >
               <CheckIcon size={24} style={{ color: "var(--accent-safe)" }} />
               <div>
-                <strong>Swap Confirmed!</strong>
+                <strong>{language === "zh" ? "兑换确认成功！" : "Swap Confirmed!"}</strong>
                 <a className="font-mono risk-link" href={swapResult.explorerUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.8rem", display: "block", marginTop: "4px" }}>
-                  View on Explorer →
+                  {t("nav_view_explorer")}
                 </a>
               </div>
             </motion.div>
@@ -605,15 +613,15 @@ const SwapCard: React.FC<SwapCardProps> = ({
         <div className="swap-action">
           {!wallet.connected ? (
             <button className="btn btn-primary swap-btn" onClick={onConnect}>
-              Connect Wallet
+              {t("nav_connect")}
             </button>
           ) : isScanning ? (
             <button className="btn btn-primary swap-btn scanning-pulse" disabled>
-              <span className="scan-spinner" /> Scanning Token...
+              <span className="scan-spinner" /> {language === "zh" ? "正在扫描代币..." : "Scanning Token..."}
             </button>
           ) : isDangerous ? (
             <button className="btn btn-danger swap-btn" disabled>
-              <BlockedIcon /> Swap Blocked - High Risk
+              <BlockedIcon /> {language === "zh" ? "兑换已阻止 — 高风险" : "Swap Blocked - High Risk"}
             </button>
           ) : stage === "complete" ? (
             <button
@@ -626,7 +634,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
                 onScanResult(null);
               }}
             >
-              New Swap
+              {language === "zh" ? "新兑换" : "New Swap"}
             </button>
           ) : needsApproval && canSwap ? (
             /* ── Two-step: Approve then Swap ── */
@@ -637,22 +645,22 @@ const SwapCard: React.FC<SwapCardProps> = ({
                 disabled={isApproving}
               >
                 {isApproving ? (
-                  <><span className="scan-spinner" /> Approving {fromToken.symbol}...</>
+                  <><span className="scan-spinner" /> {language === "zh" ? `正在授权 ${fromToken.symbol}...` : `Approving ${fromToken.symbol}...`}</>
                 ) : (
-                  <><UnlockIcon /> Approve {fromToken.symbol}</>
+                  <><UnlockIcon /> {language === "zh" ? `授权 ${fromToken.symbol}` : `Approve ${fromToken.symbol}`}</>
                 )}
               </button>
               <button className="btn btn-primary swap-btn" disabled>
-                <SwapIcon /> Swap {fromToken.symbol} → {toToken.symbol}
+                <SwapIcon /> {language === "zh" ? `兑换 ${fromToken.symbol} → ${toToken.symbol}` : `Swap ${fromToken.symbol} → ${toToken.symbol}`}
               </button>
             </div>
           ) : isSwapping ? (
             <button className="btn btn-primary swap-btn" disabled>
-              <span className="scan-spinner" /> Swapping...
+              <span className="scan-spinner" /> {t("swap_btn_swapping")}
             </button>
           ) : canSwap ? (
             <button className="btn btn-safe swap-btn" onClick={handleSwap}>
-              <SwapIcon /> Swap {fromToken.symbol} → {toToken.symbol}
+              <SwapIcon /> {language === "zh" ? `兑换 ${fromToken.symbol} → ${toToken.symbol}` : `Swap ${fromToken.symbol} → ${toToken.symbol}`}
             </button>
           ) : isMedium ? (
             <button
@@ -661,22 +669,22 @@ const SwapCard: React.FC<SwapCardProps> = ({
               disabled={!quote || !parseFloat(amount)}
               style={{ background: "linear-gradient(135deg, #FFB020, #FF8C00)" }}
             >
-              <><WarningIcon /> Swap with Caution</>
+              <><WarningIcon /> {language === "zh" ? "谨慎兑换" : "Swap with Caution"}</>
             </button>
           ) : (
             <button className="btn btn-primary swap-btn" disabled={!amount || !parseFloat(amount)}>
-              {amount && parseFloat(amount) > 0 ? "Getting Quote..." : "Enter Amount"}
+              {amount && parseFloat(amount) > 0 ? (language === "zh" ? "正在获取报价..." : "Getting Quote...") : t("swap_btn_enter_amount")}
             </button>
           )}
         </div>
 
         {/* Powered by */}
         <div className="swap-powered-by">
-          <span><ShieldIcon /> Protected by</span>
+          <span><ShieldIcon /> {language === "zh" ? "安全防护由" : "Protected by"}</span>
           <a href="https://scanguard-dashboard-main.vercel.app" target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: '#33ff00', textShadow: '0 0 8px rgba(51,255,0,0.3)', fontFamily: 'var(--font-mono)', textDecoration: 'none' }}>ScanGuard</a>
           <span className="badge badge-safe" style={{ marginLeft: "4px", fontFamily: 'var(--font-mono)' }}>MCP</span>
           <span style={{ margin: "0 4px", color: "var(--text-tertiary)" }}>·</span>
-          <span style={{ color: "var(--text-tertiary)" }}>Powered by</span>
+          <span style={{ color: "var(--text-tertiary)" }}>{language === "zh" ? "技术支持" : "Powered by"}</span>
           <span style={{ fontWeight: 600, color: "#4B7BF5" }}>OKX DEX</span>
         </div>
       </motion.div>

@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import { motion } from "framer-motion";
 import { ethers } from "ethers";
 import { WalletState } from "../lib/wallet";
+import { useLanguage } from "../context/LanguageContext";
 
 // Local ABI declarations
 const USDT_ABI = [
@@ -36,6 +37,7 @@ interface VaultPanelProps {
 }
 
 export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog }) => {
+  const { language, t } = useLanguage();
   const DEPLOYED_ADDRESSES = (STATIC_DEPLOYED_ADDRESSES as any).xlayerMainnet || STATIC_DEPLOYED_ADDRESSES;
 
   const isMainnet = true;
@@ -80,8 +82,8 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
 
   // Only the real Active TEE Scout Agent - no fake placeholder agents
   const dynamicAgentsList = activeAgentAddress 
-    ? [{ name: `Active TEE Scout Agent (${activeAgentAddress.slice(0, 6)}...${activeAgentAddress.slice(-4)})`, address: activeAgentAddress }]
-    : [{ name: "Loading agent...", address: "" }];
+    ? [{ name: `${language === "zh" ? "活跃 TEE 特工" : "Active TEE Scout Agent"} (${activeAgentAddress.slice(0, 6)}...${activeAgentAddress.slice(-4)})`, address: activeAgentAddress }]
+    : [{ name: language === "zh" ? "正在加载特工..." : "Loading agent...", address: "" }];
 
   useEffect(() => {
     if (activeAgentAddress) {
@@ -209,7 +211,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
     if (!wallet.signer || !wallet.address) return;
     setLoading(true);
     setFaucetStatus("signing");
-    addLog("Requesting 1000 Mock USDT from Faucet...");
+    addLog(language === "zh" ? "正在从领水水龙头请求 1000 Mock USDT..." : "Requesting 1000 Mock USDT from Faucet...");
     console.log("[Faucet] Starting mint to", wallet.address, "on contract", DEPLOYED_ADDRESSES.MockUSDT);
     try {
       const usdt = new ethers.Contract(DEPLOYED_ADDRESSES.MockUSDT, [
@@ -220,15 +222,15 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
       const tx = await usdt.mint(wallet.address, amount);
       console.log("[Faucet] TX sent:", tx.hash);
       setFaucetStatus("confirming");
-      addLog(`Faucet TX sent: ${tx.hash.slice(0, 14)}... Waiting for confirmation...`);
+      addLog(language === "zh" ? `水龙头交易已发送: ${tx.hash.slice(0, 14)}... 正在等待确认...` : `Faucet TX sent: ${tx.hash.slice(0, 14)}... Waiting for confirmation...`);
       const receipt = await tx.wait();
       console.log("[Faucet] TX confirmed, status:", receipt?.status);
       if (receipt?.status === 1) {
         setFaucetStatus("success");
-        addLog("✓ 1000 Mock USDT minted successfully!");
+        addLog(language === "zh" ? "✓ 1000 Mock USDT 成功铸造！" : "✓ 1000 Mock USDT minted successfully!");
       } else {
         setFaucetStatus("error");
-        addLog("✕ Faucet transaction reverted onchain.", "warning");
+        addLog(language === "zh" ? "✕ 链上水龙头交易失败。" : "✕ Faucet transaction reverted onchain.", "warning");
       }
       setRefreshKey((k) => k + 1);
       // Reset status after 3 seconds
@@ -236,7 +238,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
     } catch (err: any) {
       console.error("[Faucet] Error:", err);
       setFaucetStatus("error");
-      addLog(`Faucet error: ${err.message}`, "warning");
+      addLog(language === "zh" ? `水龙头错误: ${err.message}` : `Faucet error: ${err.message}`, "warning");
       setTimeout(() => setFaucetStatus("idle"), 3000);
     } finally {
       setLoading(false);
@@ -247,15 +249,15 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
   const handleApprove = async () => {
     if (!wallet.signer) return;
     setLoading(true);
-    addLog("Approving NoLossVault to spend USDT...");
+    addLog(language === "zh" ? "正在授权金库合约以使用您的 USDT..." : "Approving NoLossVault to spend USDT...");
     try {
       const usdt = new ethers.Contract(DEPLOYED_ADDRESSES.MockUSDT, USDT_ABI, wallet.signer);
       const tx = await usdt.approve(DEPLOYED_ADDRESSES.NoLossVault, ethers.MaxUint256);
       await tx.wait();
       setAllowance(ethers.MaxUint256);
-      addLog("✓ NoLossVault approved successfully!");
+      addLog(language === "zh" ? "✓ 金库合约授权成功！" : "✓ NoLossVault approved successfully!");
     } catch (err: any) {
-      addLog(`Approval error: ${err.message}`, "warning");
+      addLog(language === "zh" ? `授权错误: ${err.message}` : `Approval error: ${err.message}`, "warning");
     } finally {
       setLoading(false);
     }
@@ -265,17 +267,17 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
   const handleDeposit = async () => {
     if (!wallet.signer || !depositAmount) return;
     setLoading(true);
-    addLog(`Depositing ${depositAmount} USDT into Vault...`);
+    addLog(language === "zh" ? `正在向金库存入 ${depositAmount} USDT...` : `Depositing ${depositAmount} USDT into Vault...`);
     try {
       const vault = new ethers.Contract(DEPLOYED_ADDRESSES.NoLossVault, VAULT_ABI, wallet.signer);
       const tx = await vault.deposit(ethers.parseUnits(depositAmount, usdtDecimals));
       await tx.wait();
-      addLog(`✓ Staked ${depositAmount} USDT successfully! Tx: ${tx.hash.slice(0, 14)}...`);
+      addLog(language === "zh" ? `✓ 成功质押 ${depositAmount} USDT！交易: ${tx.hash.slice(0, 14)}...` : `✓ Staked ${depositAmount} USDT successfully! Tx: ${tx.hash.slice(0, 14)}...`);
       setDepositAmount("");
       setRefreshKey((k) => k + 1);
       setTxModal({ visible: true, type: "Stake", txHash: tx.hash, amount: depositAmount });
     } catch (err: any) {
-      addLog(`Deposit error: ${err.message}`, "warning");
+      addLog(language === "zh" ? `质押错误: ${err.message}` : `Deposit error: ${err.message}`, "warning");
     } finally {
       setLoading(false);
     }
@@ -285,7 +287,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
   const handleWithdraw = async () => {
     if (!wallet.signer || !withdrawAmount) return;
     setLoading(true);
-    addLog(`Initiating unstake of ${withdrawAmount} USDT from Vault...`);
+    addLog(language === "zh" ? `正在从金库赎回 ${withdrawAmount} USDT...` : `Initiating unstake of ${withdrawAmount} USDT from Vault...`);
     try {
       const vault = new ethers.Contract(DEPLOYED_ADDRESSES.NoLossVault, VAULT_ABI, wallet.signer);
 
@@ -296,17 +298,17 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
       let rawAmount = ethers.parseUnits(withdrawAmount, usdtDecimals);
       if (vaultATokenBalance > 0n && rawAmount > vaultATokenBalance) {
         rawAmount = vaultATokenBalance;
-        addLog(`ℹ️ Capping withdrawal to ${ethers.formatUnits(rawAmount, usdtDecimals)} USDT (Aave rounding adjustment)`);
+        addLog(language === "zh" ? `ℹ️ 赎回额调整为 ${ethers.formatUnits(rawAmount, usdtDecimals)} USDT（Aave 舍入调整）` : `ℹ️ Capping withdrawal to ${ethers.formatUnits(rawAmount, usdtDecimals)} USDT (Aave rounding adjustment)`);
       }
 
       const tx = await vault.withdraw(rawAmount);
       const receipt = await tx.wait();
-      addLog(`✓ Unstaked ${ethers.formatUnits(rawAmount, usdtDecimals)} USDT successfully! Tx: ${tx.hash.slice(0, 14)}...`);
+      addLog(language === "zh" ? `✓ 成功赎回 ${ethers.formatUnits(rawAmount, usdtDecimals)} USDT！交易: ${tx.hash.slice(0, 14)}...` : `✓ Unstaked ${ethers.formatUnits(rawAmount, usdtDecimals)} USDT successfully! Tx: ${tx.hash.slice(0, 14)}...`);
       setWithdrawAmount("");
       setRefreshKey((k) => k + 1);
       setTxModal({ visible: true, type: "Unstake", txHash: tx.hash, amount: ethers.formatUnits(rawAmount, usdtDecimals) });
     } catch (err: any) {
-      addLog(`Withdrawal error: ${err.message}`, "warning");
+      addLog(language === "zh" ? `赎回错误: ${err.message}` : `Withdrawal error: ${err.message}`, "warning");
     } finally {
       setLoading(false);
     }
@@ -316,16 +318,16 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
   const handleDelegate = async () => {
     if (!wallet.signer) return;
     setLoading(true);
-    addLog(`Delegating credit authority to scout agent: ${selectedAgent}...`);
+    addLog(language === "zh" ? `正在向特工授权积分额度: ${selectedAgent}...` : `Delegating credit authority to scout agent: ${selectedAgent}...`);
     try {
       const vault = new ethers.Contract(DEPLOYED_ADDRESSES.NoLossVault, VAULT_ABI, wallet.signer);
       const tx = await vault.delegateAgent(selectedAgent);
       await tx.wait();
-      addLog(`✓ Agent delegation completed! Tx: ${tx.hash.slice(0, 14)}...`);
+      addLog(language === "zh" ? `✓ 特工授权成功！交易: ${tx.hash.slice(0, 14)}...` : `✓ Agent delegation completed! Tx: ${tx.hash.slice(0, 14)}...`);
       setRefreshKey((k) => k + 1);
       setTxModal({ visible: true, type: "Delegation", txHash: tx.hash });
     } catch (err: any) {
-      addLog(`Delegation error: ${err.message}`, "warning");
+      addLog(language === "zh" ? `授权特工错误: ${err.message}` : `Delegation error: ${err.message}`, "warning");
     } finally {
       setLoading(false);
     }
@@ -349,12 +351,12 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
               </svg>
             </div>
             <h3 className="tx-modal-title">
-              {txModal.type === "Stake" && `${txModal.amount} USDT Staked!`}
-              {txModal.type === "Unstake" && `${txModal.amount} USDT Unstaked!`}
-              {txModal.type === "Delegation" && "Agent Delegated!"}
+              {txModal.type === "Stake" && (language === "zh" ? `已成功质押 ${txModal.amount} USDT！` : `${txModal.amount} USDT Staked!`)}
+              {txModal.type === "Unstake" && (language === "zh" ? `已成功赎回 ${txModal.amount} USDT！` : `${txModal.amount} USDT Unstaked!`)}
+              {txModal.type === "Delegation" && (language === "zh" ? "特工委托成功！" : "Agent Delegated!")}
             </h3>
             <p className="tx-modal-sub">
-              Your transaction was confirmed on {isMainnet ? "X Layer Mainnet" : "X Layer Testnet"}.
+              {language === "zh" ? `您的交易已在 ${isMainnet ? "X Layer 主网" : "X Layer 测试网"} 上被确认。` : `Your transaction was confirmed on ${isMainnet ? "X Layer Mainnet" : "X Layer Testnet"}.`}
             </p>
             <a
               href={`${explorerBase}${txModal.txHash}`}
@@ -362,13 +364,13 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
               rel="noopener noreferrer"
               className="tx-modal-link"
             >
-              <SearchIcon /> View Transaction on Explorer ↗
+              <SearchIcon /> {language === "zh" ? "在浏览器上查看交易 ↗" : "View Transaction on Explorer ↗"}
             </a>
             <button
               className="btn btn-primary tx-modal-close"
               onClick={() => setTxModal(m => ({ ...m, visible: false }))}
             >
-              Done
+              {language === "zh" ? "完成" : "Done"}
             </button>
           </div>
         </div>,
@@ -382,26 +384,32 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
       <div className="vault-panel glass-card">
       <div className="panel-header">
         <span className="panel-icon"><VaultIcon /></span>
-        <h3 className="panel-title">No-Loss Scouting Vault</h3>
+        <h3 className="panel-title">{language === "zh" ? "无损失特工金库" : "No-Loss Scouting Vault"}</h3>
       </div>
 
       {!wallet.connected ? (
         <div className="vault-connect-message">
-          <p>Please connect your wallet to access the No-Loss Vault and earn scout credits.</p>
+          <p>{language === "zh" ? "请连接钱包以访问无损失金库并赚取特工积分。" : "Please connect your wallet to access the No-Loss Vault and earn scout credits."}</p>
         </div>
       ) : (
         <div className="vault-content">
           {/* Credits Box */}
           <div className="credits-display glass-card">
             <div className="credits-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span>YOUR SCOUT CREDITS (VIRTUAL YIELD)</span>
+              <span>{language === "zh" ? "您的特工积分 (虚拟收益)" : "YOUR SCOUT CREDITS (VIRTUAL YIELD)"}</span>
               {multiplier > 1.0 && (
-                <span className="badge badge-purple" style={{ fontSize: "0.65rem", padding: "2px 8px", background: "rgba(168, 85, 247, 0.2)", color: "#c084fc", border: "1px solid rgba(168, 85, 247, 0.4)", borderRadius: "10px" }}>⚡ {multiplier.toFixed(1)}x Boost Active</span>
+                <span className="badge badge-purple" style={{ fontSize: "0.65rem", padding: "2px 8px", background: "rgba(168, 85, 247, 0.2)", color: "#c084fc", border: "1px solid rgba(168, 85, 247, 0.4)", borderRadius: "10px" }}>
+                  {language === "zh" ? `⚡ ${multiplier.toFixed(1)}倍加速已激活` : `⚡ ${multiplier.toFixed(1)}x Boost Active`}
+                </span>
               )}
             </div>
             <div className="credits-value">{formattedCredits}</div>
             <div className="credits-sub">
-              Accumulating at <span className="text-green font-mono">{(5.0 * multiplier).toFixed(1)}% APY</span> via Aave V3
+              {language === "zh" ? (
+                <>通过 Aave V3 以 <span className="text-green font-mono">{(5.0 * multiplier).toFixed(1)}% APY</span> 累计中</>
+              ) : (
+                <>Accumulating at <span className="text-green font-mono">{(5.0 * multiplier).toFixed(1)}% APY</span> via Aave V3</>
+              )}
             </div>
           </div>
 
@@ -419,10 +427,10 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
               alignItems: "center"
             }}>
               <span>
-                {multiplier === 1.0 && "⚡ Hold 10,000+ $PSAI to activate a yield multiplier boost (up to 5.0x)!"}
-                {multiplier === 1.5 && "⚡ Hold 50,000 $PSAI to upgrade to 2.0x Scout Specialist yield!"}
-                {multiplier === 2.0 && "⚡ Hold 250,000 $PSAI to upgrade to 3.0x Elite Scout Master yield!"}
-                {multiplier === 3.0 && "⚡ Hold 1,000,000 $PSAI to upgrade to 5.0x Legendary Director yield!"}
+                {multiplier === 1.0 && (language === "zh" ? "⚡ 持有 10,000+ $PSAI 以激活收益翻倍加速 (最高 5.0倍)！" : "⚡ Hold 10,000+ $PSAI to activate a yield multiplier boost (up to 5.0x)!")}
+                {multiplier === 1.5 && (language === "zh" ? "⚡ 持有 50,000 $PSAI 以升级为 2.0倍 特工专家收益！" : "⚡ Hold 50,000 $PSAI to upgrade to 2.0x Scout Specialist yield!")}
+                {multiplier === 2.0 && (language === "zh" ? "⚡ 持有 250,000 $PSAI 以升级为 3.0倍 精英特工大师收益！" : "⚡ Hold 250,000 $PSAI to upgrade to 3.0x Elite Scout Master yield!")}
+                {multiplier === 3.0 && (language === "zh" ? "⚡ 持有 1,000,000 $PSAI 以升级为 5.0倍 传奇总监收益！" : "⚡ Hold 1,000,000 $PSAI to upgrade to 5.0x Legendary Director yield!")}
               </span>
               <a 
                 href="https://web3.okx.com/dex-swap?chain=x-layer,x-layer&token=0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee,0xaef068ea820aafa00a2854bfd6cfab6d891ede5d"
@@ -430,7 +438,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
                 rel="noopener noreferrer"
                 style={{ color: "#a855f7", fontWeight: "bold", textDecoration: "none" }}
               >
-                Buy PSAI ↗
+                {language === "zh" ? "购买 PSAI ↗" : "Buy PSAI ↗"}
               </a>
             </div>
           ) : (
@@ -445,25 +453,31 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
               fontWeight: "600",
               textAlign: "center"
             }}>
-              👑 You have reached the Maximum Legendary Director Tier! 5.0x Yield Boost Active!
+              {language === "zh" ? "👑 您已达到最高传奇总监级别！5.0倍收益翻倍加速已激活！" : "👑 You have reached the Maximum Legendary Director Tier! 5.0x Yield Boost Active!"}
             </div>
           )}
 
           {/* Staking Details */}
           <div className="staking-balances">
             <div className="balance-item">
-              <span>Staked Balance:</span>
+              <span>{language === "zh" ? "您的质押余额:" : "Staked Balance:"}</span>
               <strong className="font-mono">{stakedBalance} USDT</strong>
             </div>
             <div className="balance-item">
-              <span>Wallet Balance:</span>
+              <span>{language === "zh" ? "钱包余额:" : "Wallet Balance:"}</span>
               <strong className="font-mono">{parseFloat(usdtBalance).toFixed(2)} USDT</strong>
             </div>
           </div>
 
           <div style={{ fontSize: "0.75rem", color: "var(--fg-dim)", marginBottom: "16px", lineHeight: "1.4", padding: "0 4px", display: "flex", alignItems: "flex-start", gap: "6px" }}>
             <span style={{ flexShrink: 0, marginTop: "2px" }}><InfoIcon /></span>
-            <span>Staked USDT is securely supplied to <strong>Aave V3</strong> yield pools under the hood to generate risk-free interest while you accumulate Scout Credits.</span>
+            <span>
+              {language === "zh" ? (
+                <>质押的 USDT 将自动存入 <strong>Aave V3</strong> 收益池以产生无风险利息，在此期间您可持续累积特工积分。</>
+              ) : (
+                <>Staked USDT is securely supplied to <strong>Aave V3</strong> yield pools under the hood to generate risk-free interest while you accumulate Scout Credits.</>
+              )}
+            </span>
           </div>
 
           {/* Staking Actions */}
@@ -479,11 +493,11 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
               />
               {!isApproved ? (
                 <button className="btn btn-approve btn-panel" onClick={handleApprove} disabled={loading}>
-                  APPROVE
+                  {language === "zh" ? "授权" : "APPROVE"}
                 </button>
               ) : (
                 <button className="btn btn-primary btn-panel" onClick={handleDeposit} disabled={loading || !depositAmount}>
-                  STAKE
+                  {language === "zh" ? "质押" : "STAKE"}
                 </button>
               )}
             </div>
@@ -498,7 +512,7 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
                 disabled={loading}
               />
               <button className="btn btn-panel" onClick={handleWithdraw} disabled={loading || !withdrawAmount}>
-                UNSTAKE
+                {language === "zh" ? "赎回" : "UNSTAKE"}
               </button>
             </div>
           </div>
@@ -509,10 +523,10 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
           <div className="delegation-box glass-card">
             <div className="delegation-header" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <RobotIcon />
-              <strong>Delegate Scout Agent</strong>
+              <strong>{language === "zh" ? "委托特工操盘" : "Delegate Scout Agent"}</strong>
             </div>
             <p className="delegation-desc">
-              Delegate spending authority of your virtual Scout Credits to an AI Scout agent. The agent will monitor World Cup news and automatically buy/sell player shares on your behalf.
+              {language === "zh" ? "将您虚拟特工积分的支出权限委托给 AI 特工。该特工会实时监测世预赛及世界杯新闻并自动代您买入/卖出球员指数份额。" : "Delegate spending authority of your virtual Scout Credits to an AI Scout agent. The agent will monitor World Cup news and automatically buy/sell player shares on your behalf."}
             </p>
 
             <div className="delegation-select">
@@ -531,17 +545,17 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
             </div>
 
             <div className="delegation-status">
-              <span>Current Delegate:</span>
+              <span>{language === "zh" ? "当前委托特工:" : "Current Delegate:"}</span>
               <strong className="font-mono text-blue">
                 {delegatedAgent === ethers.ZeroAddress
-                  ? "None"
+                  ? (language === "zh" ? "无" : "None")
                   : dynamicAgentsList.find((a) => a.address.toLowerCase() === delegatedAgent.toLowerCase())?.name ||
                     `${delegatedAgent.slice(0, 10)}...`}
               </strong>
             </div>
 
             <button className="btn btn-primary btn-delegate" onClick={handleDelegate} disabled={loading}>
-              Confirm Delegation
+              {language === "zh" ? "确认委托" : "Confirm Delegation"}
             </button>
           </div>
         </div>

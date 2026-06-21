@@ -18,6 +18,8 @@ import { LandingPage } from "./components/LandingPage";
 import { DocsPage } from "./components/DocsPage";
 import { MatchesCenter } from "./components/MatchesCenter";
 import { GreenDotIcon, SearchIcon, SwapIcon, WarningIcon, InfoIcon } from "./components/Icons";
+import { useLanguage } from "./context/LanguageContext";
+
 
 const INITIAL_WALLET: WalletState = {
   connected: false,
@@ -30,6 +32,7 @@ const INITIAL_WALLET: WalletState = {
 };
 
 const App: React.FC = () => {
+  const { t, language } = useLanguage();
   const [wallet, setWallet] = useState<WalletState>(INITIAL_WALLET);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [showReport, setShowReport] = useState(false);
@@ -286,11 +289,20 @@ const App: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <h2 className="hero-title">
-                Every token scanned.{" "}
-                <span className="text-blue">Every trade protected.</span>
+                {language === "zh" ? (
+                  <>
+                    逐币安全扫描。{" "}
+                    <span className="text-blue">保护每笔交易。</span>
+                  </>
+                ) : (
+                  <>
+                    Every token scanned.{" "}
+                    <span className="text-blue">Every trade protected.</span>
+                  </>
+                )}
               </h2>
               <p className="hero-subtitle">
-                AI-powered security scanning meets DeFi. Swap tokens on XLayer with confidence.
+                {t("swap_hero_subtitle")}
               </p>
             </motion.div>
 
@@ -313,10 +325,12 @@ const App: React.FC = () => {
           <div className="pitchside-portal animate-fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
             <div className="glass-card text-center" style={{ maxWidth: '550px', padding: '45px 30px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', margin: '0 auto' }}>
               <span className="spin-continuous" style={{ fontSize: '3rem' }}>⚽</span>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Explore Pitchside AI</h3>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{language === "zh" ? "探索赛场 AI" : "Explore Pitchside AI"}</h3>
               <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0 }}>
-                The Pitchside AI Autonomous Scouting & Trading Network is deployed on X Layer Mainnet. 
-                Explore the vault and player markets live.
+                {language === "zh" 
+                  ? "赛场 AI 自治勘探与交易网络已部署至 X Layer 主网。进入保险库和球员市场，查看实时动态。"
+                  : "The Pitchside AI Autonomous Scouting & Trading Network is deployed on X Layer Mainnet. Explore the vault and player markets live."
+                }
               </p>
               <div style={{ display: 'flex', gap: '12px', width: '100%', justifyContent: 'center' }}>
                 <button 
@@ -336,7 +350,7 @@ const App: React.FC = () => {
                   }}
                   style={{ padding: '12px 20px', fontWeight: 'bold', flex: 1 }}
                 >
-                  <GreenDotIcon /> Explore X Layer Mainnet
+                  <GreenDotIcon /> {language === "zh" ? "探索 X Layer 主网" : "Explore X Layer Mainnet"}
                 </button>
               </div>
             </div>
@@ -365,7 +379,7 @@ const App: React.FC = () => {
                   boxShadow: pitchsideSubTab === 'speculation' ? '0 0 15px rgba(75, 123, 245, 0.15)' : 'none'
                 }}
               >
-                📈 Speculation Board
+                📈 {language === "zh" ? "竞猜大盘" : "Speculation Board"}
               </button>
               <button
                 className={`subnav-btn ${pitchsideSubTab === 'matches' ? 'active' : ''}`}
@@ -387,7 +401,7 @@ const App: React.FC = () => {
                   boxShadow: pitchsideSubTab === 'matches' ? '0 0 15px rgba(75, 123, 245, 0.15)' : 'none'
                 }}
               >
-                ⚽ Matches Center
+                ⚽ {language === "zh" ? "赛场中心" : "Matches Center"}
               </button>
               <button
                 className={`subnav-btn ${pitchsideSubTab === 'leaderboard' ? 'active' : ''}`}
@@ -409,7 +423,7 @@ const App: React.FC = () => {
                   boxShadow: pitchsideSubTab === 'leaderboard' ? '0 0 15px rgba(75, 123, 245, 0.15)' : 'none'
                 }}
               >
-                🏆 Leaderboard
+                🏆 {language === "zh" ? "排行榜" : "Leaderboard"}
               </button>
             </div>
 
@@ -444,9 +458,9 @@ const App: React.FC = () => {
             <div className="activity-log-header">
               <div className="activity-log-title">
                 <span className="activity-dot" />
-                Agent Activity Log
+                {t("act_title")}
               </div>
-              <span className="badge badge-purple">Live</span>
+              <span className="badge badge-purple">{t("act_live")}</span>
             </div>
             <div className="activity-log-entries">
               <AnimatePresence initial={false}>
@@ -469,7 +483,21 @@ const App: React.FC = () => {
                       <span className={`activity-icon activity-icon-${entry.type}`}>
                         {entry.type === "scan" ? <SearchIcon size={12} style={{ marginRight: 0 }} /> : entry.type === "swap" ? <SwapIcon size={12} style={{ marginRight: 0 }} /> : entry.type === "warning" ? <WarningIcon size={12} style={{ marginRight: 0 }} /> : <InfoIcon size={12} style={{ marginRight: 0 }} />}
                       </span>
-                      <span className="activity-message">{entry.message}</span>
+                      <span className="activity-message">
+                        {entry.message === "ShieldSwap initialized. Waiting for token scan..." 
+                          ? t("act_init") 
+                          : entry.message.startsWith("Wallet connected:") 
+                            ? `${t("act_wallet_connect")}: ${entry.message.split("Wallet connected:")[1]}`
+                            : entry.message === "Wallet disconnected."
+                              ? t("act_wallet_disconnect")
+                              : entry.message.startsWith("Network switched to chain ID")
+                                ? `${t("act_net_switch")} ${entry.message.split("Network switched to chain ID")[1]}`
+                                : entry.message.startsWith("Agent chat: scanning")
+                                  ? `${t("act_scanning")} ${entry.message.split("Agent chat: scanning")[1]}`
+                                  : entry.message.startsWith("Agent chat: swap")
+                                    ? `${t("act_swap")} ${entry.message.split("Agent chat: swap")[1]}`
+                                    : entry.message}
+                      </span>
                     </motion.div>
                   ))}
               </AnimatePresence>
@@ -488,7 +516,7 @@ const App: React.FC = () => {
               <span className="footer-brand-name">ShieldSuite</span>
             </div>
             <p className="footer-brand-desc">
-              AI-shielded transaction security and autonomous sports speculation on X Layer.
+              {t("foot_desc")}
             </p>
             <div className="footer-social-row">
               <a href="https://x.com/ShieldSuite_" target="_blank" rel="noopener noreferrer" className="footer-social-link" title="Follow on X (Twitter)">
@@ -507,25 +535,25 @@ const App: React.FC = () => {
           {/* Links Columns */}
           <div className="footer-links-container">
             <div className="footer-link-col">
-              <span className="footer-col-title">PROTOCOL</span>
-              <button onClick={() => setActiveTab("swap")} className="footer-link-btn">Features</button>
-              <button onClick={() => setActiveTab("swap")} className="footer-link-btn">AI-Shield</button>
-              <button onClick={() => setActiveTab("swap")} className="footer-link-btn">Launch App</button>
+              <span className="footer-col-title">{t("foot_col_protocol")}</span>
+              <button onClick={() => setActiveTab("swap")} className="footer-link-btn">{t("foot_link_features")}</button>
+              <button onClick={() => setActiveTab("swap")} className="footer-link-btn">{t("foot_link_aishield")}</button>
+              <button onClick={() => setActiveTab("swap")} className="footer-link-btn">{t("foot_link_app")}</button>
             </div>
 
             <div className="footer-link-col">
-              <span className="footer-col-title">ECOSYSTEM</span>
-              <a href="https://www.okx.com/explorer/xlayer" target="_blank" rel="noopener noreferrer" className="footer-link">X Layer Explorer</a>
-              <a href="https://www.okx.com/web3" target="_blank" rel="noopener noreferrer" className="footer-link">OKX Wallet</a>
-              <a href="https://scanguard-dashboard-main.vercel.app" target="_blank" rel="noopener noreferrer" className="footer-link">ScanGuard MCP</a>
-              <button onClick={() => setActiveTab("pitchside")} className="footer-link-btn">Pitchside AI</button>
+              <span className="footer-col-title">{t("foot_col_eco")}</span>
+              <a href="https://www.okx.com/explorer/xlayer" target="_blank" rel="noopener noreferrer" className="footer-link">{t("foot_link_explorer")}</a>
+              <a href="https://www.okx.com/web3" target="_blank" rel="noopener noreferrer" className="footer-link">{t("foot_link_wallet")}</a>
+              <a href="https://scanguard-dashboard-main.vercel.app" target="_blank" rel="noopener noreferrer" className="footer-link">{t("foot_link_mcp")}</a>
+              <button onClick={() => setActiveTab("pitchside")} className="footer-link-btn">{t("foot_link_pitchside")}</button>
             </div>
 
             <div className="footer-link-col">
-              <span className="footer-col-title">RESOURCES</span>
-              <button onClick={() => setActiveTab("docs")} className="footer-link-btn">Docs</button>
-              <button onClick={() => setActiveTab("docs")} className="footer-link-btn">Contracts</button>
-              <button onClick={() => setActiveTab("swap")} className="footer-link-btn">ShieldSwap</button>
+              <span className="footer-col-title">{t("foot_col_res")}</span>
+              <button onClick={() => setActiveTab("docs")} className="footer-link-btn">{t("foot_link_docs")}</button>
+              <button onClick={() => setActiveTab("docs")} className="footer-link-btn">{t("foot_link_contracts")}</button>
+              <button onClick={() => setActiveTab("swap")} className="footer-link-btn">{t("foot_link_swap")}</button>
             </div>
           </div>
         </div>

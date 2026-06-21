@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import { CrossIcon, CheckIcon, WarningIcon, RobotIcon, WarningOctagonIcon, QuestionIcon } from "./Icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { ScanResult, RiskFlag } from "../hooks/useScanGuard";
+import { useLanguage } from "../context/LanguageContext";
 
 interface RiskReportProps {
   result: ScanResult | null;
@@ -14,7 +15,43 @@ interface RiskReportProps {
 }
 
 const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) => {
+  const { language, t } = useLanguage();
   const [animatedScore, setAnimatedScore] = useState(0);
+
+  // Helper for translating risk levels
+  const getTranslatedRiskLevel = (level: string) => {
+    switch (level) {
+      case "SAFE": return language === "zh" ? "安全" : "SAFE";
+      case "LOW": return language === "zh" ? "低风险" : "LOW";
+      case "MEDIUM": return language === "zh" ? "中等风险" : "MEDIUM";
+      case "HIGH": return language === "zh" ? "高风险" : "HIGH";
+      case "CRITICAL": return language === "zh" ? "严重风险" : "CRITICAL";
+      default: return level;
+    }
+  };
+
+  // Helper for translating dynamic ScanGuard flags
+  const getTranslatedFlag = (title: string, description: string) => {
+    if (language === "zh") {
+      const lowerTitle = title.toLowerCase();
+      if (lowerTitle.includes("honeypot")) {
+        return { title: t("rr_flag_honeypot"), description: t("rr_flag_honeypot_desc") };
+      }
+      if (lowerTitle.includes("tax")) {
+        return { title: t("rr_flag_tax"), description: t("rr_flag_tax_desc") };
+      }
+      if (lowerTitle.includes("proxy")) {
+        return { title: t("rr_flag_proxy"), description: t("rr_flag_proxy_desc") };
+      }
+      if (lowerTitle.includes("mint")) {
+        return { title: t("rr_flag_mint"), description: t("rr_flag_mint_desc") };
+      }
+      if (lowerTitle.includes("black")) {
+        return { title: t("rr_flag_blacklist"), description: t("rr_flag_blacklist_desc") };
+      }
+    }
+    return { title, description };
+  };
 
   // Animate risk score counting up
   useEffect(() => {
@@ -60,9 +97,9 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
           {/* Header */}
           <div className="risk-report-header">
             <div>
-              <h2 className="risk-report-title">Security Report</h2>
+              <h2 className="risk-report-title">{language === "zh" ? "安全报告" : "Security Report"}</h2>
               <p className="risk-report-subtitle font-mono" style={{ fontSize: "0.75rem", color: "var(--text-tertiary)" }}>
-                Scan #{result.scanId.slice(0, 8)} · {result.scanDurationMs}ms
+                {language === "zh" ? `扫描 #${result.scanId.slice(0, 8)} · ${result.scanDurationMs}毫秒` : `Scan #${result.scanId.slice(0, 8)} · ${result.scanDurationMs}ms`}
               </p>
             </div>
             <button className="btn btn-ghost btn-sm" onClick={onClose}><CrossIcon size={14} /></button>
@@ -97,18 +134,18 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
               animate={{ scale: 1 }}
               transition={{ delay: 0.5, type: "spring", stiffness: 500, damping: 25 }}
             >
-              {getRiskIcon(result.riskLevel)} {result.riskLevel}
+              {getRiskIcon(result.riskLevel)} {getTranslatedRiskLevel(result.riskLevel)}
             </motion.div>
           </div>
 
           {/* Token Info */}
           <div className="risk-token-info">
             <div className="risk-info-row">
-              <span className="risk-info-label">Token</span>
-              <span className="risk-info-value">{result.tokenName || "Unknown"} ({result.tokenSymbol || "???"})</span>
+              <span className="risk-info-label">{language === "zh" ? "代币" : "Token"}</span>
+              <span className="risk-info-value">{result.tokenName || (language === "zh" ? "未知" : "Unknown")} ({result.tokenSymbol || "???"})</span>
             </div>
             <div className="risk-info-row">
-              <span className="risk-info-label">Contract</span>
+              <span className="risk-info-label">{language === "zh" ? "合约" : "Contract"}</span>
               <a
                 className="risk-info-value font-mono risk-link"
                 href={result.xLayerExplorerUrl}
@@ -120,19 +157,19 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
               </a>
             </div>
             <div className="risk-info-row">
-              <span className="risk-info-label">Owner</span>
+              <span className="risk-info-label">{language === "zh" ? "所有者" : "Owner"}</span>
               <span className="risk-info-value font-mono" style={{ fontSize: "0.8rem" }}>
                 {result.ownershipRenounced ? (
-                  <span className="text-safe"><CheckIcon size={12} /> Renounced</span>
+                  <span className="text-safe"><CheckIcon size={12} /> {language === "zh" ? "已放弃" : "Renounced"}</span>
                 ) : (
-                  <span className="text-warning">{result.ownerAddress ? `${result.ownerAddress.slice(0, 8)}...` : "Unknown"}</span>
+                  <span className="text-warning">{result.ownerAddress ? `${result.ownerAddress.slice(0, 8)}...` : (language === "zh" ? "未知" : "Unknown")}</span>
                 )}
               </span>
             </div>
             <div className="risk-info-row">
-              <span className="risk-info-label">Proxy</span>
+              <span className="risk-info-label">{language === "zh" ? "代理" : "Proxy"}</span>
               <span className={`risk-info-value ${result.hasProxyPattern ? "text-warning" : "text-safe"}`}>
-                {result.hasProxyPattern ? <><WarningIcon size={12} /> Upgradeable</> : <><CheckIcon size={12} /> Not Upgradeable</>}
+                {result.hasProxyPattern ? <><WarningIcon size={12} /> {language === "zh" ? "可升级" : "Upgradeable"}</> : <><CheckIcon size={12} /> {language === "zh" ? "不可升级" : "Not Upgradeable"}</>}
               </span>
             </div>
             <div className="risk-info-row">
@@ -141,8 +178,8 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
               </span>
               <span className={`risk-info-value ${result.uniswapHasPool ? "text-safe" : "text-tertiary"}`}>
                 {result.uniswapHasPool
-                  ? <><CheckIcon size={12} /> {result.uniswapPoolCount} Pool{(result.uniswapPoolCount || 0) !== 1 ? 's' : ''}</>
-                  : "No pools found"
+                  ? <><CheckIcon size={12} /> {language === "zh" ? `${result.uniswapPoolCount} 个资金池` : `${result.uniswapPoolCount} Pool${(result.uniswapPoolCount || 0) !== 1 ? 's' : ''}`}</>
+                  : (language === "zh" ? "未找到资金池" : "No pools found")
                 }
               </span>
             </div>
@@ -157,34 +194,37 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
                   : "var(--accent-danger)"
               }}>
                 {result.riskLevel === "SAFE" || result.riskLevel === "LOW"
-                  ? <><CheckIcon size={12} /> {result.flags.length} Finding{result.flags.length !== 1 ? "s" : ""}</>
-                  : <><WarningIcon size={12} /> {result.flags.length} Threat{result.flags.length !== 1 ? "s" : ""} Detected</>}
+                  ? <><CheckIcon size={12} /> {language === "zh" ? `${result.flags.length} 项评估结果` : `${result.flags.length} Finding${result.flags.length !== 1 ? "s" : ""}`}</>
+                  : <><WarningIcon size={12} /> {language === "zh" ? `检测到 ${result.flags.length} 项安全威胁` : `${result.flags.length} Threat${result.flags.length !== 1 ? "s" : ""} Detected`}</>}
               </h3>
               <div className="risk-flags-list">
-                {result.flags.map((flag, index) => (
-                  <motion.div
-                    key={index}
-                    className="risk-flag-item"
-                    style={flag.severity === "SAFE" ? {
-                      background: "rgba(51, 255, 0, 0.04)",
-                      borderColor: "rgba(51, 255, 0, 0.1)",
-                    } : undefined}
-                    initial={{ x: 20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.6 + index * 0.1, duration: 0.3 }}
-                  >
-                    <div className="risk-flag-header">
-                      <span className={`badge badge-${getSeverityBadge(flag.severity)} font-mono`}>
-                        {flag.severity}
-                      </span>
-                      <span className="risk-flag-title">{flag.title}</span>
-                    </div>
-                    <p className="risk-flag-desc">{flag.description}</p>
-                    {flag.evidence && (
-                      <p className="risk-flag-evidence font-mono">{flag.evidence}</p>
-                    )}
-                  </motion.div>
-                ))}
+                {result.flags.map((flag, index) => {
+                  const translated = getTranslatedFlag(flag.title, flag.description);
+                  return (
+                    <motion.div
+                      key={index}
+                      className="risk-flag-item"
+                      style={flag.severity === "SAFE" ? {
+                        background: "rgba(51, 255, 0, 0.04)",
+                        borderColor: "rgba(51, 255, 0, 0.1)",
+                      } : undefined}
+                      initial={{ x: 20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.6 + index * 0.1, duration: 0.3 }}
+                    >
+                      <div className="risk-flag-header">
+                        <span className={`badge badge-${getSeverityBadge(flag.severity)} font-mono`}>
+                          {getTranslatedRiskLevel(flag.severity)}
+                        </span>
+                        <span className="risk-flag-title">{translated.title}</span>
+                      </div>
+                      <p className="risk-flag-desc">{translated.description}</p>
+                      {flag.evidence && (
+                        <p className="risk-flag-evidence font-mono">{flag.evidence}</p>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </div>
             </div>
           ) : (
@@ -195,7 +235,7 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
               transition={{ delay: 0.5, type: "spring" }}
             >
               <CheckIcon size={32} style={{ color: "var(--accent-safe)", marginBottom: "8px" }} />
-              <p>No threats detected. Token appears safe for trading.</p>
+              <p>{language === "zh" ? "未检测到任何安全威胁。代币交易状态安全。" : "No threats detected. Token appears safe for trading."}</p>
             </motion.div>
           )}
 
@@ -208,19 +248,33 @@ const RiskReport: React.FC<RiskReportProps> = ({ result, isVisible, onClose }) =
           >
             <div className="agent-rec-header">
               <RobotIcon size={18} style={{ color: "var(--accent-safe)" }} />
-              <span className="font-mono" style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--accent-safe)' }}>AGENT RECOMMENDATION</span>
+              <span className="font-mono" style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--accent-safe)' }}>
+                {language === "zh" ? "特工建议" : "AGENT RECOMMENDATION"}
+              </span>
             </div>
             <p className="agent-rec-text">
               {result.riskLevel === "SAFE" || result.riskLevel === "LOW" ? (
-                <>Token appears <strong style={{ color: 'var(--accent-safe)' }}>safe for trading</strong>. {result.uniswapHasPool ? `Verified Uniswap V3 liquidity detected (${result.uniswapPoolCount} pool${(result.uniswapPoolCount || 0) !== 1 ? 's' : ''}). ` : ''}Recommended route: <strong>OKX DEX Aggregator</strong> for best execution.</>
+                language === "zh" ? (
+                  <>该代币看起来<strong style={{ color: 'var(--accent-safe)' }}>可以安全交易</strong>。{result.uniswapHasPool ? `检测到已验证的 Uniswap V3 流动性（${result.uniswapPoolCount} 个资金池）。` : ''}推荐路径：使用 <strong>OKX DEX 聚合器</strong> 以获得最佳交易执行。</>
+                ) : (
+                  <>Token appears <strong style={{ color: 'var(--accent-safe)' }}>safe for trading</strong>. {result.uniswapHasPool ? `Verified Uniswap V3 liquidity detected (${result.uniswapPoolCount} pool${(result.uniswapPoolCount || 0) !== 1 ? 's' : ''}). ` : ''}Recommended route: <strong>OKX DEX Aggregator</strong> for best execution.</>
+                )
               ) : result.riskLevel === "MEDIUM" ? (
-                <>Proceed with <strong style={{ color: 'var(--accent-warning)' }}>caution</strong>. Some risk indicators detected. Use small amounts to test before larger trades.</>
+                language === "zh" ? (
+                  <>请<strong style={{ color: 'var(--accent-warning)' }}>谨慎交易</strong>。检测到一些风险指标。在大额交易前，建议先用小额资金进行测试。</>
+                ) : (
+                  <>Proceed with <strong style={{ color: 'var(--accent-warning)' }}>caution</strong>. Some risk indicators detected. Use small amounts to test before larger trades.</>
+                )
               ) : (
-                <><strong style={{ color: 'var(--accent-danger)' }}>Trading not recommended.</strong> High-severity threats detected. This token may be a scam or honeypot.</>
+                language === "zh" ? (
+                  <><strong style={{ color: 'var(--accent-danger)' }}>不建议交易。</strong>检测到高危安全威胁。该代币可能是骗局或蜜罐。</>
+                ) : (
+                  <><strong style={{ color: 'var(--accent-danger)' }}>Trading not recommended.</strong> High-severity threats detected. This token may be a scam or honeypot.</>
+                )
               )}
             </p>
             <div className="agent-rec-skills font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '6px' }}>
-              Powered by: OKX Security · Bytecode Analysis · Uniswap V3 · x402
+              {language === "zh" ? "技术支持：OKX 安全认证 · 字节码分析 · Uniswap V3 · x402" : "Powered by: OKX Security · Bytecode Analysis · Uniswap V3 · x402"}
             </div>
           </motion.div>
 

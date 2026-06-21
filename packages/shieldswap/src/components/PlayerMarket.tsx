@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { ethers } from "ethers";
 import { WalletState } from "../lib/wallet";
+import { useLanguage } from "../context/LanguageContext";
 
 const SHARES_ABI = [
   "function balanceOf(address account, uint256 id) external view returns (uint256)",
@@ -73,6 +74,7 @@ interface PlayerMarketProps {
 }
 
 export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLog }) => {
+  const { language, t } = useLanguage();
   const DEPLOYED_ADDRESSES = (STATIC_DEPLOYED_ADDRESSES as any).xlayerMainnet || STATIC_DEPLOYED_ADDRESSES;
 
   const isMainnet = true;
@@ -97,6 +99,32 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
     txHash: string;
     amount?: string;
   }>({ visible: false, type: "Buy", playerName: "", txHash: "" });
+
+  const getTranslatedCountry = (country: string) => {
+    if (language === "zh") {
+      const map: Record<string, string> = {
+        "All": "所有国家",
+        "Argentina": "阿根廷",
+        "France": "法国",
+        "England": "英格兰",
+        "Brazil": "巴西",
+        "Spain": "西班牙",
+        "Germany": "德国",
+        "United States": "美国",
+        "Mexico": "墨西哥",
+        "Portugal": "葡萄牙",
+        "Netherlands": "荷兰",
+        "Belgium": "比利时",
+        "Uruguay": "乌拉圭",
+        "Japan": "日本",
+        "Morocco": "摩洛哥",
+        "Canada": "加拿大",
+        "Norway": "挪威"
+      };
+      return map[country] || country;
+    }
+    return country;
+  };
 
   const addLog = (message: string, type: "info" | "warning" = "info") => {
     onActivityLog({
@@ -200,16 +228,16 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
   const handleBuy = async (tokenId: number, price: string, playerName: string) => {
     if (!wallet.signer) return;
     setLoading(true);
-    addLog(`Buying 1.0 share of ${playerName} at ${price} Credits...`);
+    addLog(language === "zh" ? `正在以 ${price} 积分买入 1.0 份 ${playerName} 的指数...` : `Buying 1.0 share of ${playerName} at ${price} Credits...`);
     try {
       const dex = new ethers.Contract(DEPLOYED_ADDRESSES.PlayerDex, DEX_ABI, wallet.signer);
       const tx = await dex.buyShares(tokenId, ethers.parseEther("1"));
       await tx.wait();
-      addLog(`✓ Bought 1 share of ${playerName}! Tx: ${tx.hash.slice(0, 14)}...`);
+      addLog(language === "zh" ? `✓ 成功买入 1 份 ${playerName} 指数！交易: ${tx.hash.slice(0, 14)}...` : `✓ Bought 1 share of ${playerName}! Tx: ${tx.hash.slice(0, 14)}...`);
       setRefreshKey((k) => k + 1);
       setTxModal({ visible: true, type: "Buy", playerName, txHash: tx.hash, amount: "1" });
     } catch (err: any) {
-      addLog(`Trade Buy Error: ${err.message}`, "warning");
+      addLog(language === "zh" ? `买入指数错误: ${err.message}` : `Trade Buy Error: ${err.message}`, "warning");
     } finally {
       setLoading(false);
     }
@@ -220,16 +248,16 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
     if (!wallet.signer) return;
     if (parseFloat(balance) <= 0) return;
     setLoading(true);
-    addLog(`Selling ${parseFloat(balance).toFixed(1)} shares of ${playerName}...`);
+    addLog(language === "zh" ? `正在卖出 ${parseFloat(balance).toFixed(1)} 份 ${playerName} 指数...` : `Selling ${parseFloat(balance).toFixed(1)} shares of ${playerName}...`);
     try {
       const dex = new ethers.Contract(DEPLOYED_ADDRESSES.PlayerDex, DEX_ABI, wallet.signer);
       const tx = await dex.sellShares(tokenId, ethers.parseEther(balance));
       await tx.wait();
-      addLog(`✓ Sold ${parseFloat(balance).toFixed(1)} shares of ${playerName}! Tx: ${tx.hash.slice(0, 14)}...`);
+      addLog(language === "zh" ? `✓ 成功卖出 ${parseFloat(balance).toFixed(1)} 份 ${playerName} 指数！交易: ${tx.hash.slice(0, 14)}...` : `✓ Sold ${parseFloat(balance).toFixed(1)} shares of ${playerName}! Tx: ${tx.hash.slice(0, 14)}...`);
       setRefreshKey((k) => k + 1);
       setTxModal({ visible: true, type: "Sell", playerName, txHash: tx.hash, amount: parseFloat(balance).toFixed(1) });
     } catch (err: any) {
-      addLog(`Trade Sell Error: ${err.message}`, "warning");
+      addLog(language === "zh" ? `卖出指数错误: ${err.message}` : `Trade Sell Error: ${err.message}`, "warning");
     } finally {
       setLoading(false);
     }
@@ -247,11 +275,11 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
               </svg>
             </div>
             <h3 className="tx-modal-title">
-              {txModal.type === "Buy" && `Bought ${txModal.amount} Share of ${txModal.playerName}!`}
-              {txModal.type === "Sell" && `Sold ${txModal.amount} Shares of ${txModal.playerName}!`}
+              {txModal.type === "Buy" && (language === "zh" ? `成功买入 ${txModal.amount} 份 ${txModal.playerName} 指数！` : `Bought ${txModal.amount} Share of ${txModal.playerName}!`)}
+              {txModal.type === "Sell" && (language === "zh" ? `成功卖出 ${txModal.amount} 份 ${txModal.playerName} 指数！` : `Sold ${txModal.amount} Shares of ${txModal.playerName}!`)}
             </h3>
             <p className="tx-modal-sub">
-              Transaction confirmed on {isMainnet ? "X Layer Mainnet" : "X Layer Testnet"}.
+              {language === "zh" ? `交易已在 ${isMainnet ? "X Layer 主网" : "X Layer 测试网"} 上被确认。` : `Your transaction was confirmed on ${isMainnet ? "X Layer Mainnet" : "X Layer Testnet"}.`}
             </p>
             <a
               href={`${explorerBase}${txModal.txHash}`}
@@ -259,13 +287,13 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
               rel="noopener noreferrer"
               className="tx-modal-link"
             >
-              <SearchIcon /> View Transaction on Explorer ↗
+              <SearchIcon /> {language === "zh" ? "在浏览器上查看交易 ↗" : "View Transaction on Explorer ↗"}
             </a>
             <button
               className="btn btn-primary tx-modal-close"
               onClick={() => setTxModal(m => ({ ...m, visible: false }))}
             >
-              Done
+              {language === "zh" ? "完成" : "Done"}
             </button>
           </div>
         </div>,
@@ -323,10 +351,10 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
       <div className="player-market glass-card">
         <div className="panel-header">
           <span className="panel-icon">⚽</span>
-          <h3 className="panel-title">World Cup Player Market</h3>
+          <h3 className="panel-title">{language === "zh" ? "世界杯球员指数市场" : "World Cup Player Market"}</h3>
         </div>
         <p className="panel-desc">
-          Trade Player Index Tokens. Token prices represent the live scouting valuation and increase with player stats and performances.
+          {language === "zh" ? "交易球员指数代币。代币价格代表特工的实时评估身价，并随球员数据和场上表现而上涨。" : "Trade Player Index Tokens. Token prices represent the live scouting valuation and increase with player stats and performances."}
         </p>
 
         {/* ── Filter Controls ─────────────────────────────────────────────────── */}
@@ -351,7 +379,7 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
               const flagCode = countryIsoMap[c];
               return (
                 <option key={c} value={c} style={{ background: '#0d131f' }}>
-                  {c === "All" ? "🌍 All Countries" : `${flagCode ? "" : "🏳️"} ${c}`}
+                  {c === "All" ? (language === "zh" ? "🌍 所有国家" : "🌍 All Countries") : `${flagCode ? "" : "🏳️"} ${getTranslatedCountry(c)}`}
                 </option>
               );
             })}
@@ -361,7 +389,7 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
           <div style={{ flex: '2 1 200px', position: 'relative' }}>
             <input
               type="text"
-              placeholder="Search players..."
+              placeholder={language === "zh" ? "搜索球员..." : "Search players..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
@@ -387,16 +415,19 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
           marginBottom: '12px', fontSize: '0.78rem', color: 'var(--text-tertiary)'
         }}>
           <span>
-            Showing {paginatedPlayers.length} of {filteredPlayers.length} players
-            {selectedCountry !== "All" && ` in ${selectedCountry}`}
+            {language === "zh" ? (
+              <>显示 {getTranslatedCountry(selectedCountry)} 的 {filteredPlayers.length} 名球员中的 {paginatedPlayers.length} 名</>
+            ) : (
+              <>Showing {paginatedPlayers.length} of {filteredPlayers.length} players{selectedCountry !== "All" && ` in ${selectedCountry}`}</>
+            )}
           </span>
-          <span>Page {safeCurrentPage} of {totalPages}</span>
+          <span>{language === "zh" ? `第 ${safeCurrentPage} 页，共 ${totalPages} 页` : `Page ${safeCurrentPage} of ${totalPages}`}</span>
         </div>
 
         <div className={`player-list ${marketExpanded ? "expanded" : "collapsed"}`}>
           {paginatedPlayers.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-tertiary)', fontSize: '0.85rem', gridColumn: '1 / -1' }}>
-              No players found matching your criteria.
+              {language === "zh" ? "没有找到符合条件的球员。" : "No players found matching your criteria."}
             </div>
           ) : (
             paginatedPlayers.map((p) => {
@@ -415,24 +446,24 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
                           />
                         ) : "🏳️"}
                       </span>
-                      <span className="player-country">{p.country}</span>
+                      <span className="player-country">{getTranslatedCountry(p.country)}</span>
                       <span className="player-rating-badge">OVR {p.rating}</span>
                     </div>
                     <h4 className="player-name">{p.name}</h4>
                     <div className="player-stats">
-                      <span>⚽ Goals: <strong>{p.goals}</strong></span>
-                      <span><ShoeIcon /> Assists: <strong>{p.assists}</strong></span>
+                      <span>{language === "zh" ? "⚽ 进球:" : "⚽ Goals:"} <strong>{p.goals}</strong></span>
+                      <span><ShoeIcon /> {language === "zh" ? "助攻:" : "Assists:"} <strong>{p.assists}</strong></span>
                     </div>
                   </div>
 
                   <div className="player-trade-area">
                     <div className="player-price-box">
-                      <div className="price-label">SHARE PRICE</div>
+                      <div className="price-label">{language === "zh" ? "指数单价" : "SHARE PRICE"}</div>
                       <div className="price-value font-mono">{parseFloat(p.price).toFixed(0)} <span className="price-unit">CRD</span></div>
                     </div>
 
                     <div className="player-balance-box">
-                      <div className="balance-label">OWNED</div>
+                      <div className="balance-label">{language === "zh" ? "持仓份额" : "OWNED"}</div>
                       <div className="balance-value font-mono">{parseFloat(p.balance).toFixed(1)}</div>
                     </div>
 
@@ -444,20 +475,20 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
                             onClick={() => handleBuy((p as any).tokenId!, p.price, p.name)}
                             disabled={loading}
                           >
-                            Buy 1
+                            {language === "zh" ? "买入 1" : "Buy 1"}
                           </button>
                           <button
                             className="btn btn-sell"
                             onClick={() => handleSell((p as any).tokenId!, p.balance, p.name)}
                             disabled={loading || !hasBalance}
                           >
-                            Sell All
+                            {language === "zh" ? "卖出全部" : "Sell All"}
                           </button>
                         </div>
                       ) : null
                     ) : (
                       <span className="not-tradeable-badge" style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)', padding: '6px 10px', borderRadius: '6px' }}>
-                        Not Tradeable
+                        {language === "zh" ? "不可交易" : "Not Tradeable"}
                       </span>
                     )}
                   </div>
@@ -490,7 +521,7 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
                 opacity: safeCurrentPage === 1 ? 0.5 : 1
               }}
             >
-              ← Prev
+              {language === "zh" ? "← 上一页" : "← Prev"}
             </button>
 
             {/* Page numbers */}
@@ -538,7 +569,7 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
                 opacity: safeCurrentPage === totalPages ? 0.5 : 1
               }}
             >
-              Next →
+              {language === "zh" ? "下一页 →" : "Next →"}
             </button>
           </div>
         )}
@@ -548,7 +579,7 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
           onClick={() => setMarketExpanded(!marketExpanded)}
           style={{ display: 'none', width: '100%', marginTop: '16px', padding: '12px' }}
         >
-          {marketExpanded ? "View Less ▴" : "View More ▾"}
+          {marketExpanded ? (language === "zh" ? "收起 ▴" : "View Less ▴") : (language === "zh" ? "展开更多 ▾" : "View More ▾")}
         </button>
       </div>
     </>
