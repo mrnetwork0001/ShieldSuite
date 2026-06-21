@@ -107,9 +107,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
           console.error("Failed to fetch registered users from backend:", e);
         }
         
-        // Always include default participants to ensure leaderboard layout is full
+        // Query current wallet address to check if active
         if (wallet.address) userAddresses.add(wallet.address);
-        if (DEPLOYED_ADDRESSES.deployer) userAddresses.add(DEPLOYED_ADDRESSES.deployer);
         
         // Scan blocks to discover recent stakers/deposits.
         // Limit query block range lookback to 99 blocks to comply with XLayer RPC strict limits.
@@ -176,10 +175,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
           })
         );
 
-        // Save active stakers (who have staked balance or accumulated credits) back to localStorage
-        const activeAddresses = managers
-          .filter((m) => m.staked > 0n || m.credits > 0n)
-          .map((m) => m.address);
+        // Filter out inactive stakers (must have staked balance or accumulated credits)
+        const activeManagers = managers.filter((m) => m.staked > 0n || m.credits > 0n);
+
+        // Save active stakers back to localStorage
+        const activeAddresses = activeManagers.map((m) => m.address);
           
         try {
           localStorage.setItem(storageKey, JSON.stringify(activeAddresses));
@@ -189,11 +189,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
 
         // Fallback: if totalStaked() returned 0 but users have balances, compute from sum
         if (totalVaultStaked === 0n) {
-          totalVaultStaked = managers.reduce((sum, m) => sum + (m.staked || 0n), 0n);
+          totalVaultStaked = activeManagers.reduce((sum, m) => sum + (m.staked || 0n), 0n);
         }
         
         // 3. Sort by credits descending
-        const sorted = managers.sort((a, b) => {
+        const sorted = activeManagers.sort((a, b) => {
           if (b.credits > a.credits) return 1;
           if (b.credits < a.credits) return -1;
           return 0;
