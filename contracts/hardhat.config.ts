@@ -30,6 +30,30 @@ const config: HardhatUserConfig = {
       accounts: process.env.AGENT_PRIVATE_KEY ? [process.env.AGENT_PRIVATE_KEY] : [],
     },
   },
+  etherscan: {
+    apiKey: {
+      xlayerMainnet: process.env.OKLINK_API_KEY || "",
+      xlayerTestnet: process.env.OKLINK_API_KEY || "",
+    },
+    customChains: [
+      {
+        network: "xlayerMainnet",
+        chainId: 196,
+        urls: {
+          apiURL: "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/XLAYER",
+          browserURL: "https://www.oklink.com/xlayer",
+        },
+      },
+      {
+        network: "xlayerTestnet",
+        chainId: 1952,
+        urls: {
+          apiURL: "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/XLAYER_TESTNET",
+          browserURL: "https://www.oklink.com/xlayer-test",
+        },
+      },
+    ],
+  },
 };
 
 export default config;
