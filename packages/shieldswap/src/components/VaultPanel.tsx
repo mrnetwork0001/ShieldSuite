@@ -272,6 +272,19 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
       const vault = new ethers.Contract(DEPLOYED_ADDRESSES.NoLossVault, VAULT_ABI, wallet.signer);
       const tx = await vault.deposit(ethers.parseUnits(depositAmount, usdtDecimals));
       await tx.wait();
+      
+      // Register user globally in backend so they permanently appear on the leaderboard (bypasses RPC block limit)
+      try {
+        const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "http://localhost:3402";
+        await fetch(`${API_BASE}/api/worldcup/register-user`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ address: wallet.address })
+        });
+      } catch (e) {
+        console.warn("Failed to register user to global backend database", e);
+      }
+
       addLog(language === "zh" ? `✓ 成功质押 ${depositAmount} USDT！交易: ${tx.hash.slice(0, 14)}...` : `✓ Staked ${depositAmount} USDT successfully! Tx: ${tx.hash.slice(0, 14)}...`);
       setDepositAmount("");
       setRefreshKey((k) => k + 1);

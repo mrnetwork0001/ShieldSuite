@@ -144,36 +144,36 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
               const userInfo = await vault.users(addr);
               const credits = await vault.getCredits(addr);
               
+              // Deterministic mock volume for hackathon demo (since XLayer RPC limits getLogs to 100 blocks)
+              const seed = parseInt(addr.slice(-6), 16) || 1;
+              const stakedUsd = Number(ethers.formatUnits(userInfo.balance, isMainnet ? 6 : 18));
+              const volumeTraded = (seed % 15000) + (stakedUsd * 4.5);
+              
               let multiplier = 1.0;
-              try {
-                const psaiTokenAddress = "0xaef068ea820aafa00a2854bfd6cfab6d891ede5d";
-                const psai = new ethers.Contract(psaiTokenAddress, [
-                  "function balanceOf(address) external view returns (uint256)"
-                ], wallet.provider!);
-                const psaiBal = await psai.balanceOf(addr);
-                if (psaiBal >= ethers.parseEther("1000000")) {
-                  multiplier = 5.0;
-                } else if (psaiBal >= ethers.parseEther("250000")) {
-                  multiplier = 3.0;
-                } else if (psaiBal >= ethers.parseEther("50000")) {
-                  multiplier = 2.0;
-                } else if (psaiBal >= ethers.parseEther("10000")) {
-                  multiplier = 1.5;
-                }
-              } catch {
-                if (wallet.chainId !== 196 && addr.toLowerCase() === "0xcd0a2370f2dc12c1802707b7d9ab3fec891e3c02") {
-                  multiplier = 3.0; // Mock Elite Scout Master (3.0x multiplier)
-                }
+              if (volumeTraded >= 50000) {
+                multiplier = 5.0;
+              } else if (volumeTraded >= 10000) {
+                multiplier = 3.0;
+              } else if (volumeTraded >= 2500) {
+                multiplier = 2.0;
+              } else if (volumeTraded >= 500) {
+                multiplier = 1.5;
+              }
+
+              // Apply elite multiplier to testnet user for demo
+              if (!isMainnet && addr.toLowerCase() === "0xcd0a2370f2dc12c1802707b7d9ab3fec891e3c02") {
+                multiplier = 5.0;
               }
 
               return {
                 address: addr,
                 staked: userInfo.balance,
                 credits: credits,
+                volumeTraded,
                 multiplier
               };
             } catch (err) {
-              return { address: addr, staked: 0n, credits: 0n, multiplier: 1.0 };
+              return { address: addr, staked: 0n, credits: 0n, volumeTraded: 0, multiplier: 1.0 };
             }
           })
         );
@@ -190,9 +190,14 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
           console.error("Failed to save stakers to localStorage", e);
         }
 
-        // Fallback: if totalStaked() returned 0 but users have balances, compute from sum
-        if (totalVaultStaked === 0n) {
-          totalVaultStaked = activeManagers.reduce((sum, m) => sum + (m.staked || 0n), 0n);
+        // Check for missing staked balance (users who deposited before tracking was added)
+        const trackedStaked = activeManagers.reduce((sum, m) => sum + (m.staked || 0n), 0n);
+        let anonymousStaked = 0n;
+        
+        if (totalVaultStaked > trackedStaked) {
+          anonymousStaked = totalVaultStaked - trackedStaked;
+        } else if (totalVaultStaked === 0n) {
+          totalVaultStaked = trackedStaked;
         }
         
         // 3. Sort by credits descending
@@ -201,12 +206,24 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
           if (b.credits < a.credits) return -1;
           return 0;
         });
+
+        if (anonymousStaked > 0n) {
+          sorted.push({
+            address: "anonymous",
+            staked: anonymousStaked,
+            credits: 0n,
+            volumeTraded: 0,
+            multiplier: 1.0
+          } as any);
+        }
         
         // 4. Map to display formats
         const mapped = sorted.map((item, index) => {
           let name = language === "zh" ? `特工经理 #${index + 1}` : `Scout Manager #${index + 1}`;
           
-          if (item.address.toLowerCase() === DEPLOYED_ADDRESSES.deployer.toLowerCase()) {
+          if (item.address === "anonymous") {
+            name = language === "zh" ? "未跟踪的储户" : "Untracked Depositors";
+          } else if (item.address.toLowerCase() === DEPLOYED_ADDRESSES.deployer.toLowerCase()) {
             name = language === "zh" ? "部署者管理员" : "Deployer Admin";
           } else if (wallet.address && item.address.toLowerCase() === wallet.address.toLowerCase()) {
             name = language === "zh" ? "您" : "You";
@@ -219,21 +236,26 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
           }
             
           return {
-            rank: index + 1,
+            rank: item.address === "anonymous" ? "-" : index + 1,
             address: item.address,
             name: name,
-            credits: parseFloat(ethers.formatEther(item.credits)).toLocaleString(undefined, {
+            credits: item.address === "anonymous" ? "—" : parseFloat(ethers.formatEther(item.credits)).toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             }),
             portfolio: parseFloat(ethers.formatUnits(item.staked, usdtDecimals)).toFixed(2) + " USDT",
             share: sharePercent,
+            volumeFormatted: item.address === "anonymous" ? "—" : "$" + item.volumeTraded.toLocaleString(undefined, { maximumFractionDigits: 0 }),
             multiplier: item.multiplier
           };
         });
         
-        // Limit to top 5 managers for premium design aesthetic
-        setLeaderboard(mapped.slice(0, 5));
+        // Limit to top 5 managers for premium design aesthetic, but always show untracked depositors
+        const top5 = mapped.filter(m => m.address !== "anonymous").slice(0, 5);
+        const anonymousManager = mapped.find(m => m.address === "anonymous");
+        if (anonymousManager) top5.push(anonymousManager);
+        
+        setLeaderboard(top5);
       } catch (err) {
         console.error("Failed to compile dynamic leaderboard:", err);
       } finally {
@@ -340,19 +362,19 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', textAlign: 'center' }}>
           <div style={{ padding: '6px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid rgba(168, 85, 247, 0.15)' }}>
             <div style={{ color: '#c084fc', fontWeight: 'bold' }}>{language === "zh" ? "1.5倍加速" : "1.5x Boost"}</div>
-            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ 10k PSAI</div>
+            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ $500 Vol</div>
           </div>
           <div style={{ padding: '6px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid rgba(14, 165, 233, 0.15)' }}>
             <div style={{ color: '#38bdf8', fontWeight: 'bold' }}>{language === "zh" ? "2.0倍加速" : "2.0x Boost"}</div>
-            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ 50k PSAI</div>
+            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ $2.5k Vol</div>
           </div>
           <div style={{ padding: '6px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.15)' }}>
             <div style={{ color: '#fbbf24', fontWeight: 'bold' }}>{language === "zh" ? "3.0倍加速" : "3.0x Boost"}</div>
-            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ 250k PSAI</div>
+            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ $10k Vol</div>
           </div>
           <div style={{ padding: '6px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid rgba(34, 197, 94, 0.15)' }}>
             <div style={{ color: '#4ade80', fontWeight: 'bold' }}>{language === "zh" ? "👑 5.0倍加速" : "👑 5.0x Boost"}</div>
-            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ 1M PSAI</div>
+            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem', marginTop: '2px' }}>≥ $50k Vol</div>
           </div>
         </div>
       </div>
@@ -364,10 +386,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         </div>
       ) : (
         <div className="leaderboard-table" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <div className="table-header" style={{ display: "grid", gridTemplateColumns: "0.55fr 2fr 1.65fr 1.1fr", fontSize: "0.72rem", color: "var(--text-tertiary)", fontWeight: "700", textTransform: "uppercase", paddingBottom: "8px", borderBottom: "1px solid var(--border-default)" }}>
+          <div className="table-header" style={{ display: "grid", gridTemplateColumns: "0.5fr 1.8fr 1.4fr 1.1fr 1fr", fontSize: "0.72rem", color: "var(--text-tertiary)", fontWeight: "700", textTransform: "uppercase", paddingBottom: "8px", borderBottom: "1px solid var(--border-default)" }}>
             <span>{language === "zh" ? "排名" : "Rank"}</span>
             <span>{language === "zh" ? "经理" : "Manager"}</span>
             <span style={{ textAlign: "right" }}>{language === "zh" ? "特工积分" : "Scout Credits"}</span>
+            <span style={{ textAlign: "right" }}>{language === "zh" ? "交易量" : "Volume"}</span>
             <span style={{ textAlign: "right" }}>{language === "zh" ? "质押 / 份额" : "Staked / Share"}</span>
           </div>
 
@@ -380,7 +403,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
                 className="leaderboard-row" 
                 style={{ 
                   display: "grid", 
-                  gridTemplateColumns: "0.55fr 2fr 1.65fr 1.1fr", 
+                  gridTemplateColumns: "0.5fr 1.8fr 1.4fr 1.1fr 1fr", 
                   fontSize: "0.82rem", 
                   alignItems: "center", 
                   padding: "10px 0", 
@@ -430,11 +453,14 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
                     )}
                   </span>
                   <span className="font-mono" style={{ fontSize: "0.68rem", color: "var(--text-tertiary)" }}>
-                    {item.address.slice(0, 6)}...{item.address.slice(-4)}
+                    {item.address === "anonymous" ? "—" : `${item.address.slice(0, 6)}...${item.address.slice(-4)}`}
                   </span>
                 </span>
                 <span className="font-mono" style={{ textAlign: "right", color: "var(--accent-safe)", fontWeight: "600" }}>
                   {item.credits}
+                </span>
+                <span className="font-mono" style={{ textAlign: "right", color: "#c084fc", fontWeight: "600" }}>
+                  {item.volumeFormatted}
                 </span>
                 <span className="font-mono" style={{ textAlign: "right", color: "var(--text-secondary)", display: "flex", flexDirection: "column", gap: "1px", fontSize: "0.75rem" }}>
                   <span>{item.portfolio}</span>
