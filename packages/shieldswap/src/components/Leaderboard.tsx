@@ -93,10 +93,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
           }
         })();
 
-        const userAddresses = new Set<string>(cachedStakers);
+        const userAddresses = new Set<string>();
+        cachedStakers.forEach(addr => userAddresses.add(addr.toLowerCase()));
 
         // Load registered users from backend API
-        const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "";
+        const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "http://localhost:3402";
         try {
           const res = await fetch(`${API_BASE}/api/worldcup/users`);
           const data = await res.json();
@@ -110,12 +111,12 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         }
         
         // Query current wallet address to check if active
-        if (wallet.address) userAddresses.add(wallet.address);
+        if (wallet.address) userAddresses.add(wallet.address.toLowerCase());
         
         // Scan blocks to discover recent stakers/deposits.
-        // Limit query block range lookback to 99 blocks to comply with XLayer RPC strict limits.
+        // Limit query block range lookback to 9999 blocks to fetch more history.
         const currentBlock = await wallet.provider!.getBlockNumber();
-        const lookback = 99;
+        const lookback = 9999;
         const startBlock = Math.max(0, currentBlock - lookback);
         
         const depositFilter = vault.filters.Deposited();
@@ -123,14 +124,14 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         
         for (const event of depositEvents) {
           const user = (event as any).args[0];
-          if (user) userAddresses.add(user);
+          if (user) userAddresses.add(user.toLowerCase());
         }
 
         const delegateFilter = vault.filters.AgentDelegated();
         const delegateEvents = await vault.queryFilter(delegateFilter, startBlock, currentBlock).catch(() => []);
         for (const event of delegateEvents) {
           const user = (event as any).args[0];
-          if (user) userAddresses.add(user);
+          if (user) userAddresses.add(user.toLowerCase());
         }
         
         // 2. Fetch stats for each user address dynamically from the active contract
