@@ -1,5 +1,52 @@
 import { ethers } from "ethers";
+import { execSync } from "child_process";
 import { getProvider, getAgentWallet, getDeployedAddresses, detectProvider } from "./wallets.js";
+
+async function contractCallViaCli(params: {
+  to: string;
+  inputData: string;
+  chain?: string;
+  amt?: string;
+}): Promise<{ txHash: string } | null> {
+  try {
+    const chain = params.chain || "196";
+    const amt = params.amt || "0";
+    const cmd = `onchainos wallet contract-call --to ${params.to} --chain ${chain} --input-data ${params.inputData} --amt ${amt} --force`;
+    console.log(`[AgentWallet] Executing: ${cmd}`);
+
+    const apiKey = process.env.OKX_API_KEY || "";
+    const secretKey = process.env.OKX_SECRET_KEY || "";
+    const passphrase = process.env.OKX_PASSPHRASE || "";
+
+    const output = execSync(cmd, {
+      timeout: 30000,
+      env: {
+        ...process.env,
+        OKX_API_KEY: apiKey,
+        OKX_SECRET_KEY: secretKey,
+        OKX_PASSPHRASE: passphrase,
+      },
+    }).toString();
+
+    console.log(`[AgentWallet] CLI output: ${output.slice(0, 200)}`);
+
+    const txMatch = output.match(/txHash[:\s]*["']?(0x[a-fA-F0-9]{64})["']?/i);
+    if (txMatch) {
+      return { txHash: txMatch[1] };
+    }
+
+    if (output.toLowerCase().includes("success") || output.includes("0x")) {
+      const hashMatch = output.match(/(0x[a-fA-F0-9]{64})/);
+      return { txHash: hashMatch?.[1] || "unknown" };
+    }
+
+    console.warn(`[AgentWallet] CLI contract-call returned no txHash`);
+    return null;
+  } catch (error: any) {
+    console.error(`[AgentWallet] CLI contract-call failed: ${error.message}`);
+    return null;
+  }
+}
 
 // Contract ABIs
 const VAULT_ABI = [
@@ -87,7 +134,9 @@ async function runScoutLoop() {
 
   const provider = getProvider();
   const wallet = getAgentWallet(provider);
-  const agentAddress = wallet.address;
+  
+  const pk = process.env.AGENT_PRIVATE_KEY;
+  const agentAddress = pk ? wallet.address : (process.env.AGENTIC_WALLET_ADDRESS || "0x80f28d975cf34f6213a4e9cda8ebdd8a8f7bceb6");
 
   await postLog(`AI Scout Agent starting loop with wallet: ${agentAddress}`, "info");
 
@@ -124,10 +173,10 @@ async function runScoutLoop() {
   const delegatedUsers = new Set<string>();
   
   const net = await provider.getNetwork();
-  const isMainnet = net.chainId === 196n || net.chainId === 196;
-  
-  if (!isMainnet) {
-    // Always include the deployer wallet so that demo trades still trigger for it in testnet/sandbox
+  const isMainnet = net.chainId === 196n;
+
+  if (!isMainnet || true) {
+    // Include deployer wallet for mainnet testing
     delegatedUsers.add(addresses.deployer);
   }
 
@@ -248,9 +297,25 @@ async function runScoutLoop() {
 
         if (newRating !== currentRating || newGoals !== currentGoals || newAssists !== currentAssists) {
           await postLog(`Updating on-chain stats for ${name || "Player"}: Rating ${currentRating} -> ${newRating}, Goals ${currentGoals} -> ${newGoals}, Assists ${currentAssists} -> ${newAssists}`, "info");
-          const updateTx = await shares.updatePlayer(event.tokenId, newRating, newGoals, newAssists, "");
-          await updateTx.wait();
-          await postLog(`✅ On-chain rating updated. Tx Hash: ${updateTx.hash}`, "info");
+          const pk = process.env.AGENT_PRIVATE_KEY;
+          if (pk) {
+            const updateTx = await shares.updatePlayer(event.tokenId, newRating, newGoals, newAssists, "");
+            await updateTx.wait();
+            await postLog(`✅ On-chain rating updated. Tx Hash: ${updateTx.hash}`, "info");
+          } else {
+            const iface = new ethers.Interface(SHARES_ABI);
+            const calldata = iface.encodeFunctionData("updatePlayer", [event.tokenId, newRating, newGoals, newAssists, ""]);
+            const txResult = await contractCallViaCli({
+              to: addresses.PlayerShares,
+              inputData: calldata,
+              chain: "196"
+            });
+            if (txResult && txResult.txHash) {
+              await postLog(`✅ On-chain rating updated via TEE. Tx Hash: ${txResult.txHash}`, "info");
+            } else {
+              throw new Error("Failed to execute updatePlayer via TEE CLI");
+            }
+          }
         }
       } catch (err: any) {
         await postLog(`⚠️ Failed to update player rating on-chain: ${err.message}`, "error");
@@ -273,9 +338,25 @@ async function runScoutLoop() {
 
             if (userCredits >= totalCost) {
               await postLog(`Executing autonomous BUY of 1.0 Share (ID: ${event.tokenId}) on behalf of user ${user.slice(0, 10)}...`, "trade");
-              const tx = await dex.buySharesFor(user, event.tokenId, amountToBuy);
-              await tx.wait();
-              await postLog(`Tx Confirmed! Purchased Player Shares. Tx Hash: ${tx.hash}`, "trade");
+              const pk = process.env.AGENT_PRIVATE_KEY;
+              if (pk) {
+                const tx = await dex.buySharesFor(user, event.tokenId, amountToBuy);
+                await tx.wait();
+                await postLog(`Tx Confirmed! Purchased Player Shares. Tx Hash: ${tx.hash}`, "trade");
+              } else {
+                const iface = new ethers.Interface(DEX_ABI);
+                const calldata = iface.encodeFunctionData("buySharesFor", [user, event.tokenId, amountToBuy]);
+                const txResult = await contractCallViaCli({
+                  to: addresses.PlayerDex,
+                  inputData: calldata,
+                  chain: "196"
+                });
+                if (txResult && txResult.txHash) {
+                  await postLog(`Tx Confirmed! Purchased Player Shares via TEE. Tx Hash: ${txResult.txHash}`, "trade");
+                } else {
+                  throw new Error("Failed to execute buySharesFor via TEE CLI");
+                }
+              }
             } else {
               await postLog(`User ${user.slice(0, 10)} has insufficient credits (${ethers.formatEther(userCredits)} < ${ethers.formatEther(totalCost)}). Skipping.`, "info");
             }
@@ -283,9 +364,25 @@ async function runScoutLoop() {
             const balance = await shares.balanceOf(user, event.tokenId);
             if (balance > 0n) {
               await postLog(`Executing autonomous SELL of ${ethers.formatEther(balance)} Shares (ID: ${event.tokenId}) on behalf of user ${user.slice(0, 10)}...`, "trade");
-              const tx = await dex.sellSharesFor(user, event.tokenId, balance);
-              await tx.wait();
-              await postLog(`Tx Confirmed! Liquidated Player Shares. Tx Hash: ${tx.hash}`, "trade");
+              const pk = process.env.AGENT_PRIVATE_KEY;
+              if (pk) {
+                const tx = await dex.sellSharesFor(user, event.tokenId, balance);
+                await tx.wait();
+                await postLog(`Tx Confirmed! Liquidated Player Shares. Tx Hash: ${tx.hash}`, "trade");
+              } else {
+                const iface = new ethers.Interface(DEX_ABI);
+                const calldata = iface.encodeFunctionData("sellSharesFor", [user, event.tokenId, balance]);
+                const txResult = await contractCallViaCli({
+                  to: addresses.PlayerDex,
+                  inputData: calldata,
+                  chain: "196"
+                });
+                if (txResult && txResult.txHash) {
+                  await postLog(`Tx Confirmed! Liquidated Player Shares via TEE. Tx Hash: ${txResult.txHash}`, "trade");
+                } else {
+                  throw new Error("Failed to execute sellSharesFor via TEE CLI");
+                }
+              }
             }
           }
         } catch (tradeErr: any) {

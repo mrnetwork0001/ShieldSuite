@@ -51,7 +51,7 @@ export const en = {
 
   // Swap Card & DEX Aggregator
   swap_hero_title: "Every token scanned. Every trade protected.",
-  swap_hero_subtitle: "AI-powered security scanning meets DeFi. Swap tokens on XLayer with confidence.",
+  swap_hero_subtitle: "AI-powered security scanning meets DeFi. Trade PSAI on XLayer, climb the leaderboard, and win a share of the $500 prize pool!",
   swap_title: "ShieldSwap",
   swap_tab_swap: "Swap",
   swap_tab_liquidity: "Liquidity",
@@ -364,7 +364,7 @@ export const zh = {
 
   // Swap Card & DEX Aggregator
   swap_hero_title: "逐币安全扫描，保卫每笔交易",
-  swap_hero_subtitle: "AI 驱动的安全扫描完美融入 DeFi。在 X Layer 上信心十足地兑换代币。",
+  swap_hero_subtitle: "AI 驱动的安全扫描完美融入 DeFi。在 X Layer 主网交易 PSAI，冲击排行榜，赢取 $500 总奖池！",
   swap_title: "防卫兑换 (ShieldSwap)",
   swap_tab_swap: "兑换",
   swap_tab_liquidity: "流动性",

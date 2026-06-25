@@ -22,11 +22,12 @@
 
 ---
 
-## Why Pitchside AI Wins
+## 🏆 Why Pitchside AI Wins
 
 Pitchside AI goes far beyond a simple MVP prediction market. It implements state-of-the-art Web3 architectural paradigms:
 
-*   **100% Principal Protection (Zero Loss Staking):** Staked USDT is not bet. Instead, on Mainnet, it is supplied directly to **Aave V3 Pools** using [ProductionNoLossVault.sol](contracts/contracts/ProductionNoLossVault.sol). The principal remains 100% safe, while virtual yield (Scout Credits) is generated for risk-free speculation.
+*   **100% Principal Protection (Zero Loss Staking - Production Ready):** Staked real USDT is not bet. Instead, on Mainnet, it is supplied directly to **Aave V3 Pools** using the custom [ProductionNoLossVault.sol](contracts/contracts/ProductionNoLossVault.sol) deployed at `0xdc5ef9103e12c7595950b25044cf91ad7f860dd3`. Staked funds are supplied to the Aave Pool Addresses Provider, earning real interest under the hood, while generating virtual yield (Scout Credits) for users.
+*   **Synchronized Decimal and Yield scaling:** Natively supports both 6-decimal real USDT and 18-decimal virtual credits. The yield accrual rate is configured at `2.314814814 * 10^12` scaled credits per second to yield exactly 200 virtual credits per day per 1 USDT staked, enabling micro-precision speculatory yield.
 *   **Hardware-Grade Agent Security (TEE):** The autonomous scout runs inside a secure **Trusted Execution Environment (TEE)** using the `okx-agentic-wallet` SDK. Private keys are securely sealed inside hardware enclaves and can never be extracted by the host application.
 *   **OKX NFT Marketplace Indexing:** Dynamic Player Shares are minted as standardized ERC-1155 tokens onchain using [PlayerShares.sol](contracts/contracts/PlayerShares.sol). Standardized metadata is served dynamically via our API endpoint so that player index shares can be indexed, bought, and sold instantly on the **OKX NFT Marketplace**.
 *   **Decentralized, Block-Derived Leaderboard:** Unlike centralized databases, our leaderboard inside [Leaderboard.tsx](packages/shieldswap/src/components/Leaderboard.tsx) queries the X Layer blockchain in real-time. It scans `Deposited` and `AgentDelegated` event logs to fetch active participants, calculate their pool share, and pull TVL and credits directly from the smart contract.
@@ -35,7 +36,7 @@ Pitchside AI goes far beyond a simple MVP prediction market. It implements state
 
 ---
 
-## The Problem & Our Solution
+## 🚨 The Problem & Our Solution
 
 ### The Problem
 With the proliferation of L2 tokens and AI-driven trading, malicious actors deploy honeypots, hidden taxes, and toxic bytecode to drain liquidity. Centralized DEX routers execute swaps blindly, and AI agents lack a standard, machine-readable protocol to verify token safety natively before engaging. 
@@ -50,7 +51,7 @@ We built a dual-layer security and speculation ecosystem:
 
 ---
 
-## Ecosystem Components
+## 🏗️ Ecosystem Components
 
 The Shield Suite monorepo is divided into four highly integrated packages:
 
@@ -59,12 +60,14 @@ The brain of the operation. A Node.js backend serving as both a RESTful API and 
 *   Executes **Dual-Layer Scanning**: Combines `okx-security` APIs with a custom bytecode heuristics engine.
 *   Manages the **x402 Payment Loop**, requiring micro-payments for access to its intelligence.
 *   Serves the **World Cup Match & News Feed** to drive the Pitchside speculation loop.
+*   Runs the **Trading Volume Indexer** which continually scans for `$PSAI` token trades, dynamically pricing native OKB swaps using the public OKX Index Tickers API (`OKB-USDT`) for exact volume metrics.
 
 ### 2. ShieldSwap & Pitchside AI (`packages/shieldswap`)
 A glassmorphic, terminal-inspired frontend built in React/Vite.
 *   Integrates `okx-dex-swap` to route trades across 500+ liquidity sources on X Layer, guaranteeing optimal routing.
 *   Features a conversational **AI Agent Chatbot** seamlessly integrated directly into the trading UI, allowing users to scan tokens and stage trades using natural language.
 *   Hosts **Pitchside AI** - an interactive portal featuring DeFi staking, player market speculation cards, and live TEE agent execution logs.
+*   Integrates the **OKX Speculation Sub-Platform** allowing users to wager PSAI tokens on gas and volume metrics with an automatic 20% token burn model.
 
 ### 3. Agent Dashboard (`packages/dashboard`)
 A real-time command center for monitoring the entire ecosystem.
@@ -102,17 +105,20 @@ A TEE-isolated Node.js loop running the autonomous agent scripts.
                           `okx-security`  [PlayerShares ERC-1155]
 ```
 
-### The Substantial New Developments:
-*   **`ProductionNoLossVault.sol` (Aave V3 Staking Vault):** On X Layer Mainnet, staked USDT is securely supplied to Aave V3 pools under the hood to generate real interest. Capital is 100% protected and withdrawable at any time. Accumulated interest is harvested to fund the reward prize pool.
-*   **`PlayerShares.sol` (Dynamic Player Index):** An ERC-1155 contract representing synthetic player shares. Ratings and metadata update dynamically onchain. Serves standardized metadata JSON schemas for secondary trading integration on OKX NFT Marketplace.
-*   **`PlayerDex.sol` (AMM Swap Engine):** A custom AMM enabling zero-slippage, credit-backed trading of Player Shares. Features decimal and yield rate synchronization ($10^{12}$ factor) to natively support both 6-decimal USDT and 18-decimal virtual credits.
-*   **TEE Scout Agent (`scout.ts`):** Fetches match news, evaluates sports sentiment, validates bytecode safety via ScanGuard API, updates player ratings onchain, and executes swaps automatically.
-*   **Dynamic Onchain Ratings & Pricing:** The TEE Scout Agent dynamically updates player ratings and statistics onchain (via `PlayerShares.updatePlayer(...)`) when it parses positive or negative news events. Since the share price in the `PlayerDex` AMM is calculated directly from the onchain rating, these match updates automatically shift player share valuations in real time, allowing early spec-buyers to cash out their profits.
-*   **Dynamic Onchain Leaderboard:** A network-aware leaderboard component that queries the active blockchain (scanning Deposited and AgentDelegated contract events) to fetch users' credits and staked values in real time on both Testnet and Mainnet. Features a **2-week campaign system** with Pre-Season Warm-Up (testnet) and Season 1 Group Stage (mainnet) countdown timers.
+### Key Technical Developments & Upgrades:
+*   **Production Staking Vault (`ProductionNoLossVault.sol`):** Stakes real USDT on X Layer Mainnet, supplying to Aave V3. Uses Aave's `supply` and `withdraw` interfaces to guarantee principal safety while accumulating interest.
+*   **Credit-Backed AMM (`PlayerDex.sol`):** A customized AMM contract deployed at `0x5124dad647eb7ece5f565f6d6fff33e4595ccd8d` that supports zero-slippage, credit-backed buying and selling of Player Shares. It uses dynamic on-chain pricing based on token supply and dynamic ratings.
+*   **Sportmonks Football API Syncing:** The system parses live match timelines and player statistics using Sportmonks. Rating configurations and index prices update onchain through the Scout Agent.
+*   **Dynamic Leaderboard Gating**: Serves a highly curated ranked leaderboard. Only users who hold at least 1 player share (`hasShares === true`) from the 16 active player contracts are officially ranked.
+*   **High-Performance RPC Caching & Resiliency**: Resolves potential RPC timeouts and page hanging on X Layer Mainnet:
+    1.  **Memory Cache**: Implemented a 5-minute memory caching layer for user player share queries.
+    2.  **Event-Driven Invalidation**: The cache is instantly invalidated when users perform critical actions (e.g., connection, sync requests) or when a `TransferSingle` event involving player shares is detected by the block indexer.
+    3.  **Graceful Timeout Wrapper**: Queries are wrapped in a strict 2.5-second timeout, falling back gracefully to the cache or safe default states if the RPC is slow or unresponsive.
+*   **OKX Speculation & Deflationary Burn**: Incorporates a sub-platform where users wager `$PSAI` on OKX network statistics. Includes a programmatic 20% burn penalty sent to the zero address (`0x0000000000000000000000000000000000000000`) on every wager to establish token deflation.
 
 ---
 
-## Autonomous AI Agent (TEE)
+## 🤖 Autonomous AI Agent (TEE)
 
 We have deployed an autonomous Node.js agent running 24/7. It continuously invokes the ScanGuard API to monitor the top 11 X Layer core tokens (WOKB, USDC, USDT, USDe, etc.) for emerging threats.
 
@@ -121,7 +127,7 @@ We have deployed an autonomous Node.js agent running 24/7. It continuously invok
 
 ---
 
-## OnchainOS Integration Deep-Dive
+## 🔌 OnchainOS Integration Deep-Dive
 
 Our application deeply leverages the OKX OnchainOS ecosystem to provide routing, analytics, and wallet controls:
 
@@ -135,7 +141,7 @@ Our application deeply leverages the OKX OnchainOS ecosystem to provide routing,
 
 ---
 
-## x402 Agent Economy
+## 💳 x402 Agent Economy
 
 ScanGuard pioneers a monetized API standard for AI agents via [x402 Payment Required](https://www.x402.org):
 
@@ -149,7 +155,7 @@ ScanGuard pioneers a monetized API standard for AI agents via [x402 Payment Requ
 
 ---
 
-## Model Context Protocol (MCP)
+## 🔧 Model Context Protocol (MCP)
 
 ScanGuard exposes an HTTP MCP server that any standard AI client can query natively to give them "X Layer vision".
 
@@ -199,23 +205,16 @@ timeline
 
 ## ⚓ Smart Contract Deployments
 
-### X Layer Mainnet (Chain ID 196) - Production Standby
-*   **Real USDT (USDT0):** `0x779Ded0c9e1022225f8E0630b35a9b54bE713736`
-*   **NoLossVault (Aave V3 Pool):** `0xe8a63b4a905d9c1c2262f261dee90478d6ffd3de`
-*   **PlayerShares:** `0xb1cc05dc0a0b70fabc6bbb1b3043ba386c86d7e1`
-*   **PlayerDex AMM:** `0xf2338b4ba18373070cdfd9f53da321fa12aa591b`
-*   **TEE Agent Address:** `0xDAce8445a5bD576111cCC8e598B67965252023C2`
-
-### X Layer Testnet (Chain ID 1952) - Sandbox Testing
-*   **MockUSDT:** `0xe5E0795a8A61502409f304f391B615220d720fE9`
-*   **NoLossVault:** `0x9E1A49480C1c1762A4B465F50c5cAAb86Aa3B046`
-*   **PlayerShares:** `0xE8a63B4a905d9C1C2262F261dee90478d6fFD3De`
-*   **PlayerDex AMM:** `0xF2338b4Ba18373070cDfD9F53DA321fA12Aa591b`
-*   **TEE Agent Address:** `0xDAce8445a5bD576111cCC8e598B67965252023C2`
+### X Layer Mainnet (Chain ID 196) - Live Production Addresses
+*   **Real USDT Token (USD₮0):** `0x779ded0c9e1022225f8e0630b35a9b54be713736`
+*   **Production NoLossVault (Aave V3):** `0xdc5ef9103e12c7595950b25044cf91ad7f860dd3`
+*   **PlayerShares:** `0xf62660a59fCbe3F81DEcD86732aeE91A7bdb3E4A`
+*   **PlayerDex AMM:** `0x5124dad647eb7ece5f565f6d6fff33e4595ccd8d`
+*   **TEE Agent Address:** `0x80f28d975cf34f6213a4e9cda8ebdd8a8f7bceb6`
 
 ---
 
-## Local Setup & Testing
+## ⚙️ Local Setup & Testing
 
 ### 1. Installation
 ```bash
@@ -241,31 +240,32 @@ This single command orchestrates:
 
 ---
 
-## Onchain Verification for Judges
+## 🧐 Onchain Verification for Judges
 
 To verify the completion and execution of the Pitchside AI World Cup loop:
 
-1.  **Claim Faucet & Stake:** Connect your wallet, claim 1,000 Mock USDT from the Faucet, and stake USDT in the **No-Loss Vault**.
+1.  **Stake Real USDT:** Connect your wallet, approve and stake real USDT (`0x779ded0c9e1022225f8e0630b35a9b54be713736`) into the **No-Loss Staking Vault**.
 2.  **Delegate Agent:** Select the **Active TEE Scout Agent** and click **Confirm Delegation**.
 3.  **Verify Live Data Feed:** Click **Verify Live Data Feed** in the Scout Console to verify real-time match data from Sportmonks Football API v3. Live matches show with a pulsing red indicator.
 4.  **Watch Agent React:** The Scout Console will immediately reflect the agent detecting new match events, scanning token bytecode via ScanGuard, and executing transactions on the `PlayerDex` contract.
-5.  **Verify Explorer:** Copy the generated transaction hash and search it on [X Layer Testnet Explorer](https://www.okx.com/explorer/xlayer-test) to verify the TEE Agent called the swap on your behalf.
+5.  **Verify Explorer:** Copy the generated transaction hash and search it on [OKLink X Layer Explorer](https://www.oklink.com/xlayer) to verify the TEE Agent called the swap on your behalf.
 6.  **Check the Leaderboard:** The Global Scout Leaderboard shows your ranking, Scout Credits, staked amount, and pool share - all read directly from onchain contract events.
 
 ---
 
-## Live Endpoints and Infrastructure
+## 🌐 Live Endpoints & Infrastructure
 
 *   **Network:** X Layer Mainnet (`Chain ID 196`)
 *   **ShieldSwap Application:** [https://shieldsuite.xyz/](https://shieldsuite.xyz/)
 *   **ScanGuard Dashboard:** [https://dashboard.shieldsuite.xyz/](https://dashboard.shieldsuite.xyz/)
 *   **Central API Node & MCP Host:** `railway`
-*   **TEE Agent Identity (X Layer):** `0xDAce8445a5bD576111cCC8e598B67965252023C2`
+*   **TEE Agent Identity (X Layer):** `0x80f28d975cf34f6213a4e9cda8ebdd8a8f7bceb6`
 
 ---
 
-## Contact & Socials
+## 🌐 Contact & Socials
 
 *   **Developer:** MrNetwork
 *   **Email:** mrnetwork0001@gmail.com
 *   **X (Twitter):** [@encrypt_wizard](https://x.com/encrypt_wizard)
+

@@ -115,8 +115,8 @@ export async function scanToken(request: ScanRequest): Promise<ScanResult> {
     if (fs.existsSync(addressPath)) {
       const content = fs.readFileSync(addressPath, "utf-8");
       const addresses = JSON.parse(content);
-      // Check both mainnet and testnet address sets
-      const allSets = [addresses.xlayerMainnet, addresses.xlayerTestnet, addresses].filter(Boolean);
+      // Check mainnet address sets
+      const allSets = [addresses.xlayerMainnet, addresses].filter(Boolean);
       for (const addrSet of allSets) {
         if (addrSet.PlayerShares && tokenAddress.toLowerCase() === addrSet.PlayerShares.toLowerCase()) {
           knownToken = { symbol: "XCPS", name: "X-Cup Player Shares" };

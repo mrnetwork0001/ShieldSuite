@@ -26,7 +26,7 @@ export interface SportmonksMatch {
 
 let cachedFixtures: SportmonksMatch[] | null = null;
 let lastCacheTime = 0;
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds cache
 
 const WORLD_CUP_TEAMS = [
   "Argentina", "France", "England", "Brazil", "Spain",

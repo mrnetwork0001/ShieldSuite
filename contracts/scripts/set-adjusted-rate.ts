@@ -25,9 +25,6 @@ async function main() {
   if (network.name === "xlayerMainnet") {
     targetAddress = data.xlayerMainnet?.NoLossVault;
     decimals = 6;
-  } else if (network.name === "xlayerTestnet") {
-    targetAddress = data.xlayerTestnet?.NoLossVault;
-    decimals = 18;
   } else {
     console.error("❌ Unsupported network!");
     process.exit(1);

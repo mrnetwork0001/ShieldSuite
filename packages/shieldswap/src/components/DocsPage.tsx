@@ -36,7 +36,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
     { name: "NoLossVault", address: "0x758ec85fc3047afff7977ec6edab43d21e9538ac" },
     { name: "PlayerShares ERC-1155", address: "0xb1cc05dc0a0b70fabc6bbb1b3043ba386c86d7e1" },
     { name: "PlayerDex AMM", address: "0xeacae6d1031194f2681b07cbcd50ee0f9c88aeee" },
-    { name: "TEE Agent Wallet", address: "0xDAce8445a5bD576111cCC8e598B67965252023C2" },
+    { name: "TEE Agent Wallet", address: "0x80f28d975cf34f6213a4e9cda8ebdd8a8f7bceb6" },
   ];
 
   const lifecycleSteps = [

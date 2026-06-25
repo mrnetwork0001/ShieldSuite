@@ -301,39 +301,50 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="token-banner-content">
-          <div className="token-banner-left">
-            <span className="token-banner-badge font-mono">{language === "zh" ? "现已上线" : "LIVE NOW"}</span>
-            <span className="token-banner-title font-mono">$PSAI</span>
-            <span className="token-banner-desc">
-              {language === "zh" ? "ShieldSuite 代币已在 X Layer 正式上线！" : "ShieldSuite Token is officially LIVE on X Layer!"}
-            </span>
-            <div className="token-banner-ca-box" onClick={handleCopyAddress}>
-              <span className="ca-label font-mono">CA:</span>
-              <span className="ca-address font-mono">0xaef0...ede5d</span>
-              <button className="btn-copy-ca font-mono">
-                {copied ? (language === "zh" ? "已复制" : "Copied") : (language === "zh" ? "复制" : "Copy")}
+        <div className="token-banner-inner">
+          <div className="token-banner-content">
+            <div className="token-banner-left">
+              <span className="token-banner-badge font-mono">{language === "zh" ? "进行中" : "CAMPAIGN"}</span>
+              <span className="token-banner-title font-mono">{language === "zh" ? "第一阶段" : "PHASE 1"}</span>
+              <div className="token-banner-ca-box" onClick={handleCopyAddress}>
+                <span className="ca-label font-mono">CA:</span>
+                <span className="ca-address font-mono">0xaef0...ede5d</span>
+                <button className="btn-copy-ca font-mono">
+                  {copied ? (language === "zh" ? "已复制" : "Copied") : (language === "zh" ? "复制" : "Copy")}
+                </button>
+              </div>
+              <span className="token-banner-desc">
+                {language === "zh" ? "🏆 $PSAI 交易大赛第一阶段已正式开启！立即加入分享 $500 奖池（USDT 与 $PSAI）。" : "🏆 $PSAI Trading Campaign Phase 1 is LIVE! Join now to share a $500 Prize Pool in USDT & $PSAI."}
+              </span>
+            </div>
+            <div className="token-banner-right">
+              <button
+                onClick={() => {
+                  setActiveTab("swap");
+                  setTimeout(() => {
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }, 100);
+                }}
+                className="btn btn-primary btn-banner-swap font-mono"
+              >
+                {language === "zh" ? "立即交易" : "Trade Now"}
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("swap");
+                  setTimeout(() => {
+                    const el = document.querySelector(".volume-leaderboard");
+                    if (el) {
+                      el.scrollIntoView({ behavior: "smooth" });
+                    }
+                  }, 100);
+                }}
+                className="btn btn-ghost btn-banner-swap font-mono"
+                style={{ background: "rgba(255,255,255,0.05)" }}
+              >
+                {language === "zh" ? "查看排行榜" : "View Leaderboard"}
               </button>
             </div>
-          </div>
-          <div className="token-banner-right">
-            <a
-              href="https://web3.okx.com/dex-swap?chain=x-layer,x-layer&token=0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee,0xaef068ea820aafa00a2854bfd6cfab6d891ede5d"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-primary btn-banner-swap font-mono"
-            >
-              {language === "zh" ? "在网页端兑换" : "Swap on Web"}
-            </a>
-            <a
-              href="https://web3.okx.com/download?deeplink=okx%3A%2F%2Fwallet%2Fdapp%2Furl%3FdappUrl%3Dhttps%253A%252F%252Fweb3.okx.com%252Fdex-swap%253Fchain%253Dx-layer%252Cx-layer%2526token%253D0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee%252C0xaef068ea820aafa00a2854bfd6cfab6d891ede5d"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-ghost btn-banner-swap font-mono"
-              style={{ background: "rgba(255,255,255,0.05)" }}
-            >
-              {language === "zh" ? "在手机 App 兑换" : "Swap on Mobile App"}
-            </a>
           </div>
         </div>
       </motion.div>
@@ -1604,41 +1615,57 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         .token-banner-glow {
           position: relative;
           width: 100%;
-          background: rgba(168, 85, 247, 0.04);
-          border: 1px solid rgba(168, 85, 247, 0.25);
-          box-shadow: 0 0 25px rgba(168, 85, 247, 0.1), inset 0 0 20px rgba(168, 85, 247, 0.05);
+          background: rgba(10, 14, 23, 0.45);
+          box-shadow: 0 0 25px rgba(168, 85, 247, 0.15), inset 0 0 20px rgba(168, 85, 247, 0.05);
           border-radius: var(--radius-lg);
           overflow: hidden;
           margin-top: 24px;
           backdrop-filter: blur(12px);
           transition: all 0.3s ease;
           z-index: 10;
+          padding: 1px; /* 1px padding acts as the border width */
         }
 
         .token-banner-glow::before {
           content: '';
           position: absolute;
-          top: 0;
-          left: -100%;
-          width: 50%;
-          height: 100%;
-          background: linear-gradient(
-            to right,
+          top: -150%;
+          left: -150%;
+          width: 400%;
+          height: 400%;
+          background: conic-gradient(
             transparent,
-            rgba(168, 85, 247, 0.15) 50%,
-            transparent
+            rgba(168, 85, 247, 0.1) 10%,
+            rgba(168, 85, 247, 1) 30%,
+            rgba(0, 229, 255, 1) 50%,
+            rgba(75, 123, 245, 1) 70%,
+            transparent 90%
           );
-          animation: banner-shine 8s infinite linear;
+          animation: neon-border-spin 6s infinite linear;
+          z-index: 1;
         }
 
-        @keyframes banner-shine {
-          0% { left: -100%; }
-          100% { left: 200%; }
+        @keyframes neon-border-spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+
+        .token-banner-inner {
+          position: relative;
+          background: rgba(10, 14, 23, 0.94);
+          border-radius: calc(var(--radius-lg) - 1px);
+          width: 100%;
+          height: 100%;
+          z-index: 2;
+          background-image: linear-gradient(135deg, rgba(168, 85, 247, 0.03) 0%, rgba(75, 123, 245, 0.03) 100%);
         }
 
         .token-banner-glow:hover {
-          border-color: rgba(168, 85, 247, 0.45);
-          box-shadow: 0 0 30px rgba(168, 85, 247, 0.15), inset 0 0 20px rgba(168, 85, 247, 0.1);
+          box-shadow: 0 0 35px rgba(168, 85, 247, 0.25), inset 0 0 20px rgba(168, 85, 247, 0.1);
         }
 
         .token-banner-content {
@@ -1647,6 +1674,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
           align-items: center;
           justify-content: space-between;
           gap: 24px;
+          position: relative;
+          z-index: 3;
         }
 
         .token-banner-left {

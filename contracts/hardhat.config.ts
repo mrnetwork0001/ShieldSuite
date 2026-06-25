@@ -21,19 +21,14 @@ const config: HardhatUserConfig = {
     localhost: {
       url: "http://127.0.0.1:8545",
     },
-    xlayerTestnet: {
-      url: "https://testrpc.xlayer.tech/terigon",
-      accounts: process.env.AGENT_PRIVATE_KEY ? [process.env.AGENT_PRIVATE_KEY] : [],
-    },
     xlayerMainnet: {
-      url: "https://rpc.xlayer.tech",
+      url: "https://xlayerrpc.okx.com",
       accounts: process.env.AGENT_PRIVATE_KEY ? [process.env.AGENT_PRIVATE_KEY] : [],
     },
   },
   etherscan: {
     apiKey: {
       xlayerMainnet: process.env.OKLINK_API_KEY || "",
-      xlayerTestnet: process.env.OKLINK_API_KEY || "",
     },
     customChains: [
       {
@@ -43,15 +38,7 @@ const config: HardhatUserConfig = {
           apiURL: "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/XLAYER",
           browserURL: "https://www.oklink.com/xlayer",
         },
-      },
-      {
-        network: "xlayerTestnet",
-        chainId: 1952,
-        urls: {
-          apiURL: "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/XLAYER_TESTNET",
-          browserURL: "https://www.oklink.com/xlayer-test",
-        },
-      },
+      }
     ],
   },
 };

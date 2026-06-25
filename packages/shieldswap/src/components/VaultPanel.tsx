@@ -55,6 +55,8 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
   const [activeAgentAddress, setActiveAgentAddress] = useState("");
   const [usdtDecimals, setUsdtDecimals] = useState(18);
   const [multiplier, setMultiplier] = useState(1.0);
+  const [lastUpdated, setLastUpdated] = useState(0n);
+  const [accumulatedCredits, setAccumulatedCredits] = useState(0n);
   const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "";
 
   // ─── Success Modal State ────────────────────────────────────────────────────
@@ -126,14 +128,18 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
         const userInfo = await vault.users(wallet.address);
         setStakedBalance(ethers.formatUnits(userInfo.balance, decimals));
         setDelegatedAgent(userInfo.delegatedAgent);
+        setLastUpdated(BigInt(userInfo.lastUpdated));
+        setAccumulatedCredits(BigInt(userInfo.accumulatedCredits));
 
         // Credits rate
         const rate = await vault.creditsPerTokenPerSecond();
         setCreditsRate(rate);
 
-        // Initial credits
+        // Fetch on-chain credits as secondary fallback, but do not set directly to avoid jumps
         const creds = await vault.getCredits(wallet.address);
-        setCredits(creds);
+        if (credits === 0n) {
+          setCredits(creds);
+        }
 
         // Allowance
         const currentAllowance = await usdt.allowance(wallet.address, DEPLOYED_ADDRESSES.NoLossVault);
@@ -193,18 +199,25 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
 
   // 2. Live credits ticking effect (ticks every 100ms for premium UX feel)
   useEffect(() => {
-    if (parseFloat(stakedBalance) <= 0) return;
+    if (parseFloat(stakedBalance) <= 0) {
+      setCredits(accumulatedCredits);
+      return;
+    }
 
     const interval = setInterval(() => {
       const balanceRaw = ethers.parseUnits(stakedBalance, usdtDecimals);
+      const nowSec = BigInt(Math.floor(Date.now() / 1000));
+      const elapsed = nowSec > lastUpdated ? nowSec - lastUpdated : 0n;
+
       const multScaled = BigInt(Math.round(multiplier * 10));
       const activeRate = (creditsRate * multScaled) / 10n;
-      const earnedPerTick = (balanceRaw * activeRate * 100n) / 1000n / 1000000000000n;
-      setCredits((prev) => prev + earnedPerTick);
+      const earned = (balanceRaw * elapsed * activeRate) / 1000000000000n; // divide by 1e12
+
+      setCredits(accumulatedCredits + earned);
     }, 100);
 
     return () => clearInterval(interval);
-  }, [stakedBalance, creditsRate, usdtDecimals, multiplier]);
+  }, [stakedBalance, creditsRate, usdtDecimals, multiplier, lastUpdated, accumulatedCredits]);
 
   // 3. Faucet claim
   const handleFaucet = async () => {
@@ -474,11 +487,11 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
           <div className="staking-balances">
             <div className="balance-item">
               <span>{language === "zh" ? "您的质押余额:" : "Staked Balance:"}</span>
-              <strong className="font-mono">{stakedBalance} USDT</strong>
+              <strong className="font-mono">{parseFloat(stakedBalance).toFixed(4)} USDT</strong>
             </div>
             <div className="balance-item">
               <span>{language === "zh" ? "钱包余额:" : "Wallet Balance:"}</span>
-              <strong className="font-mono">{parseFloat(usdtBalance).toFixed(2)} USDT</strong>
+              <strong className="font-mono">{parseFloat(usdtBalance).toFixed(4)} USDT</strong>
             </div>
           </div>
 
@@ -493,42 +506,105 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
             </span>
           </div>
 
-          {/* Staking Actions */}
-          <div className="staking-actions">
-            <div className="action-row">
-              <input
-                className="panel-input font-mono"
-                type="text"
-                placeholder="0.0"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                disabled={loading}
-              />
-              {!isApproved ? (
-                <button className="btn btn-approve btn-panel" onClick={handleApprove} disabled={loading}>
-                  {language === "zh" ? "授权" : "APPROVE"}
-                </button>
+          {/* Yield Notice / Calculator */}
+          <div style={{
+            margin: "0 0 16px",
+            padding: "12px 14px",
+            borderRadius: "10px",
+            border: "1px dashed rgba(59, 130, 246, 0.3)",
+            background: "rgba(59, 130, 246, 0.03)",
+            fontSize: "0.78rem",
+            color: "var(--text-secondary)",
+            lineHeight: "1.4"
+          }}>
+            <div style={{ fontWeight: "600", color: "#60a5fa", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "0.9rem" }}>💡</span>
+              <span>{language === "zh" ? "特工积分计算指南" : "Scout Credits Calculation Guide"}</span>
+            </div>
+            <div>
+              {language === "zh" ? (
+                <>
+                  基本速率：每质押 <strong>1 USDT</strong> 每天可获得 <strong>{Math.round(200 * multiplier)} 积分</strong>（当前加速：{multiplier.toFixed(1)}倍）。
+                  <br />
+                  <span style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>
+                    • 质押 <strong>10 USDT</strong> ➔ 约 {((200 * 10 * multiplier) / 24).toFixed(0)} 积分/小时（约 {((100 / (200 * 10 * multiplier / 1440))).toFixed(0)} 分钟可得 100 积分）
+                    <br />
+                    • 质押 <strong>100 USDT</strong> ➔ 约 {((200 * 100 * multiplier) / 24).toFixed(0)} 积分/小时（约 {((100 / (200 * 100 * multiplier / 1440))).toFixed(1)} 分钟可得 100 积分）
+                  </span>
+                </>
               ) : (
-                <button className="btn btn-primary btn-panel" onClick={handleDeposit} disabled={loading || !depositAmount}>
-                  {language === "zh" ? "质押" : "STAKE"}
-                </button>
+                <>
+                  Base Rate: Stake <strong>1 USDT</strong> to earn <strong>{Math.round(200 * multiplier)} Credits/day</strong> (current boost: {multiplier.toFixed(1)}x).
+                  <br />
+                  <span style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>
+                    • Stake <strong>10 USDT</strong> ➔ ~{((200 * 10 * multiplier) / 24).toFixed(0)} Credits/hr (~{((100 / (200 * 10 * multiplier / 1440))).toFixed(0)} mins to reach 100 Credits)
+                    <br />
+                    • Stake <strong>100 USDT</strong> ➔ ~{((200 * 100 * multiplier) / 24).toFixed(0)} Credits/hr (~{((100 / (200 * 100 * multiplier / 1440))).toFixed(1)} mins to reach 100 Credits)
+                  </span>
+                </>
               )}
             </div>
-
-            <div className="action-row">
-              <input
-                className="panel-input font-mono"
-                type="text"
-                placeholder="0.0"
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
-                disabled={loading}
-              />
-              <button className="btn btn-panel" onClick={handleWithdraw} disabled={loading || !withdrawAmount}>
-                {language === "zh" ? "赎回" : "UNSTAKE"}
-              </button>
-            </div>
           </div>
+
+          {/* Staking Actions */}
+          {(() => {
+            const exceedsBalance = depositAmount && parseFloat(depositAmount) > parseFloat(usdtBalance);
+            const exceedsStaked = withdrawAmount && parseFloat(withdrawAmount) > parseFloat(stakedBalance);
+
+            return (
+              <div className="staking-actions">
+                <div style={{ marginBottom: "12px" }}>
+                  <div className="action-row">
+                    <input
+                      className="panel-input font-mono"
+                      type="text"
+                      placeholder="0.0"
+                      value={depositAmount}
+                      onChange={(e) => setDepositAmount(e.target.value)}
+                      disabled={loading}
+                    />
+                    {!isApproved ? (
+                      <button className="btn btn-approve btn-panel" onClick={handleApprove} disabled={loading || exceedsBalance}>
+                        {language === "zh" ? "授权" : "APPROVE"}
+                      </button>
+                    ) : (
+                      <button className="btn btn-primary btn-panel" onClick={handleDeposit} disabled={loading || !depositAmount || exceedsBalance}>
+                        {language === "zh" ? "质押" : "STAKE"}
+                      </button>
+                    )}
+                  </div>
+                  {exceedsBalance && (
+                    <div style={{ color: "#ef4444", fontSize: "0.75rem", marginTop: "4px", padding: "0 4px", fontWeight: "500", display: "flex", gap: "4px" }}>
+                      <span>⚠️</span>
+                      <span>{language === "zh" ? "余额不足！输入金额超过您的钱包余额。" : "Insufficient balance! Amount exceeds your wallet balance."}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="action-row">
+                    <input
+                      className="panel-input font-mono"
+                      type="text"
+                      placeholder="0.0"
+                      value={withdrawAmount}
+                      onChange={(e) => setWithdrawAmount(e.target.value)}
+                      disabled={loading}
+                    />
+                    <button className="btn btn-panel" onClick={handleWithdraw} disabled={loading || !withdrawAmount || exceedsStaked}>
+                      {language === "zh" ? "赎回" : "UNSTAKE"}
+                    </button>
+                  </div>
+                  {exceedsStaked && (
+                    <div style={{ color: "#ef4444", fontSize: "0.75rem", marginTop: "4px", padding: "0 4px", fontWeight: "500", display: "flex", gap: "4px" }}>
+                      <span>⚠️</span>
+                      <span>{language === "zh" ? "质押余额不足！输入金额超过您的质押余额。" : "Insufficient staked balance! Amount exceeds your staked balance."}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
 
 

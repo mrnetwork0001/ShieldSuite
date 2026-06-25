@@ -1,23 +1,27 @@
 // ─── SwapCard Component ──────────────────────────────────────────────────────
-// Uniswap-style swap card with token selectors, flip, auto-quote,
-// and ScanGuard security scanning before every swap.
+// Trading Campaign Phase 1 swap card.
+// NOTE: The interactive swap card inputs and security scan/audit modules are
+// commented out for the Warm-Up Trading Campaign, and can be uncommented after the campaign.
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { CheckIcon, SettingsIcon, SwapIcon, WarningOctagonIcon, WarningIcon, BlockedIcon, UnlockIcon, ShieldIcon } from "./Icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { ethers } from "ethers";
-import TokenSelector, { TokenLogo } from "./TokenSelector";
-import { useScanGuard, ScanResult } from "../hooks/useScanGuard";
-import { useSwap, SwapQuote } from "../hooks/useSwap";
 import { WalletState } from "../lib/wallet";
-import { TOKEN_LIST, TokenInfo, findToken, XLAYER_TOKENS } from "../lib/xlayer";
 import { useLanguage } from "../context/LanguageContext";
 
+/*
+// Original Swap & Security Scan Imports (Commented out for campaign)
+import { useScanGuard, ScanResult } from "../hooks/useScanGuard";
+import { useSwap, SwapQuote } from "../hooks/useSwap";
+import { TOKEN_LIST, TokenInfo, findToken, XLAYER_TOKENS } from "../lib/xlayer";
+import TokenSelector, { TokenLogo } from "./TokenSelector";
+*/
 
 interface SwapCardProps {
   wallet: WalletState;
   onConnect: () => void;
-  onScanResult: (result: ScanResult | null) => void;
+  onScanResult: (result: any | null) => void;
   onActivityLog: (entry: ActivityEntry) => void;
 }
 
@@ -28,11 +32,12 @@ export interface ActivityEntry {
   message: string;
 }
 
+/*
+// Original Swap Stages (Commented out for campaign)
 type SwapStage = "input" | "scanning" | "scanned" | "quoting" | "ready" | "swapping" | "complete";
-
-// Default tokens
-const DEFAULT_FROM = TOKEN_LIST.find(t => t.symbol === "USDC")!;
-const DEFAULT_TO = TOKEN_LIST.find(t => t.symbol === "USDT")!;
+const DEFAULT_FROM = { symbol: "USDC", address: "0x74b7f16337b8972027f6196a17a631ac6de26d22", decimals: 6, logoColor: "#2775CA", isNative: false };
+const DEFAULT_TO = { symbol: "USDT", address: "0x1e4a5963abfd975d8c9021ce480b42188849d41d", decimals: 6, logoColor: "#26A17B", isNative: false };
+*/
 
 const SwapCard: React.FC<SwapCardProps> = ({
   wallet,
@@ -41,8 +46,23 @@ const SwapCard: React.FC<SwapCardProps> = ({
   onActivityLog,
 }) => {
   const { language, t } = useLanguage();
-  const [fromToken, setFromToken] = useState<TokenInfo>(DEFAULT_FROM);
-  const [toToken, setToToken] = useState<TokenInfo>(DEFAULT_TO);
+
+  // ─── Active Campaign States ──────────────────────────────────────────
+  const [userVolume, setUserVolume] = useState<number | null>(null);
+  const [userRank, setUserRank] = useState<number | string | null>(null);
+  const [hasShares, setHasShares] = useState<boolean | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [txHashInput, setTxHashInput] = useState("");
+  const [syncingTx, setSyncingTx] = useState(false);
+  const [syncStatusMsg, setSyncStatusMsg] = useState("");
+  const [syncStatusType, setSyncStatusType] = useState<"success" | "error" | "">("");
+
+  const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "http://localhost:3402";
+
+  /*
+  // Original Swap States & Hooks (Commented out for campaign)
+  const [fromToken, setFromToken] = useState<any>(DEFAULT_FROM);
+  const [toToken, setToToken] = useState<any>(DEFAULT_TO);
   const [amount, setAmount] = useState("");
   const [stage, setStage] = useState<SwapStage>("input");
   const [slippage, setSlippage] = useState(0.5);
@@ -55,6 +75,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
   const { scan, result: scanResult, isScanning, error: scanError } = useScanGuard();
   const { getQuote, executeSwap, quote, swapResult, isQuoting, isSwapping, error: swapError, reset: resetSwap } = useSwap();
   const quoteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  */
 
   const addLog = useCallback(
     (type: ActivityEntry["type"], message: string) => {
@@ -68,304 +89,171 @@ const SwapCard: React.FC<SwapCardProps> = ({
     [onActivityLog]
   );
 
-  // ─── Auto-scan when "from" token changes ─────────────────────────────
+  /*
+  // Original Auto-scan & Balances Effects (Commented out for campaign)
   useEffect(() => {
     if (!fromToken.address || fromToken.isNative) return;
-    if (!/^0x[a-fA-F0-9]{40}$/.test(fromToken.address)) return;
-
     setStage("scanning");
     onScanResult(null);
     resetSwap();
-
-    addLog("scan", `${language === "zh" ? "正在扫描" : "Scanning"} ${fromToken.symbol} (${fromToken.address.slice(0, 10)}...)...`);
-
+    addLog("scan", `Scanning ${fromToken.symbol}...`);
     scan(fromToken.address).then((result) => {
       if (result) {
         setStage("scanned");
         onScanResult(result);
-        addLog(
-          result.riskLevel === "SAFE" || result.riskLevel === "LOW" ? "info" : "warning",
-          `${result.tokenSymbol || fromToken.symbol}: ${language === "zh" ? "风险评分" : "Risk"} ${result.riskScore}/100 (${result.riskLevel})`
-        );
+        addLog(result.riskLevel === "SAFE" || result.riskLevel === "LOW" ? "info" : "warning", `${fromToken.symbol} risk: ${result.riskScore}/100`);
       } else {
         setStage("input");
       }
     });
   }, [fromToken.address]);
 
-  // ─── Fetch wallet balance for sell token ──────────────────────────────
   useEffect(() => {
-    if (!wallet.connected || !wallet.provider || !wallet.address) {
-      setFromBalance(null);
-      return;
-    }
-
+    if (!wallet.connected || !wallet.address || !wallet.provider) return;
     const fetchBalance = async () => {
       try {
-        if (fromToken.isNative) {
-          const bal = await wallet.provider!.getBalance(wallet.address!);
-          setFromBalance(parseFloat(ethers.formatEther(bal)).toFixed(4));
-        } else {
-          const erc20 = new ethers.Contract(
-            fromToken.address,
-            ["function balanceOf(address) view returns (uint256)"],
-            wallet.provider!
-          );
-          const bal = await erc20.balanceOf(wallet.address!);
-          setFromBalance(parseFloat(ethers.formatUnits(bal, fromToken.decimals)).toFixed(4));
-        }
-      } catch {
-        setFromBalance(null);
-      }
-
-      // Also fetch toToken balance
-      try {
-        if (toToken.isNative) {
-          const bal = await wallet.provider!.getBalance(wallet.address!);
-          setToBalance(parseFloat(ethers.formatEther(bal)).toFixed(4));
-        } else {
-          const erc20 = new ethers.Contract(
-            toToken.address,
-            ["function balanceOf(address) view returns (uint256)"],
-            wallet.provider!
-          );
-          const bal = await erc20.balanceOf(wallet.address!);
-          setToBalance(parseFloat(ethers.formatUnits(bal, toToken.decimals)).toFixed(4));
-        }
-      } catch {
-        setToBalance(null);
+        const bal = await wallet.provider!.getBalance(wallet.address!);
+        setFromBalance(parseFloat(ethers.formatEther(bal)).toFixed(4));
+      } catch (err) {
+        console.error("Balance fetch failed", err);
       }
     };
-
     fetchBalance();
+  }, [wallet.connected, wallet.address, wallet.provider, balanceRefreshKey]);
 
-    // Auto-refresh every 15 seconds
-    const interval = setInterval(fetchBalance, 15000);
-    return () => clearInterval(interval);
-  }, [wallet.connected, wallet.address, fromToken.address, toToken.address, wallet.provider, balanceRefreshKey]);
-
-  // ─── Auto-quote when amount or tokens change ─────────────────────────
   useEffect(() => {
-    if (quoteTimer.current) clearTimeout(quoteTimer.current);
+    if (!amount || parseFloat(amount) <= 0) return;
+    getQuote({
+      fromToken: fromToken.address,
+      toToken: toToken.address,
+      amount,
+      fromDecimals: fromToken.decimals,
+      toDecimals: toToken.decimals,
+      slippage,
+    });
+  }, [amount, fromToken.address, toToken.address, slippage]);
 
-    const isSafe = scanResult && (scanResult.riskLevel === "SAFE" || scanResult.riskLevel === "LOW" || scanResult.riskLevel === "MEDIUM");
-    if (!amount || parseFloat(amount) <= 0 || !isSafe) return;
-
-    quoteTimer.current = setTimeout(() => {
-      getQuote({
-        fromToken: fromToken.address,
-        toToken: toToken.address,
-        amount,
-        fromDecimals: fromToken.decimals,
-        toDecimals: toToken.decimals,
-        slippage,
-      });
-    }, 500); // 500ms debounce
-
-    return () => { if (quoteTimer.current) clearTimeout(quoteTimer.current); };
-  }, [amount, fromToken.address, toToken.address, scanResult, slippage]);
-
-  // ─── Approval state ───────────────────────────────────────────────────
   const [needsApproval, setNeedsApproval] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [approveTarget, setApproveTarget] = useState<string | null>(null);
-  const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "";
 
-  // Check if approval is needed when quote arrives or token changes
-  useEffect(() => {
-    // Native tokens never need approval
-    if (fromToken.isNative) {
-      setNeedsApproval(false);
-      return;
-    }
+  const handleApprove = async () => {};
+  const handleFlip = () => {};
+  const handleTokenSelect = (token: any) => {};
+  const handleSwap = async () => {};
+  */
 
-    // WOKB → OKB unwrap calls withdraw() directly - no router approval needed
-    const isUnwrap = fromToken.address.toLowerCase() === "0xe538905cf8410324e03a5a23c1c177a474d59b2b"
-      && toToken.address.toLowerCase() === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
-    if (isUnwrap) {
-      setNeedsApproval(false);
-      return;
-    }
-
-    // Need wallet + quote + valid amount to check
-    if (!wallet.connected || !wallet.address || !wallet.provider || !quote) {
-      return; // Don't change state - keep previous value
-    }
-
-    if (!amount || parseFloat(amount) <= 0) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const checkApproval = async () => {
-      try {
-        // Get the correct approve target
-        let target = approveTarget;
-        if (!target) {
-          const res = await fetch(`${API_BASE}/api/dex/approve-address`);
-          const data = await res.json();
-          if (data.success && data.data?.approveAddress) {
-            target = data.data.approveAddress;
-            if (!cancelled) setApproveTarget(target);
-          }
+  // ─── Active Campaign Functions ───────────────────────────────────────
+  const fetchUserStats = async () => {
+    try {
+      setLoadingStats(true);
+      const res = await fetch(`${API_BASE}/api/worldcup/leaderboard`);
+      const json = await res.json();
+      
+      let userVolumeVal = 0;
+      let hasSharesVal = false;
+      
+      // 1. Search in allUsers if present, to check volume and share ownership
+      if (json.success && Array.isArray(json.allUsers)) {
+        const userObj = json.allUsers.find((item: any) => item.address.toLowerCase() === wallet.address!.toLowerCase());
+        if (userObj) {
+          userVolumeVal = userObj.volume;
+          hasSharesVal = userObj.hasShares;
         }
-        if (!target) {
-          // Can't determine approve target - assume needed for safety
-          if (!cancelled) setNeedsApproval(true);
-          return;
-        }
-
-        const amountWei = ethers.parseUnits(amount, fromToken.decimals);
-        const erc20 = new ethers.Contract(
-          fromToken.address,
-          ["function allowance(address owner, address spender) view returns (uint256)"],
-          wallet.provider!
-        );
-        const allowance = await erc20.allowance(wallet.address!, target);
-        // Use a high threshold - if not approved with MaxUint256, always require approval
-        // This prevents edge cases where partial allowance passes the check but the swap router needs more
-        const MAX_THRESHOLD = ethers.MaxUint256 / 2n;
-        const needsIt = allowance < MAX_THRESHOLD;
-        console.log(`[Approval] ${fromToken.symbol} allowance: ${allowance.toString()}, threshold: MaxUint256/2, needsApproval: ${needsIt}`);
-        if (!cancelled) setNeedsApproval(needsIt);
-      } catch (err) {
-        console.warn("[Approval] Check failed, assuming approval needed:", err);
-        // If check fails, assume approval IS needed (safe default)
-        if (!cancelled) setNeedsApproval(true);
       }
-    };
+      
+      setUserVolume(userVolumeVal);
+      setHasShares(hasSharesVal);
 
-    checkApproval();
-    return () => { cancelled = true; };
-  }, [quote, fromToken.address, fromToken.isNative, fromToken.decimals, toToken.address, wallet.connected, wallet.address, amount, approveTarget]);
+      // 2. Search in ranked data to check leaderboard rank (only players with shares are ranked)
+      if (json.success && Array.isArray(json.data)) {
+        const idx = json.data.findIndex((item: any) => item.address.toLowerCase() === wallet.address!.toLowerCase());
+        if (idx !== -1) {
+          setUserRank(idx + 1);
+        } else {
+          setUserRank("Unranked");
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch user volume stats:", err);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
-  // ─── Handle Approve ───────────────────────────────────────────────────
-  const handleApprove = useCallback(async () => {
-    if (!wallet.signer || !approveTarget) return;
-    setIsApproving(true);
-    addLog("swap", language === "zh" ? `正在授权 ${fromToken.symbol} 进行交易...` : `Approving ${fromToken.symbol} for trading...`);
+  useEffect(() => {
+    if (!wallet.connected || !wallet.address) {
+      setUserVolume(null);
+      setUserRank(null);
+      setHasShares(null);
+      return;
+    }
+
+    fetchUserStats();
+    const interval = setInterval(fetchUserStats, 15000);
+    return () => clearInterval(interval);
+  }, [wallet.connected, wallet.address, API_BASE]);
+
+  const handleSyncTx = async () => {
+    if (!txHashInput.trim() || !wallet.address) return;
 
     try {
-      const erc20 = new ethers.Contract(
-        fromToken.address,
-        [
-          "function allowance(address owner, address spender) view returns (uint256)",
-          "function approve(address spender, uint256 amount) returns (bool)"
-        ],
-        wallet.signer
-      );
+      setSyncingTx(true);
+      setSyncStatusMsg("");
+      setSyncStatusType("");
 
-      // USDT-style tokens require resetting allowance to 0 before re-approving
-      const RESET_APPROVAL_TOKENS = [
-        "0x779ded0c9e1022225f8e0630b35a9b54be713736", // USDT0
-        "0x1e4a5963abfd975d8c9021ce480b42188849d41d", // USDT legacy
-        "0x74b7f16337b8972027f6196a17a631ac6de26d22", // USDC
-      ];
+      addLog("info", `[Sync] Submitting transaction ${txHashInput.slice(0, 10)}... for on-chain verification.`);
 
-      // Check current allowance
-      const currentAllowance = await erc20.allowance(wallet.address!, approveTarget);
-      const MAX_THRESHOLD = ethers.MaxUint256 / 2n;
+      const res = await fetch(`${API_BASE}/api/worldcup/sync-tx`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          txHash: txHashInput.trim(),
+          address: wallet.address
+        })
+      });
 
-      // If already has MaxUint256-level approval, skip
-      if (currentAllowance >= MAX_THRESHOLD) {
-        setNeedsApproval(false);
-        addLog("info", language === "zh" ? `✓ ${fromToken.symbol} 已获得授权！` : `✓ ${fromToken.symbol} already approved!`);
-        return;
+      const json = await res.json();
+
+      if (json.success) {
+        setSyncStatusType("success");
+        setSyncStatusMsg(language === "zh" 
+          ? `成功同步！增加交易量：$${json.data.addedVolume.toFixed(2)}` 
+          : `Sync successful! Added $${json.data.addedVolume.toFixed(2)} volume.`);
+        
+        setTxHashInput("");
+        await fetchUserStats();
+
+        addLog("swap", `[Sync] Success! Verified +$${json.data.addedVolume.toFixed(2)} volume.`);
+      } else {
+        setSyncStatusType("error");
+        setSyncStatusMsg(json.error || "Sync failed.");
+        
+        addLog("warning", `[Sync] Failed: ${json.error || "Unknown error"}`);
       }
-
-      // For USDT-like tokens: must reset allowance to 0 first
-      const needsReset = RESET_APPROVAL_TOKENS.some(
-        t => t.toLowerCase() === fromToken.address.toLowerCase()
-      );
-      if (needsReset && currentAllowance > 0n) {
-        addLog("info", language === "zh" ? `正在重置 ${fromToken.symbol} 授权额度为 0（代币合约安全设计要求）...` : `Resetting ${fromToken.symbol} allowance to 0 first (required by token contract)...`);
-        const resetTx = await erc20.approve(approveTarget, 0);
-        await resetTx.wait();
-        addLog("info", language === "zh" ? `重置完成，正在进行最终授权...` : `Reset complete, now approving...`);
-      }
-
-      // Now approve MaxUint256
-      const approveTx = await erc20.approve(approveTarget, ethers.MaxUint256);
-      await approveTx.wait();
-
-      setNeedsApproval(false);
-      addLog("info", language === "zh" ? `✓ ${fromToken.symbol} 授权成功！` : `✓ ${fromToken.symbol} approved!`);
     } catch (err: any) {
-      addLog("warning", language === "zh" ? `授权失败: ${err.message || "未知错误"}` : `Approval failed: ${err.message || "Unknown error"}`);
+      console.error("Tx sync error:", err);
+      setSyncStatusType("error");
+      setSyncStatusMsg(err.message || "Failed to connect to scanner API.");
+      
+      addLog("warning", `[Sync] Network error: ${err.message}`);
     } finally {
-      setIsApproving(false);
+      setSyncingTx(false);
     }
-  }, [wallet, fromToken, approveTarget, addLog]);
+  };
 
-  // ─── Flip tokens ──────────────────────────────────────────────────────
-  const handleFlip = useCallback(() => {
-    setFromToken(toToken);
-    setToToken(fromToken);
-    setAmount("");
-    resetSwap();
-    setStage("input");
-    setNeedsApproval(false);
-    onScanResult(null);
-  }, [fromToken, toToken, resetSwap, onScanResult]);
+  const getEstimatedPrize = (rank: number | string) => {
+    if (typeof rank === "string" || rank === null) return "—";
+    if (rank === 1) return "$125.00 USDT + $125.00 in $PSAI ($250)";
+    if (rank === 2) return "$55.00 USDT + $55.00 in $PSAI ($110)";
+    if (rank === 3) return "$35.00 USDT + $35.00 in $PSAI ($70)";
+    if (rank === 4) return "$22.50 USDT + $22.50 in $PSAI ($45)";
+    if (rank === 5) return "$12.50 USDT + $12.50 in $PSAI ($25)";
+    return "—";
+  };
 
-  // ─── Token selection ──────────────────────────────────────────────────
-  const handleTokenSelect = useCallback((token: TokenInfo) => {
-    if (selectorOpen === "from") {
-      if (token.address === toToken.address) {
-        setToToken(fromToken);
-      }
-      setFromToken(token);
-      setAmount("");
-      resetSwap();
-      setStage("input");
-      setNeedsApproval(false);
-    } else {
-      if (token.address === fromToken.address) {
-        setFromToken(toToken);
-      }
-      setToToken(token);
-    }
-    setSelectorOpen(null);
-  }, [selectorOpen, fromToken, toToken, resetSwap]);
-
-  // ─── Execute swap ─────────────────────────────────────────────────────
-  const handleSwap = useCallback(async () => {
-    if (!wallet.signer || !quote) return;
-
-    setStage("swapping");
-    addLog("swap", language === "zh" ? `正在兑换 ${amount} ${fromToken.symbol} → ${toToken.symbol}...` : `Swapping ${amount} ${fromToken.symbol} → ${toToken.symbol}...`);
-
-    const result = await executeSwap(
-      {
-        fromToken: fromToken.address,
-        toToken: toToken.address,
-        amount,
-        fromDecimals: fromToken.decimals,
-        toDecimals: toToken.decimals,
-        slippage,
-        recipient: wallet.address!,
-        isNative: fromToken.isNative,
-      },
-      wallet.signer
-    );
-
-    if (result) {
-      setStage("complete");
-      addLog("swap", language === "zh" ? `✓ 兑换确认！交易哈希: ${result.txHash.slice(0, 14)}...` : `✓ Swap confirmed! TX: ${result.txHash.slice(0, 14)}...`);
-      // Refresh balances immediately after swap
-      setBalanceRefreshKey((k) => k + 1);
-    } else {
-      setStage("ready");
-      addLog("warning", language === "zh" ? `兑换失败: ${swapError || "未知错误"}` : `Swap failed: ${swapError || "Unknown error"}`);
-    }
-  }, [wallet, quote, amount, fromToken, toToken, slippage, executeSwap, addLog, swapError]);
-
-  // ─── Derived state ────────────────────────────────────────────────────
-  const isSafe = scanResult && (scanResult.riskLevel === "SAFE" || scanResult.riskLevel === "LOW");
-  const isMedium = scanResult && scanResult.riskLevel === "MEDIUM";
-  const isDangerous = scanResult && (scanResult.riskLevel === "HIGH" || scanResult.riskLevel === "CRITICAL");
-  const canSwap = (isSafe || isMedium) && quote && parseFloat(amount) > 0;
+  const OKX_WEB_URL = "https://web3.okx.com/dex-swap?chain=x-layer,x-layer&token=0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee,0xaef068ea820aafa00a2854bfd6cfab6d891ede5d";
+  const OKX_MOBILE_URL = "https://web3.okx.com/download?deeplink=okx%3A%2F%2Fwallet%2Fdapp%2Furl%3FdappUrl%3Dhttps%253A%252F%252Fweb3.okx.com%252Fdex-swap%253Fchain%253Dx-layer%252Cx-layer%2526token%253D0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee%252C0xaef068ea820aafa00a2854bfd6cfab6d891ede5d";
 
   return (
     <>
@@ -375,327 +263,201 @@ const SwapCard: React.FC<SwapCardProps> = ({
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
       >
-        {/* Card Header */}
-        <div className="swap-card-header">
-          <h2 className="swap-card-title">{t("swap_tab_swap")}</h2>
+        {/* Campaign Header */}
+        <div className="swap-card-header" style={{ marginBottom: 0 }}>
+          <h2 className="swap-card-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ animation: "pulse 2s infinite" }}>🟢</span>
+            {language === "zh" ? "$PSAI 交易竞赛 (第一阶段)" : "$PSAI Trading Contest (Phase 1)"}
+          </h2>
+        </div>
+
+        {/* Campaign Info */}
+        <div style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: "1.5", marginTop: "8px" }}>
+          {language === "zh" ? (
+            "为确保最高的交易效率和零技术摩擦，本阶段的交易直接在 OKX 的官方 DEX 或手机钱包上执行。我们将通过链上数据同步追踪您的交易量，自动统计在下方的积分排行榜中！"
+          ) : (
+            "To guarantee maximum routing efficiency and zero swap friction, all trades in this phase are executed directly on the official OKX DEX web or mobile wallet interface. We automatically track your volume on-chain to rank you on the leaderboard!"
+          )}
+        </div>
+
+        {/* Trade CTAs */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "8px" }}>
+          <a
+            href={OKX_WEB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-primary swap-btn font-mono"
+            style={{ textDecoration: "none", textAlign: "center", display: "block" }}
+          >
+            📊 {language === "zh" ? "在 OKX 网页端 DEX 交易" : "Trade on OKX DEX (Web) ↗"}
+          </a>
+          <a
+            href={OKX_MOBILE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-ghost swap-btn font-mono"
+            style={{ textDecoration: "none", textAlign: "center", display: "block", background: "rgba(255,255,255,0.05)" }}
+          >
+            📱 {language === "zh" ? "在 OKX 手机 app 交易" : "Trade on OKX Mobile Wallet ↗"}
+          </a>
+        </div>
+
+        {/* 
+        // ─── COMMENTED OUT ORIGINAL SWAP INTERFACE ───
+        // Uncomment these blocks after the campaign to restore interactive swaps and security auditing.
+
+        <div className="swap-card-header" style={{ marginTop: "16px" }}>
+          <h2 className="swap-card-title">{t("swap_tab_swap")} (Paused)</h2>
           <div className="swap-settings" style={{ position: "relative" }}>
-            <button
-              className="slippage-btn"
-              onClick={() => setShowSlippage(!showSlippage)}
-            >
+            <button className="slippage-btn" disabled>
               <SettingsIcon size={12} /> {slippage}% {language === "zh" ? "滑点" : "slippage"}
             </button>
-            <AnimatePresence>
-              {showSlippage && (
-                <motion.div
-                  className="slippage-popup glass-card"
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -5 }}
-                >
-                  {[0.1, 0.5, 1.0, 3.0].map(s => (
-                    <button
-                      key={s}
-                      className={`slippage-option ${slippage === s ? "active" : ""}`}
-                      onClick={() => { setSlippage(s); setShowSlippage(false); }}
-                    >
-                      {s}%
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </div>
 
-        {/* ─── From (Sell) ─────────────────────────────────────────── */}
-        <div className="swap-token-box glass-card">
+        <div className="swap-token-box glass-card" style={{ opacity: 0.5 }}>
           <div className="swap-token-label">{t("swap_from")}</div>
           <div className="swap-token-row">
-            <input
-              className="swap-amount-input"
-              type="text"
-              placeholder="0.0"
-              value={amount}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (/^\d*\.?\d*$/.test(val)) setAmount(val);
-              }}
-              disabled={isScanning || isSwapping}
-            />
-            <button
-              className="token-pill"
-              onClick={() => setSelectorOpen("from")}
-              style={{ "--pill-color": fromToken.logoColor } as React.CSSProperties}
-            >
-              <TokenLogo token={fromToken} size={24} />
+            <input className="swap-amount-input" type="text" placeholder="0.0" disabled />
+            <button className="token-pill" disabled>
               {fromToken.symbol}
-              <span className="token-pill-arrow">▾</span>
             </button>
           </div>
-          <div className="swap-token-meta">
-            {fromBalance !== null && wallet.connected && (
-              <div className="swap-balance">
-                <span>{t("swap_balance")} {fromBalance} {fromToken.symbol}</span>
-                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                  <button
-                    className="max-btn"
-                    onClick={() => setAmount(fromBalance)}
-                  >
-                    MAX
-                  </button>
-                </div>
-              </div>
-            )}
-            {scanResult && (
-              <div className="swap-token-scan-badge">
-                <span className={`scan-dot ${isSafe ? "safe" : isDangerous ? "danger" : "warn"}`} />
-                {scanResult.riskLevel === "SAFE" && (language === "zh" ? "安全" : "SAFE")}
-                {scanResult.riskLevel === "LOW" && (language === "zh" ? "安全" : "LOW")}
-                {scanResult.riskLevel === "MEDIUM" && (language === "zh" ? "中度风险" : "MEDIUM")}
-                {scanResult.riskLevel === "HIGH" && (language === "zh" ? "高危" : "HIGH")}
-                {scanResult.riskLevel === "CRITICAL" && (language === "zh" ? "高危" : "CRITICAL")}
-                {" "}({scanResult.riskScore}/100)
-              </div>
-            )}
-            {isScanning && (
-              <div className="swap-token-scan-badge">
-                <span className="scan-spinner-sm" /> {t("swap_btn_scanning")}
-              </div>
-            )}
-          </div>
         </div>
 
-        {/* ─── Flip Arrow ─────────────────────────────────────────── */}
-        <div className="swap-arrow-wrapper">
-          <button className="swap-arrow" onClick={handleFlip} title={language === "zh" ? "反转代币" : "Flip tokens"}>
-            ⇅
-          </button>
+        <div className="swap-arrow-wrapper" style={{ opacity: 0.5 }}>
+          <button className="swap-arrow" disabled>⇅</button>
         </div>
 
-        {/* ─── To (Buy) ───────────────────────────────────────────── */}
-        <div className="swap-token-box glass-card">
+        <div className="swap-token-box glass-card" style={{ opacity: 0.5 }}>
           <div className="swap-token-label">{t("swap_to")}</div>
           <div className="swap-token-row">
-            <span className="swap-amount-output">
-              {isQuoting ? (
-                <span className="quote-loading">{language === "zh" ? "正在获取报价..." : "Quoting..."}</span>
-              ) : quote ? (
-                quote.amountOut
-              ) : amount && parseFloat(amount) > 0 && isSafe ? (
-                "..."
-              ) : (
-                "0.0"
-              )}
-            </span>
-            <button
-              className="token-pill"
-              onClick={() => setSelectorOpen("to")}
-              style={{ "--pill-color": toToken.logoColor } as React.CSSProperties}
-            >
-              <TokenLogo token={toToken} size={24} />
+            <span className="swap-amount-output">0.0</span>
+            <button className="token-pill" disabled>
               {toToken.symbol}
-              <span className="token-pill-arrow">▾</span>
             </button>
           </div>
-          {toBalance !== null && wallet.connected && (
-            <div className="swap-token-meta">
-              <div className="swap-balance">
-                <span>{t("swap_balance")} {toBalance} {toToken.symbol}</span>
-                <button
-                  className="refresh-btn"
-                  onClick={() => setBalanceRefreshKey(k => k + 1)}
-                  title={language === "zh" ? "刷新余额" : "Refresh balance"}
-                >
-                  <SwapIcon />
-                </button>
-              </div>
-            </div>
-          )}
         </div>
+        */}
 
-        {/* ─── Quote Details ──────────────────────────────────────── */}
-        <AnimatePresence>
-          {quote && (
-            <motion.div
-              className="quote-details"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-            >
-              <div className="quote-row">
-                <span>{t("swap_rate")}</span>
-                <span className="font-mono">1 {fromToken.symbol} ≈ {quote.exchangeRate} {toToken.symbol}</span>
-              </div>
-              <div className="quote-row">
-                <span>{t("swap_price_impact")}</span>
-                <span className={`font-mono ${parseFloat(quote.priceImpact) > 1 ? "text-warning" : "text-safe"}`}>
-                  {quote.priceImpact}%
+        {/* Personal Stats Section */}
+        <div className="swap-token-box glass-card" style={{ padding: "16px", marginTop: "12px", gap: "8px" }}>
+          <div className="swap-token-label" style={{ fontWeight: "700", color: "#fff", display: "flex", justifyContent: "space-between" }}>
+            <span>👤 {language === "zh" ? "您的竞猜特工统计" : "YOUR CAMPAIGN STATS"}</span>
+            {loadingStats && <span style={{ fontSize: "0.7rem", color: "var(--text-tertiary)" }}>Refreshing...</span>}
+          </div>
+          
+          {!wallet.connected ? (
+            <div style={{ textAlign: "center", padding: "12px 0", color: "var(--text-tertiary)", fontSize: "0.8rem" }}>
+              {language === "zh" ? "请先连接钱包以查看您的交易额和排名" : "Connect your wallet to track your volume & rank"}
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "8px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
+                <span style={{ color: "var(--text-secondary)" }}>{language === "zh" ? "您的地址:" : "Your Wallet:"}</span>
+                <span className="font-mono" style={{ color: "#fff" }}>
+                  {wallet.address ? `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}` : ""}
                 </span>
               </div>
-              {/* ── Route Comparison ── */}
-              <div className="route-comparison">
-                <div className="quote-row" style={{ marginBottom: '0.15rem' }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{language === "zh" ? "兑换路径对比" : "Route Comparison"}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
+                <span style={{ color: "var(--text-secondary)" }}>{language === "zh" ? "当前排名:" : "Current Rank:"}</span>
+                <span className="font-mono" style={{ color: userRank === "Unranked" ? "var(--text-tertiary)" : "var(--accent-safe)", fontWeight: "bold" }}>
+                  {userRank === null ? "..." : (userRank === "Unranked" ? (language === "zh" ? "未上榜" : "Unranked") : `#${userRank}`)}
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
+                <span style={{ color: "var(--text-secondary)" }}>{language === "zh" ? "交易量 (USDT):" : "Trading Volume:"}</span>
+                <span className="font-mono" style={{ color: "var(--accent-purple)", fontWeight: "bold" }}>
+                  {userVolume === null ? "..." : `$${userVolume.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
+                <span style={{ color: "var(--text-secondary)" }}>{language === "zh" ? "拥有球员份额:" : "Has Player Shares:"}</span>
+                <span className="font-mono" style={{ color: hasShares ? "#00ff88" : "#ff4444", fontWeight: "bold" }}>
+                  {hasShares === null ? "..." : (hasShares ? (language === "zh" ? "是 (已解锁排行)" : "Yes (Ranked)") : (language === "zh" ? "否 (未解锁排名)" : "No (Unranked)"))}
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "8px" }}>
+                <span style={{ color: "var(--text-secondary)" }}>{language === "zh" ? "预计奖励 (50/50):" : "Estimated Reward (50/50):"}</span>
+                <span className="font-mono" style={{ color: "#FFD700", fontWeight: "bold", fontSize: "0.78rem" }}>
+                  {userRank === null ? "..." : getEstimatedPrize(userRank)}
+                </span>
+              </div>
+              
+              {/* Manual Tx Sync Input Form */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "12px", marginTop: "4px" }}>
+                <span style={{ fontSize: "0.74rem", color: "var(--text-secondary)" }}>
+                  {language === "zh" ? "🔄 手动同步交易 (输入交易哈希):" : "🔄 Manual Swap Sync (Paste Tx Hash):"}
+                </span>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <input
+                    type="text"
+                    placeholder="0x..."
+                    value={txHashInput}
+                    onChange={(e) => setTxHashInput(e.target.value)}
+                    disabled={syncingTx}
+                    style={{
+                      flex: 1,
+                      background: "rgba(0,0,0,0.3)",
+                      border: "1px solid var(--border-default)",
+                      borderRadius: "6px",
+                      padding: "6px 10px",
+                      fontSize: "0.78rem",
+                      fontFamily: "var(--font-mono)",
+                      color: "#fff"
+                    }}
+                  />
+                  <button
+                    onClick={handleSyncTx}
+                    disabled={syncingTx || !txHashInput.trim()}
+                    style={{
+                      background: syncingTx || !txHashInput.trim() ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg, #4B7BF5 0%, #a855f7 100%)",
+                      border: "none",
+                      borderRadius: "6px",
+                      color: syncingTx || !txHashInput.trim() ? "var(--text-tertiary)" : "#fff",
+                      padding: "6px 12px",
+                      fontSize: "0.74rem",
+                      fontWeight: "bold",
+                      cursor: syncingTx || !txHashInput.trim() ? "not-allowed" : "pointer",
+                      transition: "opacity 0.2s"
+                    }}
+                  >
+                    {syncingTx ? (language === "zh" ? "同步中..." : "Syncing...") : (language === "zh" ? "同步" : "Sync")}
+                  </button>
                 </div>
-                <div className={`route-option ${!quote.uniswapAmountOut || parseFloat(quote.amountOut) >= parseFloat(quote.uniswapAmountOut) ? 'best' : ''}`}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span className="font-mono" style={{ fontSize: '0.8rem' }}>OKX Aggregator</span>
-                    {(!quote.uniswapAmountOut || parseFloat(quote.amountOut) >= parseFloat(quote.uniswapAmountOut)) && (
-                      <span className="best-route-badge"><CheckIcon size={12} /> {language === "zh" ? "最佳" : "Best"}</span>
-                    )}
-                  </div>
-                  <span className="font-mono" style={{ fontSize: '0.8rem' }}>{quote.amountOut} {toToken.symbol}</span>
-                </div>
-                <div className={`route-option ${quote.uniswapAmountOut && parseFloat(quote.uniswapAmountOut) > parseFloat(quote.amountOut) ? 'best' : ''}`}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span className="font-mono" style={{ fontSize: '0.8rem', opacity: quote.uniswapAmountOut ? 1 : 0.5 }}>Uniswap V3</span>
-                    {quote.uniswapAmountOut && parseFloat(quote.uniswapAmountOut) > parseFloat(quote.amountOut) && (
-                      <span className="best-route-badge"><CheckIcon size={12} /> {language === "zh" ? "最佳" : "Best"}</span>
-                    )}
-                  </div>
-                  <span className="font-mono" style={{ fontSize: '0.8rem', opacity: quote.uniswapAmountOut ? 1 : 0.5 }}>
-                    {quote.uniswapAmountOut ? `${quote.uniswapAmountOut} ${toToken.symbol}` : (language === "zh" ? "无直连池" : "No direct pool")}
+                {syncStatusMsg && (
+                  <span style={{ 
+                    fontSize: "0.7rem", 
+                    color: syncStatusType === "success" ? "var(--accent-safe)" : "var(--accent-warning)", 
+                    marginTop: "2px" 
+                  }}>
+                    {syncStatusMsg}
                   </span>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ─── Warnings ───────────────────────────────────────────── */}
-        <AnimatePresence>
-          {isDangerous && (
-            <motion.div
-              className="swap-danger-warning"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-            >
-              <span className="danger-icon"><WarningOctagonIcon size={24} style={{ color: "var(--accent-danger)" }} /></span>
-              <div>
-                <strong>{language === "zh" ? "检测到高风险代币" : "High Risk Token Detected"}</strong>
-                <p>{language === "zh" ? `该代币含有 ${scanResult!.flags.length} 个安全威胁特征。出于您的本金保护，兑换已被锁定拦截。` : `This token has ${scanResult!.flags.length} security threat(s). Swapping is blocked for your protection.`}</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ─── Success ────────────────────────────────────────────── */}
-        <AnimatePresence>
-          {swapResult && stage === "complete" && (
-            <motion.div
-              className="swap-success"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-            >
-              <CheckIcon size={24} style={{ color: "var(--accent-safe)" }} />
-              <div>
-                <strong>{language === "zh" ? "兑换确认成功！" : "Swap Confirmed!"}</strong>
-                <a className="font-mono risk-link" href={swapResult.explorerUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.8rem", display: "block", marginTop: "4px" }}>
-                  {t("nav_view_explorer")}
-                </a>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ─── Error ──────────────────────────────────────────────── */}
-        <AnimatePresence>
-          {(scanError || swapError) && (
-            <motion.div className="swap-error" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
-              <WarningIcon /> {scanError || swapError}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ─── Action Buttons ─────────────────────────────────────── */}
-        <div className="swap-action">
-          {!wallet.connected ? (
-            <button className="btn btn-primary swap-btn" onClick={onConnect}>
-              {t("nav_connect")}
-            </button>
-          ) : isScanning ? (
-            <button className="btn btn-primary swap-btn scanning-pulse" disabled>
-              <span className="scan-spinner" /> {language === "zh" ? "正在扫描代币..." : "Scanning Token..."}
-            </button>
-          ) : isDangerous ? (
-            <button className="btn btn-danger swap-btn" disabled>
-              <BlockedIcon /> {language === "zh" ? "兑换已阻止 — 高风险" : "Swap Blocked - High Risk"}
-            </button>
-          ) : stage === "complete" ? (
-            <button
-              className="btn btn-primary swap-btn"
-              onClick={() => {
-                setAmount("");
-                resetSwap();
-                setStage("input");
-                setNeedsApproval(false);
-                onScanResult(null);
-              }}
-            >
-              {language === "zh" ? "新兑换" : "New Swap"}
-            </button>
-          ) : needsApproval && canSwap ? (
-            /* ── Two-step: Approve then Swap ── */
-            <div className="swap-btn-pair">
-              <button
-                className={`btn swap-btn ${isApproving ? "btn-primary" : "btn-approve"}`}
-                onClick={handleApprove}
-                disabled={isApproving}
-              >
-                {isApproving ? (
-                  <><span className="scan-spinner" /> {language === "zh" ? `正在授权 ${fromToken.symbol}...` : `Approving ${fromToken.symbol}...`}</>
-                ) : (
-                  <><UnlockIcon /> {language === "zh" ? `授权 ${fromToken.symbol}` : `Approve ${fromToken.symbol}`}</>
                 )}
-              </button>
-              <button className="btn btn-primary swap-btn" disabled>
-                <SwapIcon /> {language === "zh" ? `兑换 ${fromToken.symbol} → ${toToken.symbol}` : `Swap ${fromToken.symbol} → ${toToken.symbol}`}
-              </button>
+              </div>
             </div>
-          ) : isSwapping ? (
-            <button className="btn btn-primary swap-btn" disabled>
-              <span className="scan-spinner" /> {t("swap_btn_swapping")}
-            </button>
-          ) : canSwap ? (
-            <button className="btn btn-safe swap-btn" onClick={handleSwap}>
-              <SwapIcon /> {language === "zh" ? `兑换 ${fromToken.symbol} → ${toToken.symbol}` : `Swap ${fromToken.symbol} → ${toToken.symbol}`}
-            </button>
-          ) : isMedium ? (
-            <button
-              className="btn btn-primary swap-btn"
-              onClick={handleSwap}
-              disabled={!quote || !parseFloat(amount)}
-              style={{ background: "linear-gradient(135deg, #FFB020, #FF8C00)" }}
-            >
-              <><WarningIcon /> {language === "zh" ? "谨慎兑换" : "Swap with Caution"}</>
-            </button>
-          ) : (
-            <button className="btn btn-primary swap-btn" disabled={!amount || !parseFloat(amount)}>
-              {amount && parseFloat(amount) > 0 ? (language === "zh" ? "正在获取报价..." : "Getting Quote...") : t("swap_btn_enter_amount")}
-            </button>
           )}
         </div>
 
-        {/* Powered by */}
-        <div className="swap-powered-by">
-          <span><ShieldIcon /> {language === "zh" ? "安全防护由" : "Protected by"}</span>
-          <a href="https://scanguard-dashboard-main.vercel.app" target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: '#33ff00', textShadow: '0 0 8px rgba(51,255,0,0.3)', fontFamily: 'var(--font-mono)', textDecoration: 'none' }}>ScanGuard</a>
-          <span className="badge badge-safe" style={{ marginLeft: "4px", fontFamily: 'var(--font-mono)' }}>MCP</span>
+        {/* Steps Box */}
+        <div style={{ padding: "12px", border: "1px solid rgba(168,85,247,0.15)", background: "rgba(168,85,247,0.02)", borderRadius: "8px", fontSize: "0.74rem", color: "var(--text-tertiary)", marginTop: "8px" }}>
+          <div style={{ fontWeight: "bold", color: "var(--text-secondary)", marginBottom: "4px" }}>💡 {language === "zh" ? "如何参与竞赛：" : "How to enter:"}</div>
+          <ol style={{ paddingLeft: "14px", margin: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
+            <li>{language === "zh" ? "点击上方按钮在 OKX 网页端或手机上兑换 $PSAI 代币。" : "Click one of the OKX links above to trade $PSAI."}</li>
+            <li>{language === "zh" ? "链上智能合约扫描模块会在 1-2 分钟内自动追踪您的地址交易量。" : "Our indexing module will scan the blockchain and update your stats."}</li>
+            <li>{language === "zh" ? "世界杯开始后，持有的 $PSAI 将直接解锁 1.5 - 5.0 倍无损失质押收益倍数！" : "Staking USDT in July with $PSAI unlocks up to 5x yield boosts!"}</li>
+          </ol>
+        </div>
+
+        {/* Footer */}
+        <div className="swap-powered-by" style={{ marginTop: "12px" }}>
+          <span>🛡️ {language === "zh" ? "竞赛由" : "Campaign verified by"}</span>
+          <span style={{ fontWeight: 600, color: "#4B7BF5", fontFamily: 'var(--font-mono)' }}>X Layer</span>
           <span style={{ margin: "0 4px", color: "var(--text-tertiary)" }}>·</span>
-          <span style={{ color: "var(--text-tertiary)" }}>{language === "zh" ? "技术支持" : "Powered by"}</span>
-          <span style={{ fontWeight: 600, color: "#4B7BF5" }}>OKX DEX</span>
+          <span style={{ color: "var(--text-tertiary)" }}>{language === "zh" ? "数据提供" : "Aggregated on"}</span>
+          <span style={{ fontWeight: 600, color: "#33ff00" }}>OKX DEX</span>
         </div>
       </motion.div>
-
-      {/* Token Selector Modal */}
-      <TokenSelector
-        isOpen={selectorOpen !== null}
-        onClose={() => setSelectorOpen(null)}
-        onSelect={handleTokenSelect}
-        excludeAddress={selectorOpen === "from" ? toToken.address : fromToken.address}
-      />
 
       <style>{`
         .swap-card {
@@ -719,42 +481,6 @@ const SwapCard: React.FC<SwapCardProps> = ({
           font-weight: 700;
         }
 
-        .slippage-btn {
-          font-size: 0.78rem;
-          color: var(--text-tertiary);
-          padding: 4px 10px;
-          background: rgba(255,255,255,0.03);
-          border-radius: var(--radius-full);
-          border: 1px solid var(--border-default);
-          cursor: pointer;
-          font-family: var(--font-mono);
-        }
-        .slippage-btn:hover { border-color: var(--accent-blue); }
-
-        .slippage-popup {
-          position: absolute;
-          top: 100%;
-          right: 0;
-          margin-top: 6px;
-          padding: 6px;
-          display: flex;
-          gap: 4px;
-          z-index: 10;
-        }
-        .slippage-option {
-          padding: 6px 12px;
-          border-radius: var(--radius-sm);
-          border: 1px solid var(--border-default);
-          background: transparent;
-          color: var(--text-secondary);
-          cursor: pointer;
-          font-size: 0.75rem;
-          font-family: var(--font-mono);
-          font-weight: 600;
-        }
-        .slippage-option:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
-        .slippage-option.active { border-color: var(--accent-blue); color: var(--accent-blue); background: var(--accent-blue-dim); }
-
         .swap-token-box {
           padding: 16px;
           display: flex;
@@ -768,279 +494,11 @@ const SwapCard: React.FC<SwapCardProps> = ({
           font-weight: 500;
         }
 
-        .swap-token-row {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .swap-amount-input {
-          flex: 1;
-          font-size: 1.8rem;
-          font-weight: 700;
-          font-family: var(--font-mono);
-          color: var(--text-primary);
-          background: transparent;
-          border: none;
-          outline: none;
-          width: 0;
-          min-width: 0;
-        }
-        .swap-amount-input::placeholder { color: var(--text-tertiary); }
-        .swap-amount-input:disabled { opacity: 0.5; }
-
-        .swap-amount-output {
-          flex: 1;
-          font-size: 1.8rem;
-          font-weight: 700;
-          font-family: var(--font-mono);
-          color: var(--text-primary);
-        }
-        .quote-loading {
-          font-size: 1rem;
-          color: var(--text-tertiary);
-          animation: pulse-text 1s ease-in-out infinite;
-        }
-        @keyframes pulse-text { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-        .token-pill {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 12px 6px 6px;
-          border-radius: var(--radius-full);
-          border: 1px solid var(--border-default);
-          background: rgba(255,255,255,0.03);
-          color: var(--text-primary);
-          cursor: pointer;
-          font-size: 0.95rem;
-          font-weight: 700;
-          font-family: var(--font-mono);
-          transition: all 0.15s;
-          white-space: nowrap;
-        }
-        .token-pill:hover { border-color: var(--pill-color, var(--accent-blue)); background: rgba(255,255,255,0.06); }
-
-        .token-pill-icon {
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 0.75rem;
-          font-weight: 800;
-          color: white;
-        }
-
-        .token-pill-arrow {
-          font-size: 0.7rem;
-          color: var(--text-tertiary);
-          margin-left: 2px;
-        }
-
-        .swap-token-scan-badge {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 0.72rem;
-          color: var(--text-secondary);
-          font-family: var(--font-mono);
-        }
-        .scan-dot { width: 6px; height: 6px; border-radius: 50%; }
-        .scan-dot.safe { background: var(--accent-safe); box-shadow: 0 0 4px var(--accent-safe); }
-        .scan-dot.danger { background: var(--accent-danger); box-shadow: 0 0 4px var(--accent-danger); }
-        .scan-dot.warn { background: var(--accent-warning); box-shadow: 0 0 4px var(--accent-warning); }
-        .scan-spinner-sm { display: inline-block; width: 10px; height: 10px; border: 1.5px solid rgba(255,255,255,0.2); border-top-color: var(--accent-blue); border-radius: 50%; animation: rotate-slow 0.8s linear infinite; }
-
-        .swap-token-meta {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-        .swap-balance {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          font-size: 0.75rem;
-          color: var(--text-tertiary);
-          font-family: var(--font-mono);
-        }
-        .max-btn {
-          padding: 2px 8px;
-          border-radius: 4px;
-          border: 1px solid var(--accent-blue);
-          background: var(--accent-blue-dim);
-          color: var(--accent-blue);
-          font-size: 0.65rem;
-          font-weight: 700;
-          font-family: var(--font-mono);
-          cursor: pointer;
-          letter-spacing: 0.05em;
-        }
-        .max-btn:hover { background: rgba(75, 123, 245, 0.2); }
-
-        .refresh-btn {
-          padding: 2px 4px;
-          border-radius: 4px;
-          border: none;
-          background: transparent;
-          color: var(--text-tertiary);
-          font-size: 0.7rem;
-          cursor: pointer;
-          transition: all 0.2s;
-          line-height: 1;
-        }
-        .refresh-btn:hover {
-          color: var(--accent-blue);
-          transform: rotate(180deg);
-        }
-
-        .swap-arrow-wrapper {
-          display: flex;
-          justify-content: center;
-          margin: -8px 0;
-          position: relative;
-          z-index: 2;
-        }
-
-        .swap-arrow {
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--bg-elevated);
-          border: 2px solid var(--border-default);
-          border-radius: var(--radius-md);
-          color: var(--text-secondary);
-          font-size: 1.1rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .swap-arrow:hover {
-          border-color: var(--accent-blue);
-          color: var(--accent-blue);
-          transform: rotate(180deg);
-        }
-
-        .quote-details {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          padding: 12px 16px;
-          background: rgba(0,0,0,0.15);
-          border-radius: var(--radius-md);
-          overflow: hidden;
-        }
-        .quote-row {
-          display: flex;
-          justify-content: space-between;
-          font-size: 0.78rem;
-          color: var(--text-secondary);
-        }
-
-        .route-comparison {
-          margin-top: 8px;
-          padding-top: 8px;
-          border-top: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        .route-option {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 8px 10px;
-          margin-top: 4px;
-          border-radius: var(--radius-sm);
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid rgba(255, 255, 255, 0.04);
-          transition: all 0.2s ease;
-        }
-        .route-option.best {
-          background: rgba(0, 255, 136, 0.04);
-          border-color: rgba(0, 255, 136, 0.15);
-        }
-        .best-route-badge {
-          display: inline-flex;
-          align-items: center;
-          font-size: 0.6rem;
-          font-weight: 700;
-          padding: 2px 6px;
-          border-radius: 4px;
-          background: rgba(0, 255, 136, 0.12);
-          color: var(--accent-safe);
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-        }
-
-        .swap-danger-warning {
-          display: flex;
-          gap: 12px;
-          padding: 14px;
-          background: rgba(255, 59, 92, 0.06);
-          border: 1px solid rgba(255, 59, 92, 0.15);
-          border-radius: var(--radius-md);
-          overflow: hidden;
-        }
-        .swap-danger-warning strong { color: var(--accent-danger); font-size: 0.9rem; }
-        .swap-danger-warning p { font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px; line-height: 1.4; }
-        .danger-icon { font-size: 1.5rem; flex-shrink: 0; }
-
-        .swap-success {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 14px;
-          background: var(--accent-safe-dim);
-          border: 1px solid rgba(0, 255, 136, 0.15);
-          border-radius: var(--radius-md);
-          overflow: hidden;
-        }
-        .swap-success strong { color: var(--accent-safe); font-size: 0.9rem; }
-
-        .swap-error {
-          padding: 12px;
-          background: var(--accent-danger-dim);
-          border: 1px solid rgba(255, 59, 92, 0.2);
-          border-radius: var(--radius-md);
-          font-size: 0.82rem;
-          color: var(--accent-danger);
-          overflow: hidden;
-        }
-
         .swap-btn {
           width: 100%;
           padding: 16px;
           font-size: 1rem;
           border-radius: var(--radius-lg);
-        }
-
-        .swap-btn-pair {
-          display: flex;
-          flex-direction: row;
-          gap: 10px;
-          width: 100%;
-        }
-        .swap-btn-pair .swap-btn {
-          flex: 1;
-          padding: 14px 8px;
-          font-size: 0.9rem;
-        }
-        .swap-btn-pair .swap-btn:disabled {
-          opacity: 0.35;
-          cursor: not-allowed;
-        }
-
-        .btn-approve {
-          background: linear-gradient(135deg, #8B5CF6, #6366F1) !important;
-          color: white !important;
-          border: none !important;
-          font-weight: 700;
-          letter-spacing: 0.02em;
-        }
-        .btn-approve:hover {
-          filter: brightness(1.15);
-          box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
         }
 
         .swap-powered-by {
@@ -1053,22 +511,13 @@ const SwapCard: React.FC<SwapCardProps> = ({
           padding-top: 8px;
         }
 
-        .scan-spinner {
-          display: inline-block;
-          width: 16px;
-          height: 16px;
-          border: 2px solid rgba(255,255,255,0.3);
-          border-top-color: white;
-          border-radius: 50%;
-          animation: rotate-slow 0.8s linear infinite;
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
         }
-
-        .risk-link { color: var(--accent-blue); text-decoration: none; }
-        .risk-link:hover { text-decoration: underline; }
 
         @media (max-width: 500px) {
           .swap-card { padding: 16px; }
-          .swap-amount-input, .swap-amount-output { font-size: 1.4rem; }
           .swap-powered-by {
             flex-wrap: nowrap;
             white-space: nowrap;

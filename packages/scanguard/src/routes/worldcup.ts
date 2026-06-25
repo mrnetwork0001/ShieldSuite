@@ -96,10 +96,93 @@ let agentLogs: AgentLog[] = [
 ];
 
 const USERS_FILE = path.join(__dirname, "../../data/worldcup_users.json");
+const VOLUMES_FILE = path.join(__dirname, "../../data/worldcup_volumes.json");
+const LAST_BLOCK_FILE = path.join(__dirname, "../../data/worldcup_last_block.json");
+const ACTIVE_SCOUTS_FILE = path.join(__dirname, "../../data/worldcup_active_scouts.json");
+const SYNCED_TXS_FILE = path.join(__dirname, "../../data/worldcup_synced_txs.json");
 
 let registeredUsers = new Set<string>([
-  "0xCd0a2370F2dC12c1802707B7d9aB3fec891E3c02" // default test user
+  "0xcd0a2370f2dc12c1802707b7d9ab3fec891e3c02" // default test user
 ]);
+
+let activeScouts = new Set<string>([
+  "0xcd0a2370f2dc12c1802707b7d9ab3fec891e3c02" // default test user
+]);
+
+let syncedTxs = new Set<string>();
+let userVolumes: Record<string, number> = {};
+let lastScannedBlock = 0n;
+
+interface ShareCacheEntry {
+  hasShares: boolean;
+  timestamp: number;
+}
+const sharesCache = new Map<string, ShareCacheEntry>();
+const SHARES_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
+  return new Promise<T>((resolve) => {
+    const timer = setTimeout(() => {
+      resolve(fallback);
+    }, timeoutMs);
+    promise.then(
+      (val) => {
+        clearTimeout(timer);
+        resolve(val);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(fallback);
+      }
+    );
+  });
+}
+
+let okbPriceUsd = 75.4;
+
+async function updateOkbPrice() {
+  try {
+    const res = await fetch("https://www.okx.com/api/v5/market/index-tickers?instId=OKB-USDT");
+    const json = await res.json() as any;
+    if (json && json.code === "0" && Array.isArray(json.data) && json.data[0]) {
+      const idxPx = parseFloat(json.data[0].idxPx);
+      if (!isNaN(idxPx) && idxPx > 0) {
+        okbPriceUsd = idxPx;
+        logger.info(`[WorldCup] Successfully fetched OKB price index from OKX: $${okbPriceUsd}`);
+      }
+    }
+  } catch (err: any) {
+    logger.error(`[WorldCup] Error fetching OKB price from OKX index-tickers: ${err.message}. Using fallback $${okbPriceUsd}`);
+  }
+}
+
+
+// Load synced transaction hashes on startup
+try {
+  if (fs.existsSync(SYNCED_TXS_FILE)) {
+    const raw = fs.readFileSync(SYNCED_TXS_FILE, "utf-8");
+    if (raw.trim()) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        arr.forEach(tx => syncedTxs.add(tx.toLowerCase()));
+      }
+    }
+  }
+} catch (err: any) {
+  logger.error(`[WorldCup] Failed to load synced transactions: ${err.message}`);
+}
+
+function saveSyncedTxs() {
+  try {
+    fs.writeFileSync(SYNCED_TXS_FILE, JSON.stringify(Array.from(syncedTxs), null, 2), "utf-8");
+  } catch (err: any) {
+    logger.error(`[WorldCup] Failed to save synced transactions: ${err.message}`);
+  }
+}
+const CAMPAIGN_START_BLOCK_MAINNET = 63584000n;
+const CAMPAIGN_START_TIME_SEC = 1782385200; // June 25, 2026, 12:00:00 PM UTC+1
+const CAMPAIGN_END_TIME_SEC = 1782990000;   // July 2, 2026, 12:00:00 PM UTC+1
+const TX_VALID_START_TIME_SEC = 1782345600; // June 25, 2026, 1:00:00 AM UTC+1 (Option 1: allow earlier test swaps)
 
 // Load registered users on startup
 try {
@@ -134,12 +217,354 @@ function saveRegisteredUsers() {
   }
 }
 
+try {
+  if (fs.existsSync(ACTIVE_SCOUTS_FILE)) {
+    const raw = fs.readFileSync(ACTIVE_SCOUTS_FILE, "utf-8");
+    if (raw.trim()) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        arr.forEach((addr) => {
+          if (typeof addr === "string") {
+            activeScouts.add(addr.toLowerCase());
+          }
+        });
+        logger.info(`[WorldCup] Loaded ${activeScouts.size} active scouts from disk.`);
+      }
+    }
+  }
+} catch (err: any) {
+  logger.error(`[WorldCup] Failed to load active scouts: ${err.message}`);
+}
+
+function saveActiveScouts() {
+  try {
+    const arr = Array.from(activeScouts);
+    fs.writeFileSync(ACTIVE_SCOUTS_FILE, JSON.stringify(arr, null, 2), "utf-8");
+  } catch (err: any) {
+    logger.error(`[WorldCup] Failed to save active scouts: ${err.message}`);
+  }
+}
+
+// Load registered user volumes on startup
+try {
+  if (fs.existsSync(VOLUMES_FILE)) {
+    const raw = fs.readFileSync(VOLUMES_FILE, "utf-8");
+    if (raw.trim()) {
+      userVolumes = JSON.parse(raw);
+      const normalized: Record<string, number> = {};
+      for (const [addr, vol] of Object.entries(userVolumes)) {
+        normalized[addr.toLowerCase()] = Number(vol);
+      }
+      userVolumes = normalized;
+      logger.info(`[WorldCup] Loaded ${Object.keys(userVolumes).length} user volumes from disk.`);
+    }
+  }
+} catch (err: any) {
+  logger.error(`[WorldCup] Failed to load user volumes: ${err.message}`);
+}
+
+function saveUserVolumes() {
+  try {
+    fs.writeFileSync(VOLUMES_FILE, JSON.stringify(userVolumes, null, 2), "utf-8");
+  } catch (err: any) {
+    logger.error(`[WorldCup] Failed to save user volumes: ${err.message}`);
+  }
+}
+
+// Load last scanned block on startup
+try {
+  if (fs.existsSync(LAST_BLOCK_FILE)) {
+    const raw = fs.readFileSync(LAST_BLOCK_FILE, "utf-8");
+    const parsed = JSON.parse(raw);
+    lastScannedBlock = BigInt(parsed.lastBlock || CAMPAIGN_START_BLOCK_MAINNET);
+  } else {
+    lastScannedBlock = CAMPAIGN_START_BLOCK_MAINNET;
+  }
+} catch {}
+
+function saveLastScannedBlock(block: bigint) {
+  try {
+    fs.writeFileSync(LAST_BLOCK_FILE, JSON.stringify({ lastBlock: block.toString() }, null, 2), "utf-8");
+  } catch {}
+}
+
+function computeVolume(tx: any, receipt: any, psaiAmount: bigint): number {
+  const transferTopic = ethers.id("Transfer(address,address,uint256)");
+  const usdtAddresses = [
+    "0x1e4a5963abfd975d8c9021ce480b42188849d41d", // MockUSDT
+    "0x779ded0c9e1022225f8e0630b35a9b54be713736", // real USDT
+    "0x74b7f16337b8972027f6196a17a631ac6de26d22"  // real USDC
+  ];
+  const wokbAddress = "0xe538905cf8410324e03a5a23c1c177a474d59b2b";
+  const OKB_PRICE_USD = okbPriceUsd;
+  const PSAI_PRICE_USD = 0.0015;
+
+  let maxUsdVolume = 0.0;
+
+  // 1. Check stablecoin transfer logs (USDT, USDC, MockUSDT - 6 decimals)
+  for (const l of receipt.logs) {
+    if (usdtAddresses.includes(l.address.toLowerCase())) {
+      if (l.topics[0] === transferTopic && l.data !== "0x") {
+        try {
+          const val = Number(ethers.formatUnits(BigInt(l.data), 6));
+          if (val > maxUsdVolume) {
+            maxUsdVolume = val;
+          }
+        } catch {}
+      }
+    }
+  }
+
+  // 2. Check WOKB transfer logs (18 decimals, multiply by OKB_PRICE_USD)
+  for (const l of receipt.logs) {
+    if (l.address.toLowerCase() === wokbAddress) {
+      if (l.topics[0] === transferTopic && l.data !== "0x") {
+        try {
+          const val = Number(ethers.formatEther(BigInt(l.data))) * OKB_PRICE_USD;
+          if (val > maxUsdVolume) {
+            maxUsdVolume = val;
+          }
+        } catch {}
+      }
+    }
+  }
+
+  // 3. Check native OKB tx.value
+  if (tx && tx.value) {
+    try {
+      const val = Number(ethers.formatEther(BigInt(tx.value))) * OKB_PRICE_USD;
+      if (val > maxUsdVolume) {
+        maxUsdVolume = val;
+      }
+    } catch {}
+  }
+
+  return maxUsdVolume;
+}
+
+let isScanning = false;
+
+async function syncTradingVolumes() {
+  if (isScanning) {
+    logger.info("[TradingVolumeIndexer] Indexer is already running, skipping this interval.");
+    return;
+  }
+  isScanning = true;
+
+  try {
+    const rpcUrl = process.env.XLAYER_RPC_URL || "https://rpc.xlayer.tech";
+    const isMainnet = rpcUrl.includes("rpc.xlayer.tech") && !rpcUrl.includes("testrpc");
+    if (!isMainnet) {
+      return;
+    }
+
+    const psaiAddress = "0xaef068ea820aafa00a2854bfd6cfab6d891ede5d";
+    const usdtAddresses = [
+      "0x1e4a5963abfd975d8c9021ce480b42188849d41d", // MockUSDT (Faucet-Enabled for Testing)
+      "0x779ded0c9e1022225f8e0630b35a9b54be713736"  // secondary USDT
+    ];
+    const playerSharesAddress = "0xf62660a59fCbe3F81DEcD86732aeE91A7bdb3E4A";
+
+    const provider = new ethers.JsonRpcProvider(rpcUrl, 196, { staticNetwork: true });
+    const latestBlock = BigInt(await provider.getBlockNumber());
+
+    if (lastScannedBlock === 0n || lastScannedBlock > latestBlock) {
+      lastScannedBlock = latestBlock - 5000n;
+    }
+
+    if (lastScannedBlock < CAMPAIGN_START_BLOCK_MAINNET) {
+      lastScannedBlock = CAMPAIGN_START_BLOCK_MAINNET;
+    }
+
+    if (lastScannedBlock >= latestBlock) {
+      return;
+    }
+
+    const transferTopic = ethers.id("Transfer(address,address,uint256)");
+    let startBlock = lastScannedBlock + 1n;
+    let scanChunkSize = 100n; // Locked to 100 blocks to comply with public RPC limits
+
+    const addresses = getAddressesForChain(196);
+    const playerDexAddress = addresses ? addresses.PlayerDex.toLowerCase() : "0x12c84e9535b7fdd8087d80ad960e6a2f21384526";
+    const addressesToSkip = new Set([
+      psaiAddress,
+      ...usdtAddresses,
+      playerSharesAddress.toLowerCase(),
+      playerDexAddress,
+      "0x0000000000000000000000000000000000000000"
+    ]);
+
+    while (startBlock <= latestBlock) {
+      const currentChunkSize = latestBlock - startBlock >= scanChunkSize ? scanChunkSize : latestBlock - startBlock;
+      const endBlock = startBlock + currentChunkSize;
+      logger.info(`[TradingVolumeIndexer] Scanning blocks ${startBlock} to ${endBlock} for $PSAI Transfers (Chunk size: ${currentChunkSize})...`);
+
+      const filter = {
+        address: psaiAddress,
+        fromBlock: "0x" + startBlock.toString(16),
+        toBlock: "0x" + endBlock.toString(16),
+        topics: [transferTopic]
+      };
+
+      const transferSingleTopic = ethers.id("TransferSingle(address,address,address,uint256,uint256)");
+      const filterShares = {
+        address: playerSharesAddress,
+        fromBlock: "0x" + startBlock.toString(16),
+        toBlock: "0x" + endBlock.toString(16),
+        topics: [transferSingleTopic]
+      };
+
+      let logs: any[], shareLogs: any[];
+      try {
+        [logs, shareLogs] = await Promise.all([
+          provider.getLogs(filter),
+          provider.getLogs(filterShares)
+        ]);
+      } catch (rpcErr: any) {
+        logger.error(`[TradingVolumeIndexer] RPC getLogs error with range ${startBlock}-${endBlock}: ${rpcErr.message}. Retrying in 2s...`);
+        await new Promise(r => setTimeout(r, 2000));
+        continue;
+      }
+
+      let newActiveScoutFound = false;
+      for (const log of shareLogs) {
+        try {
+          if (log.topics.length >= 4) {
+            const to = ("0x" + log.topics[3].slice(26)).toLowerCase();
+            if (!activeScouts.has(to)) {
+              activeScouts.add(to);
+              newActiveScoutFound = true;
+            }
+            sharesCache.delete(to); // clear cache entry on new share transfer!
+          }
+        } catch (err) {}
+      }
+      if (newActiveScoutFound) {
+        saveActiveScouts();
+      }
+
+      const txHashes = new Set<string>();
+      const parsedTransfers: Array<{ txHash: string; from: string; to: string; amount: bigint }> = [];
+
+      for (const log of logs) {
+        try {
+          const from = ("0x" + log.topics[1].slice(26)).toLowerCase();
+          const to = ("0x" + log.topics[2].slice(26)).toLowerCase();
+          
+          let amount: bigint;
+          if (log.data === "0x" && log.topics.length >= 4) {
+            amount = BigInt(log.topics[3]);
+          } else {
+            amount = log.data === "0x" ? 0n : BigInt(log.data);
+          }
+
+          // Track all transfers of PSAI so volumes are pre-calculated.
+          parsedTransfers.push({ txHash: log.transactionHash, from, to, amount });
+          txHashes.add(log.transactionHash);
+        } catch (err: any) {
+          logger.error(`[TradingVolumeIndexer] Failed to parse log: ${err.message}`);
+        }
+      }
+
+      if (txHashes.size > 0) {
+        logger.info(`[TradingVolumeIndexer] Found ${txHashes.size} transactions involving $PSAI. Fetching receipts...`);
+
+        for (const txHash of txHashes) {
+          try {
+            if (syncedTxs.has(txHash.toLowerCase())) {
+              continue;
+            }
+
+            const receipt = await provider.getTransactionReceipt(txHash);
+            if (!receipt || receipt.status !== 1) continue;
+
+            const block = await provider.getBlock(receipt.blockNumber);
+            if (!block) continue;
+
+            if (block.timestamp < TX_VALID_START_TIME_SEC || block.timestamp > CAMPAIGN_END_TIME_SEC) {
+              logger.info(`[TradingVolumeIndexer] Transaction ${txHash} is outside campaign time window (${new Date(block.timestamp * 1000).toISOString()}). Skipping.`);
+              continue;
+            }
+
+            const userTransfers = parsedTransfers.filter(t => t.txHash === txHash);
+            const totalPsaiAmount = userTransfers.reduce((sum, t) => sum + t.amount, 0n);
+
+            const finalVolume = computeVolume(null, receipt, totalPsaiAmount);
+
+            if (finalVolume > 0) {
+              syncedTxs.add(txHash.toLowerCase());
+              saveSyncedTxs();
+
+              for (const t of userTransfers) {
+                if (!addressesToSkip.has(t.from)) {
+                  userVolumes[t.from] = (userVolumes[t.from] || 0) + finalVolume;
+                }
+                if (!addressesToSkip.has(t.to)) {
+                  userVolumes[t.to] = (userVolumes[t.to] || 0) + finalVolume;
+                }
+              }
+            }
+          } catch (txErr: any) {
+            logger.error(`[TradingVolumeIndexer] Error checking tx ${txHash}: ${txErr.message}`);
+          }
+        }
+
+        saveUserVolumes();
+      }
+
+      lastScannedBlock = endBlock;
+      saveLastScannedBlock(lastScannedBlock);
+      startBlock = endBlock + 1n;
+      
+      // Throttler to prevent rate limit
+      await new Promise(r => setTimeout(r, 200));
+    }
+  } catch (err: any) {
+    logger.error(`[TradingVolumeIndexer] Indexer error: ${err.message}`);
+  } finally {
+    isScanning = false;
+  }
+}
+
+// Start trading volumes sync scheduler
+setInterval(() => {
+  syncTradingVolumes().catch((err) => {
+    logger.error(`[TradingVolumeIndexer] Uncaught sync error: ${err.message}`);
+  });
+}, 30_000);
+
+// Start OKB price update scheduler (every 5 minutes)
+setInterval(() => {
+  updateOkbPrice().catch((err) => {
+    logger.error(`[TradingVolumeIndexer] OKB price scheduler error: ${err.message}`);
+  });
+}, 300_000);
+
+// Initial startup sync
+setTimeout(async () => {
+  await updateOkbPrice();
+  syncTradingVolumes()
+    .then(() => logger.info("[TradingVolumeIndexer] Initial startup sync complete."))
+    .catch((err) => logger.error(`[TradingVolumeIndexer] Initial startup sync failed: ${err.message}`));
+}, 2000);
+
 const SPORTMONKS_PLAYER_MAP: Record<number, { tokenId: number; name: string }> = {
   184798: { tokenId: 1, name: "Lionel Messi" },
+  333594: { tokenId: 2, name: "Lautaro Martinez" },
   96611: { tokenId: 16, name: "Kylian Mbappe" },
+  185658: { tokenId: 17, name: "Antoine Griezmann" },
+  997: { tokenId: 31, name: "Harry Kane" },
+  37255840: { tokenId: 32, name: "Jude Bellingham" },
   16827155: { tokenId: 33, name: "Bukayo Saka" },
-  154421: { tokenId: 9999, name: "Erling Haaland" },
-  600687: { tokenId: 46, name: "Vinicius Junior" }
+  600687: { tokenId: 46, name: "Vinicius Junior" },
+  7346228: { tokenId: 47, name: "Rodrygo" },
+  186910: { tokenId: 61, name: "Rodri" },
+  37656179: { tokenId: 63, name: "Lamine Yamal" },
+  33186829: { tokenId: 76, name: "Jamal Musiala" },
+  37429246: { tokenId: 77, name: "Florian Wirtz" },
+  580: { tokenId: 121, name: "Cristiano Ronaldo" },
+  1371: { tokenId: 151, name: "Kevin De Bruyne" },
+  154421: { tokenId: 9999, name: "Erling Haaland" }
 };
 
 // ─── Inline Agent Processing ─────────────────────────────────────────────────
@@ -171,7 +596,7 @@ function getAddressesForChain(chainId: number) {
     try {
       const content = fs.readFileSync(p, "utf-8");
       const data = JSON.parse(content);
-      const addrs = chainId === 196 ? data.xlayerMainnet : data.xlayerTestnet;
+      const addrs = data.xlayerMainnet;
       if (addrs) return addrs;
     } catch {}
   }
@@ -179,22 +604,15 @@ function getAddressesForChain(chainId: number) {
   // Hardcoded fallback so it works on Railway without the contracts folder
   logger.warn("[InlineAgent] Using hardcoded deployed addresses (file not found)");
   const FALLBACK: Record<string, any> = {
-    xlayerTestnet: {
-      MockUSDT: "0xe5E0795a8A61502409f304f391B615220d720fE9",
-      NoLossVault: "0x9E1A49480C1c1762A4B465F50c5cAAb86Aa3B046",
-      PlayerShares: "0xE8a63B4a905d9C1C2262F261dee90478d6fFD3De",
-      PlayerDex: "0xF2338b4Ba18373070cDfD9F53DA321fA12Aa591b",
-      deployer: "0xDAce8445a5bD576111cCC8e598B67965252023C2",
-    },
     xlayerMainnet: {
       MockUSDT: "0x779ded0c9e1022225f8e0630b35a9b54be713736",
       NoLossVault: "0x758ec85fc3047afff7977ec6edab43d21e9538ac",
-      PlayerShares: "0xb1cc05dc0a0b70fabc6bbb1b3043ba386c86d7e1",
-      PlayerDex: "0xeacae6d1031194f2681b07cbcd50ee0f9c88aeee",
-      deployer: "0xdace8445a5bd576111ccc8e598b67965252023c2",
-    },
+      PlayerShares: "0xf62660a59fCbe3F81DEcD86732aeE91A7bdb3E4A",
+      PlayerDex: "0x12C84e9535b7fDd8087d80ad960e6A2f21384526",
+      deployer: "0xDAce8445a5bD576111cCC8e598B67965252023C2",
+    }
   };
-  return chainId === 196 ? FALLBACK.xlayerMainnet : FALLBACK.xlayerTestnet;
+  return FALLBACK.xlayerMainnet;
 }
 
 const VAULT_ABI = [
@@ -204,6 +622,7 @@ const VAULT_ABI = [
 
 const SHARES_ABI = [
   "function balanceOf(address account, uint256 id) external view returns (uint256)",
+  "function balanceOfBatch(address[] calldata accounts, uint256[] calldata ids) external view returns (uint256[] memory)",
   "function players(uint256 id) external view returns (string name, string country, uint256 rating, uint256 goals, uint256 assists)",
   "function updatePlayer(uint256 id, uint256 rating, uint256 goals, uint256 assists, string newUri) external",
 ];
@@ -220,31 +639,42 @@ async function processEventInline(
   userAddress?: string,
 ) {
   const pk = process.env.AGENT_PRIVATE_KEY;
-  if (!pk) {
-    addAgentLog("⚠️ AGENT_PRIVATE_KEY not configured — cannot execute trades.", "error");
-    return;
-  }
-
   const addresses = getAddressesForChain(chainId);
   if (!addresses) {
     addAgentLog("⚠️ No deployed addresses found for chain " + chainId, "error");
     return;
   }
 
-  // Normalize: anything that isn't mainnet 196 is treated as testnet 1952
-  const isMainnet = chainId === 196;
-  const normalizedChainId = isMainnet ? 196 : 1952;
-  const rpcUrl = isMainnet
-    ? "https://rpc.xlayer.tech"
-    : "https://testrpc.xlayer.tech/terigon";
-
+  // Normalize: use mainnet 196
+  const isMainnet = true;
+  const normalizedChainId = 196;
+  const rpcUrl = "https://rpc.xlayer.tech";
   const provider = new ethers.JsonRpcProvider(rpcUrl, normalizedChainId, { staticNetwork: true });
-  const wallet = new ethers.Wallet(pk, provider);
-  const agentAddress = wallet.address;
 
-  const vault  = new ethers.Contract(addresses.NoLossVault, VAULT_ABI, wallet);
-  const shares = new ethers.Contract(addresses.PlayerShares, SHARES_ABI, wallet);
-  const dex    = new ethers.Contract(addresses.PlayerDex, DEX_ABI, wallet);
+  const { getAgentAddress, contractCallViaCli } = await import("../agent-wallet.js");
+
+  let wallet: ethers.Wallet | null = null;
+  let vault: ethers.Contract;
+  let shares: ethers.Contract;
+  let dex: ethers.Contract;
+  let agentAddress = "";
+
+  if (pk) {
+    wallet = new ethers.Wallet(pk, provider);
+    vault  = new ethers.Contract(addresses.NoLossVault, VAULT_ABI, wallet);
+    shares = new ethers.Contract(addresses.PlayerShares, SHARES_ABI, wallet);
+    dex    = new ethers.Contract(addresses.PlayerDex, DEX_ABI, wallet);
+    agentAddress = wallet.address;
+  } else {
+    vault  = new ethers.Contract(addresses.NoLossVault, VAULT_ABI, provider);
+    shares = new ethers.Contract(addresses.PlayerShares, SHARES_ABI, provider);
+    dex    = new ethers.Contract(addresses.PlayerDex, DEX_ABI, provider);
+    agentAddress = getAgentAddress();
+    if (!agentAddress) {
+      addAgentLog("⚠️ Neither AGENT_PRIVATE_KEY nor AGENTIC_WALLET_ADDRESS is configured.", "error");
+      return;
+    }
+  }
 
   // ── 1. Sentiment Analysis ──
   addAgentLog(`🔍 Scouting News: "${event.description}" (TokenID: ${event.tokenId})`, "sentiment");
@@ -300,9 +730,24 @@ async function processEventInline(
       `📝 Updating on-chain stats for ${playerName}: Rating → ${newRating} (Goals and Assists remain real-world synced)`,
       "info",
     );
-    const updateTx = await shares.updatePlayer(event.tokenId, newRating, newGoals, newAssists, "");
-    await updateTx.wait();
-    addAgentLog(`✅ On-chain rating updated. Tx: ${updateTx.hash}`, "info");
+    if (pk && wallet) {
+      const updateTx = await shares.updatePlayer(event.tokenId, newRating, newGoals, newAssists, "");
+      await updateTx.wait();
+      addAgentLog(`✅ On-chain rating updated. Tx: ${updateTx.hash}`, "info");
+    } else {
+      const iface = new ethers.Interface(SHARES_ABI);
+      const calldata = iface.encodeFunctionData("updatePlayer", [event.tokenId, newRating, newGoals, newAssists, ""]);
+      const txResult = await contractCallViaCli({
+        to: addresses.PlayerShares,
+        inputData: calldata,
+        chain: "196"
+      });
+      if (txResult && txResult.txHash) {
+        addAgentLog(`✅ On-chain rating updated via TEE. Tx: ${txResult.txHash}`, "info");
+      } else {
+        throw new Error("Failed to execute updatePlayer via TEE CLI");
+      }
+    }
   } catch (err: any) {
     addAgentLog(`⚠️ Rating update failed: ${err.message?.slice(0, 120)}`, "error");
   }
@@ -356,9 +801,24 @@ async function processEventInline(
             `🤖 Executing autonomous BUY of 1.0 Share (ID: ${event.tokenId}) for ${user.slice(0, 10)}…`,
             "trade",
           );
-          const tx = await dex.buySharesFor(user, event.tokenId, amountToBuy);
-          await tx.wait();
-          addAgentLog(`✅ Tx Confirmed! Bought Player Shares. Hash: ${tx.hash}`, "trade");
+          if (pk && wallet) {
+            const tx = await dex.buySharesFor(user, event.tokenId, amountToBuy);
+            await tx.wait();
+            addAgentLog(`✅ Tx Confirmed! Bought Player Shares. Hash: ${tx.hash}`, "trade");
+          } else {
+            const iface = new ethers.Interface(DEX_ABI);
+            const calldata = iface.encodeFunctionData("buySharesFor", [user, event.tokenId, amountToBuy]);
+            const txResult = await contractCallViaCli({
+              to: addresses.PlayerDex,
+              inputData: calldata,
+              chain: "196"
+            });
+            if (txResult && txResult.txHash) {
+              addAgentLog(`✅ Tx Confirmed! Bought Player Shares via TEE. Hash: ${txResult.txHash}`, "trade");
+            } else {
+              throw new Error("Failed to execute buySharesFor via TEE CLI");
+            }
+          }
         } else {
           addAgentLog(
             `⚠️ User ${user.slice(0, 10)}… — insufficient credits (${ethers.formatEther(userCredits)} < ${ethers.formatEther(totalCost)}). Skipping.`,
@@ -372,9 +832,24 @@ async function processEventInline(
             `🤖 Executing autonomous SELL of ${ethers.formatEther(balance)} Shares (ID: ${event.tokenId}) for ${user.slice(0, 10)}…`,
             "trade",
           );
-          const tx = await dex.sellSharesFor(user, event.tokenId, balance);
-          await tx.wait();
-          addAgentLog(`✅ Tx Confirmed! Sold Player Shares. Hash: ${tx.hash}`, "trade");
+          if (pk && wallet) {
+            const tx = await dex.sellSharesFor(user, event.tokenId, balance);
+            await tx.wait();
+            addAgentLog(`✅ Tx Confirmed! Sold Player Shares. Hash: ${tx.hash}`, "trade");
+          } else {
+            const iface = new ethers.Interface(DEX_ABI);
+            const calldata = iface.encodeFunctionData("sellSharesFor", [user, event.tokenId, balance]);
+            const txResult = await contractCallViaCli({
+              to: addresses.PlayerDex,
+              inputData: calldata,
+              chain: "196"
+            });
+            if (txResult && txResult.txHash) {
+              addAgentLog(`✅ Tx Confirmed! Sold Player Shares via TEE. Hash: ${txResult.txHash}`, "trade");
+            } else {
+              throw new Error("Failed to execute sellSharesFor via TEE CLI");
+            }
+          }
         } else {
           addAgentLog(`ℹ️ User ${user.slice(0, 10)}… holds 0 shares of ID ${event.tokenId}. Skipping sell.`, "info");
         }
@@ -391,11 +866,22 @@ async function processEventInline(
 }
 
 const BASE_RATINGS: Record<number, number> = {
-  1: 90, // Messi
-  16: 91, // Mbappe
-  33: 87, // Saka
-  9999: 90, // Haaland
-  46: 89  // Vinicius Jr
+  1: 90,
+  2: 87,
+  16: 91,
+  17: 88,
+  31: 90,
+  32: 89,
+  33: 87,
+  46: 89,
+  47: 86,
+  61: 90,
+  63: 84,
+  76: 87,
+  77: 86,
+  121: 88,
+  151: 90,
+  9999: 90
 };
 
 async function syncCumulativePlayerStats(fixtures: any[], chainId: number) {
@@ -441,19 +927,24 @@ async function syncCumulativePlayerStats(fixtures: any[], chainId: number) {
 
   // 3. Connect to X Layer PlayerShares contract
   const pk = process.env.AGENT_PRIVATE_KEY;
-  if (!pk) {
-    logger.warn("[WorldCupSync] AGENT_PRIVATE_KEY not set — cannot sync player stats on-chain.");
-    return;
-  }
-
   const addresses = getAddressesForChain(chainId);
   if (!addresses) return;
 
-  const isMainnet = chainId === 196;
-  const rpcUrl = isMainnet ? "https://rpc.xlayer.tech" : "https://testrpc.xlayer.tech/terigon";
-  const provider = new ethers.JsonRpcProvider(rpcUrl, isMainnet ? 196 : 1952, { staticNetwork: true });
-  const wallet = new ethers.Wallet(pk, provider);
-  const shares = new ethers.Contract(addresses.PlayerShares, SHARES_ABI, wallet);
+  const isMainnet = true;
+  const rpcUrl = "https://rpc.xlayer.tech";
+  const provider = new ethers.JsonRpcProvider(rpcUrl, 196, { staticNetwork: true });
+
+  const { contractCallViaCli } = await import("../agent-wallet.js");
+
+  let wallet: ethers.Wallet | null = null;
+  let shares: ethers.Contract;
+
+  if (pk) {
+    wallet = new ethers.Wallet(pk, provider);
+    shares = new ethers.Contract(addresses.PlayerShares, SHARES_ABI, wallet);
+  } else {
+    shares = new ethers.Contract(addresses.PlayerShares, SHARES_ABI, provider);
+  }
 
   // 4. Compare with on-chain values and update if necessary
   for (const [tokenIdStr, stats] of Object.entries(playerStats)) {
@@ -474,11 +965,27 @@ async function syncCumulativePlayerStats(fixtures: any[], chainId: number) {
         logger.info(`  On-chain: Goals: ${onChainGoals}, Assists: ${onChainAssists}`);
         logger.info(`[WorldCupSync] Broadcasting update transaction to X Layer...`);
 
-        const tx = await shares.updatePlayer(tokenId, newRating, stats.goals, stats.assists, "");
-        await tx.wait();
-        
-        logger.info(`[WorldCupSync] On-chain stats updated. Tx: ${tx.hash}`);
-        addAgentLog(`🔄 Real-world sync: Updated Token ID ${tokenId} (${onChainData[0]}) on X Layer to Rating: ${newRating}, Goals: ${stats.goals}, Assists: ${stats.assists}.`, "info");
+        if (pk && wallet) {
+          const tx = await shares.updatePlayer(tokenId, newRating, stats.goals, stats.assists, "");
+          await tx.wait();
+          
+          logger.info(`[WorldCupSync] On-chain stats updated. Tx: ${tx.hash}`);
+          addAgentLog(`🔄 Real-world sync: Updated Token ID ${tokenId} (${onChainData[0]}) on X Layer to Rating: ${newRating}, Goals: ${stats.goals}, Assists: ${stats.assists}.`, "info");
+        } else {
+          const iface = new ethers.Interface(SHARES_ABI);
+          const calldata = iface.encodeFunctionData("updatePlayer", [tokenId, newRating, stats.goals, stats.assists, ""]);
+          const txResult = await contractCallViaCli({
+            to: addresses.PlayerShares,
+            inputData: calldata,
+            chain: "196"
+          });
+          if (txResult && txResult.txHash) {
+            logger.info(`[WorldCupSync] On-chain stats updated via TEE. Tx: ${txResult.txHash}`);
+            addAgentLog(`🔄 Real-world sync (TEE): Updated Token ID ${tokenId} (${onChainData[0]}) on X Layer to Rating: ${newRating}, Goals: ${stats.goals}, Assists: ${stats.assists}.`, "info");
+          } else {
+            throw new Error("Failed to execute updatePlayer via TEE CLI");
+          }
+        }
       }
     } catch (err: any) {
       logger.error(`[WorldCupSync] Failed to sync stats for Token ID ${tokenId}: ${err.message}`);
@@ -516,11 +1023,7 @@ worldCupRouter.post("/update", (req: Request, res: Response) => {
 
   logger.info(`[WorldCup] Event pushed: ${description} (TokenID: ${tokenId})`);
 
-  // Determine target chain — prefer explicit chainId from frontend,
-  // otherwise default based on XLAYER_RPC_URL env variable
-  const targetChainId = chainId
-    ? Number(chainId)
-    : process.env.XLAYER_RPC_URL?.includes("testrpc") ? 1952 : 196;
+  const targetChainId = 196;
 
   // Fire-and-forget: execute the agent's trade logic inline
   processEventInline(
@@ -549,6 +1052,7 @@ worldCupRouter.post("/register-user", (req: Request, res: Response) => {
   const normalized = address.toLowerCase();
   const isNew = !registeredUsers.has(normalized);
   registeredUsers.add(normalized);
+  sharesCache.delete(normalized); // clear cache entry to force fresh check on next load
   
   if (isNew) {
     logger.info(`[WorldCup] Registered candidate user address: ${normalized}`);
@@ -566,6 +1070,226 @@ worldCupRouter.get("/users", (_req: Request, res: Response) => {
   res.json({
     success: true,
     data: Array.from(registeredUsers)
+  });
+});
+
+// GET /api/worldcup/leaderboard
+worldCupRouter.get("/leaderboard", async (_req: Request, res: Response) => {
+  const uniqueAddresses = Array.from(new Set(Array.from(registeredUsers).map(addr => addr.toLowerCase())));
+  
+  const rpcUrl = "https://rpc.xlayer.tech";
+  const targetChainId = 196;
+  const addresses = getAddressesForChain(targetChainId);
+  const playerSharesAddress = addresses?.PlayerShares || "0xf62660a59fCbe3F81DEcD86732aeE91A7bdb3E4A";
+  
+  const provider = new ethers.JsonRpcProvider(rpcUrl, targetChainId, { staticNetwork: true });
+  const sharesContract = new ethers.Contract(playerSharesAddress, SHARES_ABI, provider);
+  const PLAYER_IDS = [1, 2, 16, 17, 31, 32, 33, 46, 47, 61, 63, 76, 77, 121, 151, 9999];
+
+  // Perform parallel balanceOfBatch queries for all candidate users with cache and timeout
+  const checks = await Promise.all(
+    uniqueAddresses.map(async (addr) => {
+      const cached = sharesCache.get(addr);
+      if (cached && (Date.now() - cached.timestamp < SHARES_CACHE_TTL_MS)) {
+        return { address: addr, hasShares: cached.hasShares };
+      }
+
+      try {
+        const accounts = Array(PLAYER_IDS.length).fill(addr);
+        // Query the contract with a 2.5s timeout
+        const balances = await withTimeout<bigint[]>(
+          sharesContract.balanceOfBatch(accounts, PLAYER_IDS) as Promise<bigint[]>,
+          2500,
+          []
+        );
+
+        if (balances && balances.length > 0) {
+          const hasShares = balances.some(b => b > 0n);
+          sharesCache.set(addr, { hasShares, timestamp: Date.now() });
+          return { address: addr, hasShares };
+        }
+      } catch (err: any) {
+        logger.warn(`[Leaderboard] Failed to query shares balance for ${addr}: ${err.message}`);
+      }
+
+      // Fallback to expired cached value if we have one, otherwise false
+      if (cached) {
+        return { address: addr, hasShares: cached.hasShares };
+      }
+      return { address: addr, hasShares: false };
+    })
+  );
+
+  const sharesMap = new Map(checks.map(c => [c.address, c.hasShares]));
+
+  // Build the list of all users with hasShares status
+  const allUsers = uniqueAddresses.map((normalized) => {
+    return {
+      address: normalized,
+      volume: userVolumes[normalized] || 0,
+      hasShares: sharesMap.get(normalized) || false,
+    };
+  });
+
+  // Only rank users who have at least one player share
+  const filteredUsers = allUsers.filter(u => u.hasShares);
+  const sortedUsers = filteredUsers.sort((a, b) => b.volume - a.volume);
+
+  res.json({
+    success: true,
+    data: sortedUsers,
+    allUsers: allUsers,
+    campaignStart: CAMPAIGN_START_TIME_SEC * 1000,
+    campaignEnd: CAMPAIGN_END_TIME_SEC * 1000,
+  });
+});
+
+// POST /api/worldcup/sync-tx
+worldCupRouter.post("/sync-tx", async (req: Request, res: Response) => {
+  const { txHash, address } = req.body;
+  if (!txHash || !address) {
+    res.status(400).json({ success: false, error: "txHash and address are required" });
+    return;
+  }
+
+  const normalizedAddress = address.toLowerCase();
+  const normalizedTxHash = txHash.trim();
+  sharesCache.delete(normalizedAddress); // clear cache entry so next load retrieves actual balances
+
+  try {
+    const rpcUrl = process.env.XLAYER_RPC_URL || "https://rpc.xlayer.tech";
+    const provider = new ethers.JsonRpcProvider(rpcUrl, 196, { staticNetwork: true });
+
+    logger.info(`[WorldCup] Manual Tx Sync request from ${normalizedAddress} for tx: ${normalizedTxHash}`);
+
+    // 1. Fetch transaction and receipt
+    const [tx, receipt] = await Promise.all([
+      provider.getTransaction(normalizedTxHash),
+      provider.getTransactionReceipt(normalizedTxHash)
+    ]);
+
+    if (!tx || !receipt) {
+      res.status(404).json({ success: false, error: "Transaction or receipt not found on X Layer Mainnet. Please double check the hash." });
+      return;
+    }
+
+    if (receipt.status !== 1) {
+      res.status(400).json({ success: false, error: "Transaction failed on-chain." });
+      return;
+    }
+
+    // Fetch block to get timestamp
+    const block = await provider.getBlock(receipt.blockNumber);
+    if (!block) {
+      res.status(500).json({ success: false, error: "Failed to verify transaction block timestamp." });
+      return;
+    }
+
+    if (block.timestamp < TX_VALID_START_TIME_SEC || block.timestamp > CAMPAIGN_END_TIME_SEC) {
+      res.status(400).json({ success: false, error: "Transaction occurred outside the campaign window (Starts: June 25, 12:00 PM UTC+1, Ends: July 2, 12:00 PM UTC+1)." });
+      return;
+    }
+
+    // 2. Validate transaction involves the user
+    const involvesUser = 
+      tx.from.toLowerCase() === normalizedAddress || 
+      (tx.to && tx.to.toLowerCase() === normalizedAddress);
+
+    const psaiAddress = "0xaef068ea820aafa00a2854bfd6cfab6d891ede5d";
+    const transferTopic = ethers.id("Transfer(address,address,uint256)");
+
+    let psaiAmountTransferred = 0n;
+    let logInvolvesUser = false;
+
+    for (const l of receipt.logs) {
+      const logAddress = l.address.toLowerCase();
+      if (l.topics[0] === transferTopic && l.topics.length >= 3) {
+        const fromTopic = ("0x" + l.topics[1].slice(26)).toLowerCase();
+        const toTopic = ("0x" + l.topics[2].slice(26)).toLowerCase();
+
+        if (fromTopic === normalizedAddress || toTopic === normalizedAddress) {
+          logInvolvesUser = true;
+        }
+
+        if (logAddress === psaiAddress) {
+          const amount = l.data === "0x" ? 0n : BigInt(l.data);
+          psaiAmountTransferred += amount;
+        }
+      }
+    }
+
+    if (!involvesUser && !logInvolvesUser) {
+      res.status(400).json({ success: false, error: "This transaction does not involve your connected wallet address." });
+      return;
+    }
+
+    if (psaiAmountTransferred === 0n) {
+      res.status(400).json({ success: false, error: "No $PSAI token transfer found in this transaction." });
+      return;
+    }
+
+    // 3. Compute volume
+    const finalVolume = computeVolume(tx, receipt, psaiAmountTransferred);
+
+    if (finalVolume <= 0) {
+      res.status(400).json({ success: false, error: "Could not calculate a positive volume for this transaction." });
+      return;
+    }
+
+    // 4. Update databases and save
+    if (syncedTxs.has(normalizedTxHash.toLowerCase())) {
+      res.status(400).json({ success: false, error: "This transaction has already been synced." });
+      return;
+    }
+
+    syncedTxs.add(normalizedTxHash.toLowerCase());
+    saveSyncedTxs();
+
+    registeredUsers.add(normalizedAddress);
+    saveRegisteredUsers();
+
+    userVolumes[normalizedAddress] = (userVolumes[normalizedAddress] || 0) + finalVolume;
+    saveUserVolumes();
+
+    logger.info(`[WorldCup] Manual Tx Sync successful for ${normalizedAddress}: +$${finalVolume} (Tx: ${normalizedTxHash})`);
+
+    res.json({
+      success: true,
+      data: {
+        address: normalizedAddress,
+        volume: userVolumes[normalizedAddress],
+        addedVolume: finalVolume
+      }
+    });
+  } catch (err: any) {
+    logger.error(`[WorldCup] Manual Tx Sync error: ${err.message}`);
+    res.status(500).json({ success: false, error: `Sync failed: ${err.message}` });
+  }
+});
+
+// POST /api/worldcup/mock-trade
+worldCupRouter.post("/mock-trade", (req: Request, res: Response) => {
+  const { address, volume } = req.body;
+  if (!address || volume === undefined) {
+    res.status(400).json({ success: false, error: "Address and volume are required" });
+    return;
+  }
+
+  const normalized = address.toLowerCase();
+  registeredUsers.add(normalized);
+  saveRegisteredUsers();
+
+  userVolumes[normalized] = (userVolumes[normalized] || 0) + Number(volume);
+  saveUserVolumes();
+
+  logger.info(`[WorldCup] Mock trade registered for ${normalized}: +$${volume}`);
+
+  res.json({
+    success: true,
+    data: {
+      address: normalized,
+      volume: userVolumes[normalized],
+    },
   });
 });
 
@@ -611,8 +1335,8 @@ worldCupRouter.post("/agent-logs", (req: Request, res: Response) => {
 worldCupRouter.get("/metadata/:id", async (req: Request, res: Response) => {
   const id = Number(req.params.id);
 
-  const rpcUrl = process.env.XLAYER_RPC_URL || "https://rpc.xlayer.tech";
-  const targetChainId = rpcUrl.includes("testrpc") ? 1952 : 196;
+  const rpcUrl = "https://rpc.xlayer.tech";
+  const targetChainId = 196;
   const addresses = getAddressesForChain(targetChainId);
 
   let name = "";
@@ -682,7 +1406,7 @@ worldCupRouter.get("/matches", async (_req: Request, res: Response) => {
       const sm = await sportmonks.fetchWorldCupFixtures();
       if (sm && sm.length > 0) {
         fifaMatches = sm;
-        const targetChainId = process.env.XLAYER_RPC_URL?.includes("testrpc") ? 1952 : 196;
+        const targetChainId = 196;
         syncCumulativePlayerStats(sm, targetChainId).catch((err) => {
           logger.error(`[WorldCupSync] Error in cumulative stats sync: ${err.message}`);
         });
@@ -773,7 +1497,7 @@ async function syncFromSportmonks() {
     try {
       const matchesData = await sportmonks.fetchWorldCupFixtures();
       if (matchesData && matchesData.length > 0) {
-        const targetChainId = process.env.XLAYER_RPC_URL?.includes("testrpc") ? 1952 : 196;
+        const targetChainId = 196;
         syncCumulativePlayerStats(matchesData, targetChainId).catch((err) => {
           logger.error(`[WorldCupSync] Error in cron stats sync: ${err.message}`);
         });
@@ -866,11 +1590,6 @@ const pendingMultiplierClaims = new Set<string>();
 
 async function syncPsaiMultiplierCredits() {
   const pk = process.env.AGENT_PRIVATE_KEY;
-  if (!pk) {
-    logger.warn("[PsaiMultiplierSync] AGENT_PRIVATE_KEY not set — cannot sync credits.");
-    return;
-  }
-
   const rpcUrl = process.env.XLAYER_RPC_URL || "https://rpc.xlayer.tech";
   const chainId = rpcUrl.includes("testrpc") ? 1952 : 196;
   const addresses = getAddressesForChain(chainId);
@@ -880,13 +1599,23 @@ async function syncPsaiMultiplierCredits() {
   }
 
   const provider = new ethers.JsonRpcProvider(rpcUrl, chainId, { staticNetwork: true });
-  const wallet = new ethers.Wallet(pk, provider);
-  
-  const vault = new ethers.Contract(addresses.NoLossVault, [
+  const { contractCallViaCli } = await import("../agent-wallet.js");
+
+  let wallet: ethers.Wallet | null = null;
+  let vault: ethers.Contract;
+
+  const vaultAbi = [
     "function users(address user) external view returns (uint256 balance, uint256 lastUpdated, uint256 accumulatedCredits, address delegatedAgent)",
     "function creditsPerTokenPerSecond() external view returns (uint256)",
     "function addCredits(address userAddress, uint256 amount) external"
-  ], wallet);
+  ];
+
+  if (pk) {
+    wallet = new ethers.Wallet(pk, provider);
+    vault = new ethers.Contract(addresses.NoLossVault, vaultAbi, wallet);
+  } else {
+    vault = new ethers.Contract(addresses.NoLossVault, vaultAbi, provider);
+  }
 
   // Fetch current credits rate
   let rate: bigint;
@@ -978,11 +1707,27 @@ async function syncPsaiMultiplierCredits() {
         logger.info(`[PsaiMultiplierSync] User ${user} qualified for ${multiplier}x multiplier boost. Staked: ${ethers.formatUnits(stakedBalance, chainId === 196 ? 6 : 18)} USDT, Elapsed: ${elapsed}s, Rate: ${rate}, Calculating Bonus: ${ethers.formatEther(bonus)} Credits.`);
         
         try {
-          const tx = await vault.addCredits(user, bonus);
-          await tx.wait();
-          
-          logger.info(`[PsaiMultiplierSync] Successfully credited bonus to ${user}. Tx: ${tx.hash}`);
-          addAgentLog(`⚡ PSAI Holder Multiplier: Credited +${parseFloat(ethers.formatEther(bonus)).toFixed(2)} Scout Credits to ${user.slice(0, 10)}... (staked balance: ${parseFloat(ethers.formatUnits(stakedBalance, chainId === 196 ? 6 : 18)).toFixed(2)} USDT, ${multiplier}x yield active).`, "info");
+          if (pk && wallet) {
+            const tx = await vault.addCredits(user, bonus);
+            await tx.wait();
+            
+            logger.info(`[PsaiMultiplierSync] Successfully credited bonus to ${user}. Tx: ${tx.hash}`);
+            addAgentLog(`⚡ PSAI Holder Multiplier: Credited +${parseFloat(ethers.formatEther(bonus)).toFixed(2)} Scout Credits to ${user.slice(0, 10)}... (staked balance: ${parseFloat(ethers.formatUnits(stakedBalance, chainId === 196 ? 6 : 18)).toFixed(2)} USDT, ${multiplier}x yield active).`, "info");
+          } else {
+            const iface = new ethers.Interface(vaultAbi);
+            const calldata = iface.encodeFunctionData("addCredits", [user, bonus]);
+            const txResult = await contractCallViaCli({
+              to: addresses.NoLossVault,
+              inputData: calldata,
+              chain: "196"
+            });
+            if (txResult && txResult.txHash) {
+              logger.info(`[PsaiMultiplierSync] Successfully credited bonus to ${user} via TEE. Tx: ${txResult.txHash}`);
+              addAgentLog(`⚡ PSAI Holder Multiplier: Credited +${parseFloat(ethers.formatEther(bonus)).toFixed(2)} Scout Credits to ${user.slice(0, 10)}... (staked balance: ${parseFloat(ethers.formatUnits(stakedBalance, chainId === 196 ? 6 : 18)).toFixed(2)} USDT, ${multiplier}x yield active).`, "info");
+            } else {
+              throw new Error("Failed to execute addCredits via TEE CLI");
+            }
+          }
         } catch (txErr: any) {
           logger.error(`[PsaiMultiplierSync] Transaction failed for user ${user}: ${txErr.message}`);
         } finally {

@@ -23,10 +23,8 @@ interface LeaderboardProps {
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
   const { language, t } = useLanguage();
-  const isMainnet = wallet.chainId !== 1952;
-  const DEPLOYED_ADDRESSES = isMainnet
-    ? ((STATIC_DEPLOYED_ADDRESSES as any).xlayerMainnet || STATIC_DEPLOYED_ADDRESSES)
-    : ((STATIC_DEPLOYED_ADDRESSES as any).xlayerTestnet || STATIC_DEPLOYED_ADDRESSES);
+  const isMainnet = true;
+  const DEPLOYED_ADDRESSES = (STATIC_DEPLOYED_ADDRESSES as any).xlayerMainnet || STATIC_DEPLOYED_ADDRESSES;
 
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -75,12 +73,13 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
   }, [isMainnet]);
 
   useEffect(() => {
-    if (!wallet.provider || !DEPLOYED_ADDRESSES.NoLossVault) return;
+    if (!DEPLOYED_ADDRESSES.NoLossVault) return;
 
     const fetchLeaderboard = async () => {
       try {
         setLoading(true);
-        const vault = new ethers.Contract(DEPLOYED_ADDRESSES.NoLossVault, VAULT_ABI, wallet.provider!);
+        const provider = new ethers.JsonRpcProvider("https://rpc.xlayer.tech", undefined, { batchMaxCount: 1 });
+        const vault = new ethers.Contract(DEPLOYED_ADDRESSES.NoLossVault, VAULT_ABI, provider);
         
         // 1. Load cached stakers from localStorage
         const storageKey = isMainnet ? "shieldsuite_stakers_mainnet" : "shieldsuite_stakers_testnet";
@@ -96,14 +95,18 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         const userAddresses = new Set<string>();
         cachedStakers.forEach(addr => userAddresses.add(addr.toLowerCase()));
 
-        // Load registered users from backend API
+        // Load registered users and volumes from backend API
         const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "http://localhost:3402";
+        const backendVolumes: Record<string, number> = {};
         try {
-          const res = await fetch(`${API_BASE}/api/worldcup/users`);
+          const res = await fetch(`${API_BASE}/api/worldcup/leaderboard`);
           const data = await res.json();
           if (data.success && Array.isArray(data.data)) {
-            data.data.forEach((addr: string) => {
-              if (addr) userAddresses.add(addr.toLowerCase());
+            data.data.forEach((item: any) => {
+              if (item.address) {
+                userAddresses.add(item.address.toLowerCase());
+                backendVolumes[item.address.toLowerCase()] = item.volume || 0;
+              }
             });
           }
         } catch (e) {
@@ -115,7 +118,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         
         // Scan blocks to discover recent stakers/deposits.
         // Limit query block range lookback to 9999 blocks to fetch more history.
-        const currentBlock = await wallet.provider!.getBlockNumber();
+        const currentBlock = await provider.getBlockNumber();
         const lookback = 9999;
         const startBlock = Math.max(0, currentBlock - lookback);
         
@@ -138,48 +141,46 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         let totalVaultStaked = await vault.totalStaked().catch(() => 0n);
         const usdtDecimals = isMainnet ? 6 : 18;
         
-        const managers = await Promise.all(
-          Array.from(userAddresses).map(async (addr) => {
-            try {
-              const userInfo = await vault.users(addr);
-              const credits = await vault.getCredits(addr);
-              
-              // Deterministic mock volume for hackathon demo (since XLayer RPC limits getLogs to 100 blocks)
-              const seed = parseInt(addr.slice(-6), 16) || 1;
-              const stakedUsd = Number(ethers.formatUnits(userInfo.balance, isMainnet ? 6 : 18));
-              const volumeTraded = (seed % 15000) + (stakedUsd * 4.5);
-              
-              let multiplier = 1.0;
-              if (volumeTraded >= 50000) {
-                multiplier = 5.0;
-              } else if (volumeTraded >= 10000) {
-                multiplier = 3.0;
-              } else if (volumeTraded >= 2500) {
-                multiplier = 2.0;
-              } else if (volumeTraded >= 500) {
-                multiplier = 1.5;
-              }
-
-              // Apply elite multiplier to testnet user for demo
-              if (!isMainnet && addr.toLowerCase() === "0xcd0a2370f2dc12c1802707b7d9ab3fec891e3c02") {
-                multiplier = 5.0;
-              }
-
-              return {
-                address: addr,
-                staked: userInfo.balance,
-                credits: credits,
-                volumeTraded,
-                multiplier
-              };
-            } catch (err) {
-              return { address: addr, staked: 0n, credits: 0n, volumeTraded: 0, multiplier: 1.0 };
+        const managers = [];
+        for (const addr of Array.from(userAddresses)) {
+          try {
+            const userInfo = await vault.users(addr);
+            const credits = await vault.getCredits(addr);
+            
+            // Actual volume tracked from ScanGuard backend
+            const volumeTraded = backendVolumes[addr.toLowerCase()] || 0;
+            
+            let multiplier = 1.0;
+            if (volumeTraded >= 50000) {
+              multiplier = 5.0;
+            } else if (volumeTraded >= 10000) {
+              multiplier = 3.0;
+            } else if (volumeTraded >= 2500) {
+              multiplier = 2.0;
+            } else if (volumeTraded >= 500) {
+              multiplier = 1.5;
             }
-          })
-        );
 
-        // Filter out inactive stakers (must have staked balance or accumulated credits)
-        const activeManagers = managers.filter((m) => m.staked > 0n || m.credits > 0n);
+            // Apply elite multiplier to testnet user for demo
+            if (!isMainnet && addr.toLowerCase() === "0xcd0a2370f2dc12c1802707b7d9ab3fec891e3c02") {
+              multiplier = 5.0;
+            }
+
+            managers.push({
+              address: addr,
+              staked: userInfo.balance,
+              credits: credits,
+              volumeTraded,
+              multiplier
+            });
+          } catch (err: any) {
+            console.error(`Leaderboard fetch error for ${addr}:`, err.message);
+            managers.push({ address: addr, staked: 0n, credits: 0n, volumeTraded: 0, multiplier: 1.0 });
+          }
+        }
+
+        // Filter out inactive stakers (must have staked balance or accumulated credits or volume)
+        const activeManagers = managers.filter((m) => m.staked > 0n || m.credits > 0n || m.volumeTraded > 0);
 
         // Save active stakers back to localStorage
         const activeAddresses = activeManagers.map((m) => m.address);
@@ -200,10 +201,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
           totalVaultStaked = trackedStaked;
         }
         
-        // 3. Sort by credits descending
+        // 3. Sort by volume descending for Trading Competition
         const sorted = activeManagers.sort((a, b) => {
-          if (b.credits > a.credits) return 1;
-          if (b.credits < a.credits) return -1;
+          if (b.volumeTraded > a.volumeTraded) return 1;
+          if (b.volumeTraded < a.volumeTraded) return -1;
           return 0;
         });
 
@@ -273,7 +274,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
       <div className="panel-header" style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
         <span className="panel-icon" style={{ display: "flex", alignItems: "center" }}><TrophyIcon size={20} style={{ marginRight: 0 }} /></span>
         <h3 className="panel-title" style={{ fontSize: "1.15rem", fontWeight: "700", color: "#fff", margin: 0 }}>
-          {language === "zh" ? "全球特工积分排行榜" : "Global Scout Leaderboard"} ({isMainnet ? (language === "zh" ? "主网" : "Mainnet") : (language === "zh" ? "测试网沙盒" : "Testnet Sandbox")})
+          {language === "zh" ? "全球交易额排行榜 (第一阶段)" : "Global Trading Volume Leaderboard (Phase 1)"} ({isMainnet ? (language === "zh" ? "主网" : "Mainnet") : (language === "zh" ? "测试网沙盒" : "Testnet Sandbox")})
         </h3>
       </div>
 
@@ -304,7 +305,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
             color: campaignTime.phase === 'live' ? '#00ff88' : '#FFD700',
             border: `1px solid ${campaignTime.phase === 'live' ? 'rgba(0,255,136,0.3)' : 'rgba(255,215,0,0.25)'}`,
           }}>
-            {isMainnet ? (language === "zh" ? "第一赛季 · 小组赛" : "SEASON 1 · GROUP STAGE") : (language === "zh" ? "季前热身赛" : "PRE-SEASON WARM-UP")}
+            {isMainnet ? (language === "zh" ? "交易竞赛 · 第一阶段" : "TRADING CAMPAIGN · PHASE 1") : (language === "zh" ? "季前交易测试" : "PRE-SEASON TRADING TEST")}
           </span>
         </div>
 
@@ -337,11 +338,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
           {isMainnet ? (
             <>
-              <strong style={{ color: '#FFD700', display: "inline-flex", alignItems: "center", gap: "4px" }}><TrophyIcon size={14} style={{ marginRight: 0 }} /> {language === "zh" ? "奖金池:" : "Prize Pool:"}</strong> {language === "zh" ? "在为期两周的活动期间，所有存款产生的 Aave V3 USDT 收益将 100% 作为奖金。根据特工积分进行排名的顶级经理将赢得相应比例的分成。质押本金 100% 可随时赎回 - 零本金损失。" : "100% of Aave V3 USDT yield generated by all deposits during the 2-week campaign. Top managers by Scout Credits win proportional shares. Deposits are fully returnable - no loss."}
+              <strong style={{ color: '#FFD700', display: "inline-flex", alignItems: "center", gap: "4px" }}><TrophyIcon size={14} style={{ marginRight: 0 }} /> {language === "zh" ? "奖励分配 (50/50 USDT/PSAI):" : "Prize Distribution (50/50 USDT/PSAI):"}</strong> {language === "zh" ? "前5名交易量最高的经理将瓜分 $500 奖金池。 1st: $250 | 2nd: $110 | 3rd: $70 | 4th: $45 | 5th: $25。活动结束后，立即无缝开启世界杯赛场 AI 无损失 Staking 大赛！" : "$500 prize pool split among the top 5 volume traders. 1st: $250 | 2nd: $110 | 3rd: $70 | 4th: $45 | 5th: $25. Transitioning straight to the July Staking Main Game upon completion!"}
             </>
           ) : (
             <>
-              <strong style={{ color: 'var(--accent-blue)', display: "inline-flex", alignItems: "center", gap: "4px" }}><DumbbellIcon size={14} style={{ marginRight: 0 }} /> {language === "zh" ? "季前热身活动:" : "Pre-Season Campaign:"}</strong> {language === "zh" ? "在世界杯开始前，使用测试网 USDT 体验完整的流程。在排行榜上争取名次来热身 —— 主网第一赛季将于 6 月 11 日正式上线！" : "Practice the full flow with testnet USDT before World Cup kicks off. Top the leaderboard here to warm up - mainnet Season 1 goes live on June 11!"}
+              <strong style={{ color: 'var(--accent-blue)', display: "inline-flex", alignItems: "center", gap: "4px" }}><DumbbellIcon size={14} style={{ marginRight: 0 }} /> {language === "zh" ? "季前交易测试活动:" : "Pre-Season Trading Campaign:"}</strong> {language === "zh" ? "使用测试网体验 $PSAI 交易 volume 排行榜。第一名可模拟获得 $250 的 USDT/PSAI 分成 —— 主网交易大奖赛正式上线中！" : "Practice generating trading volume on the leaderboard. Top ranked users win proportional mock rewards of the $500 pool. X Layer Mainnet Trading Campaign is live!"}
             </>
           )}
         </div>

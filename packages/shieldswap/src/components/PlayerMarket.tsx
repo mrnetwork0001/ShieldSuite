@@ -22,6 +22,7 @@ import STATIC_DEPLOYED_ADDRESSES from "../deployed-addresses.json";
 
 import { SearchIcon, CheckIcon, ShoeIcon } from "./Icons";
 import ROSTER_PLAYERS from "../data/worldcup_rosters.json";
+import { switchToChain } from "../lib/xlayer";
 
 interface PlayerRosterItem {
   id: number;
@@ -75,15 +76,14 @@ interface PlayerMarketProps {
 
 export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLog }) => {
   const { language, t } = useLanguage();
+  const isMainnet = true;
   const DEPLOYED_ADDRESSES = (STATIC_DEPLOYED_ADDRESSES as any).xlayerMainnet || STATIC_DEPLOYED_ADDRESSES;
 
-  const isMainnet = true;
-  const explorerBase = isMainnet
-    ? "https://www.okx.com/explorer/xlayer/tx/"
-    : "https://www.okx.com/explorer/xlayer-test/tx/";
+  const explorerBase = "https://www.okx.com/explorer/xlayer/tx/";
 
   const [players, setPlayers] = useState(INITIAL_PLAYERS);
   const [selectedCountry, setSelectedCountry] = useState("All");
+  const [tradeError, setTradeError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -144,39 +144,47 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
   useEffect(() => {
     const fetchPlayerData = async () => {
       try {
-        const provider = wallet.provider || new ethers.JsonRpcProvider("https://rpc.xlayer.tech");
+        const provider = new ethers.JsonRpcProvider("https://rpc.xlayer.tech", undefined, { batchMaxCount: 1 });
         const shares = new ethers.Contract(DEPLOYED_ADDRESSES.PlayerShares, SHARES_ABI, provider);
         const dex = new ethers.Contract(DEPLOYED_ADDRESSES.PlayerDex, DEX_ABI, provider);
 
         const onChainIds = INITIAL_PLAYERS.map(p => p.id);
 
-        // Fetch stats and prices in batch
-        const [playersStats, pricesRaw] = await Promise.all([
-          shares.getPlayers(onChainIds).catch(() => []),
-          dex.getSharePrices(onChainIds).catch(() => [])
-        ]);
+        // Query player stats and prices sequentially to prevent RPC batching issues
+        const playersStats = await shares.getPlayers(onChainIds).catch((e: any) => {
+          console.error("PlayerMarket getPlayers error:", e.message);
+          return [];
+        });
+        const pricesRaw = await dex.getSharePrices(onChainIds).catch((e: any) => {
+          console.error("PlayerMarket getSharePrices error:", e.message);
+          return [];
+        });
 
         let balancesRaw: bigint[] = [];
         if (wallet.connected && wallet.address) {
           const accounts = onChainIds.map(() => wallet.address);
-          balancesRaw = await shares.balanceOfBatch(accounts, onChainIds).catch(() => []);
+          balancesRaw = await shares.balanceOfBatch(accounts, onChainIds).catch((e: any) => {
+            console.error("PlayerMarket balanceOfBatch error:", e.message);
+            return [];
+          });
         }
 
         const onChainMap: Record<string, { tokenId: number; rating: number; goals: number; assists: number; price: string; balance: string }> = {};
 
         onChainIds.forEach((id, i) => {
           const stats = playersStats[i];
-          if (stats && stats.nameString && stats.nameString.trim() !== "") {
-            const nameKey = stats.nameString.trim().toLowerCase();
+          const nameString = stats ? (stats.nameString || stats[0] || "") : "";
+          if (nameString.trim() !== "") {
+            const nameKey = nameString.trim().toLowerCase();
             const priceWei = pricesRaw[i] || 0n;
             const balanceWei = balancesRaw[i] || 0n;
 
             onChainMap[nameKey] = {
               tokenId: id,
-              rating: Number(stats.rating || 0),
-              goals: Number(stats.goals || 0),
-              assists: Number(stats.assists || 0),
-              price: priceWei > 0n ? ethers.formatEther(priceWei) : String(Number(stats.rating || 90)),
+              rating: Number(stats.rating || stats[2] || 0),
+              goals: Number(stats.goals || stats[3] || 0),
+              assists: Number(stats.assists || stats[4] || 0),
+              price: priceWei > 0n ? ethers.formatEther(priceWei) : String(Number(stats.rating || stats[2] || 90)),
               balance: ethers.formatEther(balanceWei)
             };
           }
@@ -228,8 +236,37 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
   const handleBuy = async (tokenId: number, price: string, playerName: string) => {
     if (!wallet.signer) return;
     setLoading(true);
-    addLog(language === "zh" ? `正在以 ${price} 积分买入 1.0 份 ${playerName} 的指数...` : `Buying 1.0 share of ${playerName} at ${price} Credits...`);
+    setTradeError(null);
     try {
+      if (wallet.chainId !== 196) {
+        addLog(language === "zh" ? "请将网络切换至 X Layer Mainnet" : "Please switch network to X Layer Mainnet", "warning");
+        const switched = await switchToChain(196);
+        if (!switched) {
+          setLoading(false);
+          return;
+        }
+      }
+      addLog(language === "zh" ? `正在以 ${price} 积分买入 1.0 份 ${playerName} 的指数...` : `Buying 1.0 share of ${playerName} at ${price} Credits...`);
+      
+      // Check user credits first to prevent gas estimation failure (which blocks wallet pop-ups)
+      const vault = new ethers.Contract(
+        DEPLOYED_ADDRESSES.NoLossVault,
+        ["function getCredits(address user) external view returns (uint256)"],
+        wallet.signer
+      );
+      const userCredits = await vault.getCredits(wallet.address).catch(() => 0n);
+      const requiredCost = ethers.parseEther(price);
+      if (userCredits < requiredCost) {
+        const errorMsg = language === "zh"
+          ? `积分不足！您当前仅有 ${parseFloat(ethers.formatEther(userCredits)).toFixed(1)} 积分，而购买 1 份 ${playerName} 需要 ${parseFloat(price).toFixed(0)} 积分。建议您在“无损失特工金库”中质押 USDT 或等待时间累积更多积分。`
+          : `Insufficient credits! You have ${parseFloat(ethers.formatEther(userCredits)).toFixed(1)} Credits, but purchasing 1 share of ${playerName} requires ${parseFloat(price).toFixed(0)} Credits. Please stake USDT in the No-Loss Vault or wait to accumulate more credits.`;
+        
+        setTradeError(errorMsg);
+        addLog(`✕ ${errorMsg}`, "warning");
+        setLoading(false);
+        return;
+      }
+
       const dex = new ethers.Contract(DEPLOYED_ADDRESSES.PlayerDex, DEX_ABI, wallet.signer);
       const tx = await dex.buyShares(tokenId, ethers.parseEther("1"));
       await tx.wait();
@@ -237,6 +274,15 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
       setRefreshKey((k) => k + 1);
       setTxModal({ visible: true, type: "Buy", playerName, txHash: tx.hash, amount: "1" });
     } catch (err: any) {
+      const errMsg = err.message || "";
+      if (errMsg.includes("Insufficient credits") || errMsg.includes("revert")) {
+        const customErr = language === "zh"
+          ? `交易失败：积分不足。请确保您在“无损失特工金库”中质押了 USDT 并累积了足够的特工积分。`
+          : `Transaction failed: Insufficient credits. Please make sure you have staked USDT in the Vault and accumulated enough Scout Credits.`;
+        setTradeError(customErr);
+      } else {
+        setTradeError(language === "zh" ? `买入指数错误: ${err.message}` : `Trade Buy Error: ${err.message}`);
+      }
       addLog(language === "zh" ? `买入指数错误: ${err.message}` : `Trade Buy Error: ${err.message}`, "warning");
     } finally {
       setLoading(false);
@@ -248,8 +294,16 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
     if (!wallet.signer) return;
     if (parseFloat(balance) <= 0) return;
     setLoading(true);
-    addLog(language === "zh" ? `正在卖出 ${parseFloat(balance).toFixed(1)} 份 ${playerName} 指数...` : `Selling ${parseFloat(balance).toFixed(1)} shares of ${playerName}...`);
     try {
+      if (wallet.chainId !== 196) {
+        addLog(language === "zh" ? "请将网络切换至 X Layer Mainnet" : "Please switch network to X Layer Mainnet", "warning");
+        const switched = await switchToChain(196);
+        if (!switched) {
+          setLoading(false);
+          return;
+        }
+      }
+      addLog(language === "zh" ? `正在卖出 ${parseFloat(balance).toFixed(1)} 份 ${playerName} 指数...` : `Selling ${parseFloat(balance).toFixed(1)} shares of ${playerName}...`);
       const dex = new ethers.Contract(DEPLOYED_ADDRESSES.PlayerDex, DEX_ABI, wallet.signer);
       const tx = await dex.sellShares(tokenId, ethers.parseEther(balance));
       await tx.wait();
@@ -356,6 +410,41 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
         <p className="panel-desc">
           {language === "zh" ? "交易球员指数代币。代币价格代表特工的实时评估身价，并随球员数据和场上表现而上涨。" : "Trade Player Index Tokens. Token prices represent the live scouting valuation and increase with player stats and performances."}
         </p>
+
+        {tradeError && (
+          <div style={{
+            margin: "0 0 16px",
+            padding: "12px 16px",
+            borderRadius: "8px",
+            background: "rgba(239, 68, 68, 0.08)",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            color: "#f87171",
+            fontSize: "0.82rem",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center"
+          }}>
+            <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+              <span style={{ flexShrink: 0 }}>⚠️</span>
+              <span>{tradeError}</span>
+            </div>
+            <button 
+              onClick={() => setTradeError(null)}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#f87171",
+                cursor: "pointer",
+                fontWeight: "bold",
+                fontSize: "1.1rem",
+                padding: "0 4px",
+                lineHeight: "1"
+              }}
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* ── Filter Controls ─────────────────────────────────────────────────── */}
         <div style={{ display: 'flex', gap: '8px', margin: '0 0 16px', flexWrap: 'wrap' }}>

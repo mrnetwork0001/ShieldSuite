@@ -5,7 +5,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { WalletState, shortenAddress, formatBalance } from "../lib/wallet";
-import { XLAYER_CHAIN, XLAYER_TESTNET, getExplorerUrl, switchToChain } from "../lib/xlayer";
+import { XLAYER_CHAIN, getExplorerUrl, switchToChain } from "../lib/xlayer";
 import { ethers } from "ethers";
 import { DocsIcon, ShieldIcon, CopyIcon, HistoryIcon, DisconnectIcon, NetworkDot } from "./Icons";
 import { useLanguage } from "../context/LanguageContext";

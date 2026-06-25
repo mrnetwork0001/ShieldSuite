@@ -1,16 +1,9 @@
 {
-  "xlayerTestnet": {
-    "MockUSDT": "0xe5E0795a8A61502409f304f391B615220d720fE9",
-    "NoLossVault": "0x9E1A49480C1c1762A4B465F50c5cAAb86Aa3B046",
-    "PlayerShares": "0xE8a63B4a905d9C1C2262F261dee90478d6fFD3De",
-    "PlayerDex": "0xF2338b4Ba18373070cDfD9F53DA321fA12Aa591b",
-    "deployer": "0xDAce8445a5bD576111cCC8e598B67965252023C2"
-  },
   "xlayerMainnet": {
     "MockUSDT": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "NoLossVault": "0x758ec85fc3047afff7977ec6edab43d21e9538ac",
-    "PlayerShares": "0xb1cc05dc0a0b70fabc6bbb1b3043ba386c86d7e1",
-    "PlayerDex": "0xeacae6d1031194f2681b07cbcd50ee0f9c88aeee",
+    "NoLossVault": "0xdc5ef9103e12c7595950b25044cf91ad7f860dd3",
+    "PlayerShares": "0xf62660a59fcbe3f81decd86732aee91a7bdb3e4a",
+    "PlayerDex": "0x5124dad647eb7ece5f565f6d6fff33e4595ccd8d",
     "deployer": "0xdace8445a5bd576111ccc8e598b67965252023c2"
   }
 }

@@ -28,14 +28,10 @@ async function main() {
   }
 
   const roster = JSON.parse(fs.readFileSync(rosterPath, "utf-8"));
-  const players = [
-    ...roster,
-    { id: 9999, name: "Erling Haaland", country: "Norway", rating: 90 }
-  ];
+  const players = roster;
 
-  // Filter out players already registered in the constructor to avoid double-registration gas waste
-  const defaultIds = new Set([1, 16, 33, 46, 9999]);
-  const playersToRegister = players.filter(p => !defaultIds.has(p.id));
+  // Register all players from our roster
+  const playersToRegister = players;
 
   console.log(`Total players to register: ${playersToRegister.length}`);
 

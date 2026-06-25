@@ -7,9 +7,8 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
-const XLAYER_RPC = process.env.XLAYER_RPC_URL || "https://rpc.xlayer.tech";
-const isMainnetRPC = (XLAYER_RPC.includes("rpc.xlayer.tech") && !XLAYER_RPC.includes("testrpc")) || XLAYER_RPC.includes("196");
-const XLAYER_CHAIN_ID = isMainnetRPC ? 196 : 1952;
+const XLAYER_RPC = "https://rpc.xlayer.tech";
+const XLAYER_CHAIN_ID = 196;
 const LOCAL_RPC = "http://127.0.0.1:8545";
 
 let cachedProvider: ethers.JsonRpcProvider | null = null;
@@ -30,7 +29,7 @@ export async function detectProvider(): Promise<ethers.JsonRpcProvider> {
     const rpcProvider = new ethers.JsonRpcProvider(XLAYER_RPC, XLAYER_CHAIN_ID, { staticNetwork: true });
     const code = await rpcProvider.getCode(addresses.MockUSDT);
     if (code !== "0x" && code.length > 2) {
-      console.log(`🟢 Detected deployed contracts on XLayer ${isMainnetRPC ? "Mainnet" : "Testnet"}. Using RPC.`);
+      console.log("🟢 Detected deployed contracts on XLayer Mainnet. Using RPC.");
       cachedProvider = rpcProvider;
       return cachedProvider;
     }
@@ -59,10 +58,8 @@ export async function detectProvider(): Promise<ethers.JsonRpcProvider> {
 
 export function getProvider(): ethers.JsonRpcProvider {
   if (!cachedProvider) {
-    const rpc = process.env.XLAYER_RPC_URL || "https://rpc.xlayer.tech";
-    const isMainnet = (rpc.includes("rpc.xlayer.tech") && !rpc.includes("testrpc")) || rpc.includes("196");
-    const chainId = isMainnet ? 196 : 1952;
-    cachedProvider = new ethers.JsonRpcProvider(rpc, chainId, { staticNetwork: true });
+    const rpc = "https://rpc.xlayer.tech";
+    cachedProvider = new ethers.JsonRpcProvider(rpc, 196, { staticNetwork: true });
   }
   return cachedProvider;
 }
@@ -102,14 +99,8 @@ export function getDeployedAddresses(): DeployedAddresses | null {
       const content = fs.readFileSync(addressPath, "utf-8");
       const data = JSON.parse(content);
       
-      // Determine if network is mainnet or testnet based on config
-      const isMainnet = (XLAYER_RPC.includes("rpc.xlayer.tech") && !XLAYER_RPC.includes("testrpc")) || XLAYER_RPC.includes("196");
-      const networkKey = isMainnet ? "xlayerMainnet" : "xlayerTestnet";
-      
-      if (data[networkKey]) {
-        return data[networkKey] as DeployedAddresses;
-      } else if (data.xlayerTestnet) {
-        return data.xlayerTestnet as DeployedAddresses;
+      if (data.xlayerMainnet) {
+        return data.xlayerMainnet as DeployedAddresses;
       }
       return data as DeployedAddresses;
     }

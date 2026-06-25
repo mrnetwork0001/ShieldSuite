@@ -149,34 +149,21 @@ export async function resolveCustomToken(address: string, provider: any): Promis
   }
 }
 
-export const XLAYER_TESTNET = {
-  chainId: 1952,
-  chainIdHex: "0x7a0",
-  chainName: "XLayer Testnet",
-  rpcUrls: ["https://testrpc.xlayer.tech"],
-  blockExplorerUrls: ["https://www.okx.com/explorer/xlayer-test"],
-  nativeCurrency: {
-    name: "OKB",
-    symbol: "OKB",
-    decimals: 18,
-  },
-} as const;
-
 /** Default RPC URL */
 export const RPC_URL = XLAYER_CHAIN.rpcUrls[0];
 
 /** Explorer link helper */
 export function getExplorerUrl(type: "address" | "tx", value: string, chainId = 196): string {
-  const base = chainId === 1952 ? XLAYER_TESTNET.blockExplorerUrls[0] : XLAYER_CHAIN.blockExplorerUrls[0];
+  const base = XLAYER_CHAIN.blockExplorerUrls[0];
   return `${base}/${type}/${value}`;
 }
 
 /** Add chain to MetaMask / wallet */
-export async function addChainToWallet(chainId: number): Promise<boolean> {
+export async function addChainToWallet(chainId = 196): Promise<boolean> {
   const provider = (window as any).okxwallet || window.ethereum;
   if (!provider) return false;
 
-  const info = chainId === 1952 ? XLAYER_TESTNET : XLAYER_CHAIN;
+  const info = XLAYER_CHAIN;
 
   try {
     await provider.request({
@@ -198,11 +185,11 @@ export async function addChainToWallet(chainId: number): Promise<boolean> {
 }
 
 /** Switch wallet to a specific chain */
-export async function switchToChain(chainId: number): Promise<boolean> {
+export async function switchToChain(chainId = 196): Promise<boolean> {
   const provider = (window as any).okxwallet || window.ethereum;
   if (!provider) return false;
 
-  const hex = chainId === 1952 ? XLAYER_TESTNET.chainIdHex : XLAYER_CHAIN.chainIdHex;
+  const hex = XLAYER_CHAIN.chainIdHex;
 
   try {
     await provider.request({
@@ -213,7 +200,7 @@ export async function switchToChain(chainId: number): Promise<boolean> {
   } catch (error: any) {
     // Chain not added yet - try adding
     if (error.code === 4902) {
-      return addChainToWallet(chainId);
+      return addChainToWallet(196);
     }
     return false;
   }

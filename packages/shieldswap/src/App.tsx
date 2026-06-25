@@ -17,6 +17,8 @@ import { Leaderboard } from "./components/Leaderboard";
 import { LandingPage } from "./components/LandingPage";
 import { DocsPage } from "./components/DocsPage";
 import { MatchesCenter } from "./components/MatchesCenter";
+import { OKXSpeculation } from "./components/OKXSpeculation";
+import { VolumeLeaderboard } from "./components/VolumeLeaderboard";
 import { GreenDotIcon, SearchIcon, SwapIcon, WarningIcon, InfoIcon } from "./components/Icons";
 import { useLanguage } from "./context/LanguageContext";
 
@@ -37,7 +39,7 @@ const App: React.FC = () => {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [activeTab, setActiveTab] = useState<"home" | "docs" | "swap" | "pitchside">("home");
-  const [pitchsideSubTab, setPitchsideSubTab] = useState<"speculation" | "matches" | "leaderboard">("speculation");
+  const [pitchsideSubTab, setPitchsideSubTab] = useState<"speculation" | "matches" | "leaderboard" | "okx_speculation">("speculation");
   const [instructionsExpanded, setInstructionsExpanded] = useState(false);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([
     {
@@ -291,13 +293,13 @@ const App: React.FC = () => {
               <h2 className="hero-title">
                 {language === "zh" ? (
                   <>
-                    逐币安全扫描。{" "}
-                    <span className="text-blue">保护每笔交易。</span>
+                    热身交易大赛。{" "}
+                    <span className="text-blue">保卫每笔交易。</span>
                   </>
                 ) : (
                   <>
-                    Every token scanned.{" "}
-                    <span className="text-blue">Every trade protected.</span>
+                    Warm-Up Trading Campaign.{" "}
+                    <span className="text-blue">Every swap protected.</span>
                   </>
                 )}
               </h2>
@@ -313,6 +315,9 @@ const App: React.FC = () => {
                 onConnect={handleConnect}
                 onScanResult={handleScanResult}
                 onActivityLog={handleActivityLog}
+              />
+              <VolumeLeaderboard
+                wallet={wallet}
               />
               <RiskReport
                 result={scanResult}
@@ -425,6 +430,30 @@ const App: React.FC = () => {
               >
                 🏆 {language === "zh" ? "排行榜" : "Leaderboard"}
               </button>
+              {/* Commented out OKX Speculation tab for production deployment. Can be uncommented for local testing.
+              <button
+                className={`subnav-btn ${pitchsideSubTab === 'okx_speculation' ? 'active' : ''}`}
+                onClick={() => setPitchsideSubTab('okx_speculation')}
+                style={{
+                  background: pitchsideSubTab === 'okx_speculation' ? 'linear-gradient(135deg, rgba(75, 123, 245, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%)' : 'transparent',
+                  border: '1px solid',
+                  borderColor: pitchsideSubTab === 'okx_speculation' ? 'var(--accent-blue)' : 'var(--border-default)',
+                  borderRadius: '10px',
+                  color: pitchsideSubTab === 'okx_speculation' ? '#fff' : 'var(--text-secondary)',
+                  padding: '10px 20px',
+                  fontSize: '0.85rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s',
+                  boxShadow: pitchsideSubTab === 'okx_speculation' ? '0 0 15px rgba(75, 123, 245, 0.15)' : 'none'
+                }}
+              >
+                🔥 {language === "zh" ? "OKX 预测" : "OKX Speculation"}
+              </button>
+              */}
             </div>
 
             {pitchsideSubTab === 'speculation' ? (
@@ -441,8 +470,10 @@ const App: React.FC = () => {
               </div>
             ) : pitchsideSubTab === 'matches' ? (
               <MatchesCenter wallet={wallet} onActivityLog={handleActivityLog} />
-            ) : (
+            ) : pitchsideSubTab === 'leaderboard' ? (
               <Leaderboard wallet={wallet} />
+            ) : (
+              <OKXSpeculation wallet={wallet} onActivityLog={handleActivityLog} />
             )}
           </div>
         )}

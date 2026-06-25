@@ -342,3 +342,50 @@ export async function checkAgentReady(): Promise<{
   };
 }
 
+/**
+ * Execute a smart contract call using the onchainos CLI tool (TEE signing)
+ */
+export async function contractCallViaCli(params: {
+  to: string;
+  inputData: string;
+  chain?: string;
+  amt?: string;
+}): Promise<{ txHash: string } | null> {
+  try {
+    const chain = params.chain || "196";
+    const amt = params.amt || "0";
+
+    const cmd = `onchainos wallet contract-call --to ${params.to} --chain ${chain} --input-data ${params.inputData} --amt ${amt} --force`;
+    logger.info(`[AgentWallet] Executing: ${cmd}`);
+
+    const output = execSync(cmd, {
+      timeout: 30000,
+      env: {
+        ...process.env,
+        OKX_API_KEY: getCredentials().apiKey,
+        OKX_SECRET_KEY: getCredentials().secretKey,
+        OKX_PASSPHRASE: getCredentials().passphrase,
+      },
+    }).toString();
+
+    logger.info(`[AgentWallet] CLI output: ${output.slice(0, 200)}`);
+
+    const txMatch = output.match(/txHash[:\s]*["']?(0x[a-fA-F0-9]{64})["']?/i);
+    if (txMatch) {
+      return { txHash: txMatch[1] };
+    }
+
+    if (output.toLowerCase().includes("success") || output.includes("0x")) {
+      const hashMatch = output.match(/(0x[a-fA-F0-9]{64})/);
+      return { txHash: hashMatch?.[1] || "unknown" };
+    }
+
+    logger.warn(`[AgentWallet] CLI contract-call returned no txHash`);
+    return null;
+  } catch (error: any) {
+    logger.error(`[AgentWallet] CLI contract-call failed: ${error.message}`);
+    return null;
+  }
+}
+
+
