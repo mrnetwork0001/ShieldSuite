@@ -548,8 +548,8 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
 
           {/* Staking Actions */}
           {(() => {
-            const exceedsBalance = depositAmount && parseFloat(depositAmount) > parseFloat(usdtBalance);
-            const exceedsStaked = withdrawAmount && parseFloat(withdrawAmount) > parseFloat(stakedBalance);
+            const exceedsBalance = !!(depositAmount && parseFloat(depositAmount) > parseFloat(usdtBalance));
+            const exceedsStaked = !!(withdrawAmount && parseFloat(withdrawAmount) > parseFloat(stakedBalance));
 
             return (
               <div className="staking-actions">
