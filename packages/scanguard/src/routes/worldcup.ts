@@ -139,6 +139,7 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Pr
 }
 
 let okbPriceUsd = 75.4;
+let psaiPriceUsd = 0.0015; // dynamically updated from observed DEX swaps
 
 async function updateOkbPrice() {
   try {
@@ -179,10 +180,10 @@ function saveSyncedTxs() {
     logger.error(`[WorldCup] Failed to save synced transactions: ${err.message}`);
   }
 }
-const CAMPAIGN_START_BLOCK_MAINNET = 63584000n;
+const CAMPAIGN_START_BLOCK_MAINNET = 63616164n; // Block at June 25, 2026, 12:00:00 PM UTC+1 (11:00 UTC)
 const CAMPAIGN_START_TIME_SEC = 1782385200; // June 25, 2026, 12:00:00 PM UTC+1
 const CAMPAIGN_END_TIME_SEC = 1782990000;   // July 2, 2026, 12:00:00 PM UTC+1
-const TX_VALID_START_TIME_SEC = 1782345600; // June 25, 2026, 1:00:00 AM UTC+1 (Option 1: allow earlier test swaps)
+const TX_VALID_START_TIME_SEC = CAMPAIGN_START_TIME_SEC; // Only count volume from campaign start onward
 
 // Load registered users on startup
 try {
@@ -297,7 +298,6 @@ function computeVolume(tx: any, receipt: any, psaiAmount: bigint): number {
   ];
   const wokbAddress = "0xe538905cf8410324e03a5a23c1c177a474d59b2b";
   const OKB_PRICE_USD = okbPriceUsd;
-  const PSAI_PRICE_USD = 0.0015;
 
   let maxUsdVolume = 0.0;
 
@@ -337,6 +337,25 @@ function computeVolume(tx: any, receipt: any, psaiAmount: bigint): number {
         maxUsdVolume = val;
       }
     } catch {}
+  }
+
+  // 4. If we found a USD volume from stablecoin/OKB AND have PSAI amount, derive the implied PSAI price
+  const psaiDecimal = psaiAmount > 0n ? Number(ethers.formatEther(psaiAmount)) : 0;
+  if (maxUsdVolume > 0 && psaiDecimal > 0) {
+    const derivedPrice = maxUsdVolume / psaiDecimal;
+    // Sanity check: only update if the derived price is reasonable
+    if (derivedPrice > 0.0001 && derivedPrice < 10) {
+      psaiPriceUsd = derivedPrice;
+      logger.info(`[TradingVolumeIndexer] Updated PSAI price from swap: $${psaiPriceUsd.toFixed(6)}`);
+    }
+    return maxUsdVolume;
+  }
+
+  // 5. Fallback: use PSAI amount × current tracked PSAI market price
+  if (maxUsdVolume === 0 && psaiDecimal > 0) {
+    const fallbackVolume = psaiDecimal * psaiPriceUsd;
+    logger.info(`[TradingVolumeIndexer] Using PSAI price fallback ($${psaiPriceUsd.toFixed(6)}) for ${psaiDecimal.toFixed(2)} PSAI = $${fallbackVolume.toFixed(4)}`);
+    return fallbackVolume;
   }
 
   return maxUsdVolume;
@@ -475,7 +494,10 @@ async function syncTradingVolumes() {
               continue;
             }
 
-            const receipt = await provider.getTransactionReceipt(txHash);
+            const [receipt, tx] = await Promise.all([
+              provider.getTransactionReceipt(txHash),
+              provider.getTransaction(txHash)
+            ]);
             if (!receipt || receipt.status !== 1) continue;
 
             const block = await provider.getBlock(receipt.blockNumber);
@@ -489,19 +511,45 @@ async function syncTradingVolumes() {
             const userTransfers = parsedTransfers.filter(t => t.txHash === txHash);
             const totalPsaiAmount = userTransfers.reduce((sum, t) => sum + t.amount, 0n);
 
-            const finalVolume = computeVolume(null, receipt, totalPsaiAmount);
+            const finalVolume = computeVolume(tx, receipt, totalPsaiAmount);
 
             if (finalVolume > 0) {
               syncedTxs.add(txHash.toLowerCase());
               saveSyncedTxs();
 
-              for (const t of userTransfers) {
-                if (!addressesToSkip.has(t.from)) {
-                  userVolumes[t.from] = (userVolumes[t.from] || 0) + finalVolume;
+              // Detect liquidity pools from logs
+              const syncTopic = ethers.id("Sync(uint112,uint112)");
+              const swapTopicV2 = ethers.id("Swap(address,uint256,uint256,uint256,uint256,address)");
+              const swapTopicV3 = ethers.id("Swap(address,address,int256,int256,uint160,uint128,int24)");
+              
+              const poolAddresses = new Set<string>();
+              for (const l of receipt.logs) {
+                if (l.topics[0] === syncTopic || l.topics[0] === swapTopicV2 || l.topics[0] === swapTopicV3) {
+                  poolAddresses.add(l.address.toLowerCase());
                 }
-                if (!addressesToSkip.has(t.to)) {
-                  userVolumes[t.to] = (userVolumes[t.to] || 0) + finalVolume;
+              }
+
+              // Calculate net PSAI changes to find real participants
+              const netChanges: Record<string, bigint> = {};
+              userTransfers.forEach(t => {
+                netChanges[t.from] = (netChanges[t.from] || 0n) - t.amount;
+                netChanges[t.to] = (netChanges[t.to] || 0n) + t.amount;
+              });
+
+              const users = Object.entries(netChanges)
+                .filter(([addr, netAmount]) => netAmount !== 0n && !addressesToSkip.has(addr) && !poolAddresses.has(addr))
+                .map(([addr]) => addr);
+
+              if (users.length === 0) {
+                // Fallback to tx.from
+                const txSender = receipt.from.toLowerCase();
+                if (!addressesToSkip.has(txSender)) {
+                  users.push(txSender);
                 }
+              }
+
+              for (const u of users) {
+                userVolumes[u] = (userVolumes[u] || 0) + finalVolume;
               }
             }
           } catch (txErr: any) {
@@ -1075,7 +1123,7 @@ worldCupRouter.get("/users", (_req: Request, res: Response) => {
 
 // GET /api/worldcup/leaderboard
 worldCupRouter.get("/leaderboard", async (_req: Request, res: Response) => {
-  const uniqueAddresses = Array.from(new Set(Array.from(registeredUsers).map(addr => addr.toLowerCase())));
+  const uniqueAddresses = Array.from(new Set([...Array.from(registeredUsers), ...Object.keys(userVolumes)].map(addr => addr.toLowerCase())));
   
   const rpcUrl = "https://rpc.xlayer.tech";
   const targetChainId = 196;
@@ -1131,8 +1179,8 @@ worldCupRouter.get("/leaderboard", async (_req: Request, res: Response) => {
     };
   });
 
-  // Only rank users who have at least one player share
-  const filteredUsers = allUsers.filter(u => u.hasShares);
+  // Rank all users who have generated trading volume
+  const filteredUsers = allUsers.filter(u => u.volume > 0);
   const sortedUsers = filteredUsers.sort((a, b) => b.volume - a.volume);
 
   res.json({

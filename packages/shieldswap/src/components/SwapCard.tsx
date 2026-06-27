@@ -153,8 +153,20 @@ const SwapCard: React.FC<SwapCardProps> = ({
       let userVolumeVal = 0;
       let hasSharesVal = false;
       
-      // 1. Search in allUsers if present, to check volume and share ownership
-      if (json.success && Array.isArray(json.allUsers)) {
+      // 1. Search in the ranked data array first (sorted by volume)
+      if (json.success && Array.isArray(json.data)) {
+        const idx = json.data.findIndex((item: any) => item.address.toLowerCase() === wallet.address!.toLowerCase());
+        if (idx !== -1) {
+          userVolumeVal = json.data[idx].volume;
+          hasSharesVal = json.data[idx].hasShares;
+          setUserRank(idx + 1);
+        } else {
+          setUserRank("Unranked");
+        }
+      }
+
+      // 2. Also check allUsers if we didn't find volume in ranked data
+      if (userVolumeVal === 0 && json.success && Array.isArray(json.allUsers)) {
         const userObj = json.allUsers.find((item: any) => item.address.toLowerCase() === wallet.address!.toLowerCase());
         if (userObj) {
           userVolumeVal = userObj.volume;
@@ -164,16 +176,6 @@ const SwapCard: React.FC<SwapCardProps> = ({
       
       setUserVolume(userVolumeVal);
       setHasShares(hasSharesVal);
-
-      // 2. Search in ranked data to check leaderboard rank (only players with shares are ranked)
-      if (json.success && Array.isArray(json.data)) {
-        const idx = json.data.findIndex((item: any) => item.address.toLowerCase() === wallet.address!.toLowerCase());
-        if (idx !== -1) {
-          setUserRank(idx + 1);
-        } else {
-          setUserRank("Unranked");
-        }
-      }
     } catch (err) {
       console.error("Failed to fetch user volume stats:", err);
     } finally {
@@ -373,8 +375,8 @@ const SwapCard: React.FC<SwapCardProps> = ({
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
                 <span style={{ color: "var(--text-secondary)" }}>{language === "zh" ? "拥有球员份额:" : "Has Player Shares:"}</span>
-                <span className="font-mono" style={{ color: hasShares ? "#00ff88" : "#ff4444", fontWeight: "bold" }}>
-                  {hasShares === null ? "..." : (hasShares ? (language === "zh" ? "是 (已解锁排行)" : "Yes (Ranked)") : (language === "zh" ? "否 (未解锁排名)" : "No (Unranked)"))}
+                <span className="font-mono" style={{ color: hasShares ? "#00ff88" : "#ffaa00", fontWeight: "bold" }}>
+                  {hasShares === null ? "..." : (hasShares ? (language === "zh" ? "是 ✓" : "Yes ✓") : (language === "zh" ? "否 (可选)" : "No (Optional)"))}
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "8px" }}>
