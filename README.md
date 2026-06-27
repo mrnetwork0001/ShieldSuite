@@ -22,7 +22,7 @@
 
 ---
 
-## 🏆 Why Pitchside AI Wins
+## Why Pitchside AI Wins
 
 Pitchside AI goes far beyond a simple MVP prediction market. It implements state-of-the-art Web3 architectural paradigms:
 
@@ -36,7 +36,7 @@ Pitchside AI goes far beyond a simple MVP prediction market. It implements state
 
 ---
 
-## 🚨 The Problem & Our Solution
+## The Problem & Our Solution
 
 ### The Problem
 With the proliferation of L2 tokens and AI-driven trading, malicious actors deploy honeypots, hidden taxes, and toxic bytecode to drain liquidity. Centralized DEX routers execute swaps blindly, and AI agents lack a standard, machine-readable protocol to verify token safety natively before engaging. 
@@ -51,7 +51,7 @@ We built a dual-layer security and speculation ecosystem:
 
 ---
 
-## 🏗️ Ecosystem Components
+## Ecosystem Components
 
 The Shield Suite monorepo is divided into four highly integrated packages:
 
@@ -80,7 +80,7 @@ A TEE-isolated Node.js loop running the autonomous agent scripts.
 
 ---
 
-## ⚽ Pitchside AI - Autonomous World Cup Speculation
+## Pitchside AI - Autonomous World Cup Speculation
 
 **Pitchside AI** is a World Cup-themed expansion developed specifically for the **X Layer X Cup Hackathon**. It builds on top of Shield Suite's core security layers, adding no-loss staking and dynamic index token speculation:
 
@@ -118,7 +118,7 @@ A TEE-isolated Node.js loop running the autonomous agent scripts.
 
 ---
 
-## 🤖 Autonomous AI Agent (TEE)
+## Autonomous AI Agent (TEE)
 
 We have deployed an autonomous Node.js agent running 24/7. It continuously invokes the ScanGuard API to monitor the top 11 X Layer core tokens (WOKB, USDC, USDT, USDe, etc.) for emerging threats.
 
@@ -127,7 +127,7 @@ We have deployed an autonomous Node.js agent running 24/7. It continuously invok
 
 ---
 
-## 🔌 OnchainOS Integration Deep-Dive
+## OnchainOS Integration Deep-Dive
 
 Our application deeply leverages the OKX OnchainOS ecosystem to provide routing, analytics, and wallet controls:
 
@@ -141,7 +141,7 @@ Our application deeply leverages the OKX OnchainOS ecosystem to provide routing,
 
 ---
 
-## 💳 x402 Agent Economy
+## x402 Agent Economy
 
 ScanGuard pioneers a monetized API standard for AI agents via [x402 Payment Required](https://www.x402.org):
 
@@ -155,7 +155,7 @@ ScanGuard pioneers a monetized API standard for AI agents via [x402 Payment Requ
 
 ---
 
-## 🔧 Model Context Protocol (MCP)
+## Model Context Protocol (MCP)
 
 ScanGuard exposes an HTTP MCP server that any standard AI client can query natively to give them "X Layer vision".
 
@@ -180,11 +180,11 @@ curl -X POST http://38.49.216.120:3402/mcp/tools/call \
 
 ---
 
-## 🚀 Active Development & Road to World Cup 2026
+## Active Development & Road to World Cup 2026
 
 ShieldSuite and Pitchside AI are not just hackathon submissions—they are actively maintained projects on a direct roadmap to mainnet deployment ahead of the **FIFA World Cup 2026**.
 
-### 🗓️ Development Roadmap
+### Development Roadmap
 
 ```mermaid
 timeline
@@ -203,7 +203,7 @@ timeline
 
 ---
 
-## ⚓ Smart Contract Deployments
+## Smart Contract Deployments
 
 ### X Layer Mainnet (Chain ID 196) - Live Production Addresses
 *   **Real USDT Token (USD₮0):** `0x779ded0c9e1022225f8e0630b35a9b54be713736`
@@ -214,7 +214,7 @@ timeline
 
 ---
 
-## ⚙️ Local Setup & Testing
+## Local Setup & Testing
 
 ### 1. Installation
 ```bash
@@ -240,7 +240,7 @@ This single command orchestrates:
 
 ---
 
-## 🧐 Onchain Verification for Judges
+## Onchain Verification for Judges
 
 To verify the completion and execution of the Pitchside AI World Cup loop:
 
@@ -253,7 +253,7 @@ To verify the completion and execution of the Pitchside AI World Cup loop:
 
 ---
 
-## 🌐 Live Endpoints & Infrastructure
+## Live Endpoints & Infrastructure
 
 *   **Network:** X Layer Mainnet (`Chain ID 196`)
 *   **ShieldSwap Application:** [https://shieldsuite.xyz/](https://shieldsuite.xyz/)
@@ -263,7 +263,7 @@ To verify the completion and execution of the Pitchside AI World Cup loop:
 
 ---
 
-## 🌐 Contact & Socials
+## Contact & Socials
 
 *   **Developer:** MrNetwork
 *   **Email:** mrnetwork0001@gmail.com
