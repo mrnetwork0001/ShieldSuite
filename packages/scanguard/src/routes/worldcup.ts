@@ -410,6 +410,7 @@ async function syncTradingVolumes() {
       ...usdtAddresses,
       playerSharesAddress.toLowerCase(),
       playerDexAddress,
+      "0x360e68faccca8ca495c1b759fd9eee466db9fb32",
       "0x0000000000000000000000000000000000000000"
     ]);
 
