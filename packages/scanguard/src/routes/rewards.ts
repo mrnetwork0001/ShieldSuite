@@ -1,13 +1,17 @@
 import { Router } from "express";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { ethers } from "ethers";
 import { contractCallViaCli } from "../agent-wallet.js";
 import { logger } from "../logger.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 export const rewardsRouter = Router();
 
-const AIRDROP_FILE = path.join(process.cwd(), "data", "airdrop.json");
+const AIRDROP_FILE = path.join(__dirname, "../../data/airdrop.json");
 const USDT_ADDRESS = "0x779ded0c9e1022225f8e0630b35a9b54be713736"; // X Layer Mainnet Real USDT
 const PSAI_ADDRESS = "0xaef068ea820aafa00a2854bfd6cfab6d891ede5d"; // X Layer Mainnet PSAI
 const USDT_DECIMALS = 6;
