@@ -381,11 +381,34 @@ export async function contractCallViaCli(params: {
     }
 
     logger.warn(`[AgentWallet] CLI contract-call returned no txHash`);
-    return null;
   } catch (error: any) {
     logger.error(`[AgentWallet] CLI contract-call failed: ${error.message}`);
-    return null;
   }
+
+  // Fallback to Ethers.js if AGENT_PRIVATE_KEY is present (Railway environments)
+  const privateKey = process.env.AGENT_PRIVATE_KEY;
+  if (privateKey) {
+    try {
+      logger.info(`[AgentWallet] Falling back to ethers.js for contract-call...`);
+      const provider = new ethers.JsonRpcProvider(process.env.XLAYER_RPC_URL || "https://rpc.xlayer.tech");
+      const wallet = new ethers.Wallet(privateKey, provider);
+      
+      const tx = await wallet.sendTransaction({
+        to: params.to,
+        value: ethers.parseEther(params.amt || "0"),
+        data: params.inputData
+      });
+      
+      logger.info(`[AgentWallet] Ethers contract-call successful! Hash: ${tx.hash}`);
+      // Wait for 1 confirmation to ensure it's mined successfully
+      await tx.wait();
+      return { txHash: tx.hash };
+    } catch (ethersError: any) {
+      logger.error(`[AgentWallet] Ethers contract-call fallback failed: ${ethersError.message}`);
+    }
+  }
+
+  return null;
 }
 
 
