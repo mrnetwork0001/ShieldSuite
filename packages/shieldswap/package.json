@@ -10,10 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "ethers": "^6.13.5",
     "framer-motion": "^12.4.7",
+    "html-to-image": "^1.11.13",
+    "react": "^19.0.0",
+    "react-confetti": "^6.4.0",
+    "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2"
   },
   "devDependencies": {
@@ -24,4 +26,3 @@
     "vite": "^6.2.4"
   }
 }
-

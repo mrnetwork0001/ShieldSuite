@@ -19,6 +19,7 @@ import { DocsPage } from "./components/DocsPage";
 import { MatchesCenter } from "./components/MatchesCenter";
 import { OKXSpeculation } from "./components/OKXSpeculation";
 import { VolumeLeaderboard } from "./components/VolumeLeaderboard";
+import { UserHub } from "./components/UserHub";
 import { GreenDotIcon, SearchIcon, SwapIcon, WarningIcon, InfoIcon } from "./components/Icons";
 import { useLanguage } from "./context/LanguageContext";
 
@@ -38,7 +39,7 @@ const App: React.FC = () => {
   const [wallet, setWallet] = useState<WalletState>(INITIAL_WALLET);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [showReport, setShowReport] = useState(false);
-  const [activeTab, setActiveTab] = useState<"home" | "docs" | "swap" | "pitchside">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "docs" | "swap" | "pitchside" | "rewards">("home");
   const [pitchsideSubTab, setPitchsideSubTab] = useState<"speculation" | "matches" | "leaderboard" | "okx_speculation">("speculation");
   const [instructionsExpanded, setInstructionsExpanded] = useState(false);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([
@@ -279,6 +280,8 @@ const App: React.FC = () => {
       <main className="main-content">
         {activeTab === "home" ? (
           <LandingPage setActiveTab={setActiveTab} />
+        ) : activeTab === "rewards" ? (
+          <UserHub wallet={wallet} onConnect={handleConnect} />
         ) : activeTab === "docs" ? (
           <DocsPage setActiveTab={setActiveTab} />
         ) : activeTab === "swap" ? (

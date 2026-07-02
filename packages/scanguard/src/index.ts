@@ -19,6 +19,7 @@ import { getBestUniswapQuote } from "./uniswap.js";
 import { checkAgentReady, getAgentBalance, pingOnChain } from "./agent-wallet.js";
 import { loadDatabase, saveDatabase } from "./database.js";
 import { worldCupRouter } from "./routes/worldcup.js";
+import { rewardsRouter } from "./routes/rewards.js";
 
 export { logger };
 
@@ -434,6 +435,9 @@ app.use("/mcp", mcpRouter);
 
 // ─── World Cup Routes ────────────────────────────────────────────────────────
 app.use("/api/worldcup", worldCupRouter);
+
+// ─── Rewards/Airdrop Routes ──────────────────────────────────────────────────
+app.use("/api/rewards", rewardsRouter);
 
 // ─── Agentic Wallet Routes ───────────────────────────────────────────────────
 

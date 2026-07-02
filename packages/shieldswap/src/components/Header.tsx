@@ -15,8 +15,8 @@ interface HeaderProps {
   wallet: WalletState;
   onConnect: () => void;
   onDisconnect: () => void;
-  activeTab: "home" | "docs" | "swap" | "pitchside";
-  setActiveTab: (tab: "home" | "docs" | "swap" | "pitchside") => void;
+  activeTab: "home" | "docs" | "swap" | "pitchside" | "rewards";
+  setActiveTab: (tab: "home" | "docs" | "swap" | "pitchside" | "rewards") => void;
   audioMuted: boolean;
   setAudioMuted: (muted: boolean) => void;
 }
@@ -126,6 +126,12 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                 onClick={() => setActiveTab("pitchside")}
               >
                 {t("nav_pitchside")}
+              </button>
+              <button
+                className={`tab-btn ${activeTab === "rewards" ? "active" : ""}`}
+                onClick={() => setActiveTab("rewards")}
+              >
+                🏆 User Hub
               </button>
             </>
           )}
@@ -397,6 +403,11 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                             onClick={() => { setActiveTab('pitchside'); setMobileMenuOpen(false); }}
                             style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
                           >{t("nav_pitchside")}</button>
+                          <button 
+                            className={`nav-link-item ${activeTab === 'rewards' ? 'active' : ''}`}
+                            onClick={() => { setActiveTab('rewards'); setMobileMenuOpen(false); }}
+                            style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                          >🏆 User Hub</button>
                         </>
                       )}
                        {activeTab === "pitchside" && (

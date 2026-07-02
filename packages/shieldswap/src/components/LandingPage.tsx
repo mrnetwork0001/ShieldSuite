@@ -304,7 +304,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         <div className="token-banner-inner">
           <div className="token-banner-content">
             <div className="token-banner-left">
-              <span className="token-banner-badge font-mono">{language === "zh" ? "进行中" : "CAMPAIGN"}</span>
+              <span className="token-banner-badge font-mono" style={{ background: "rgba(255, 50, 50, 0.2)", color: "#ff5555" }}>{language === "zh" ? "已结束" : "ENDED"}</span>
               <span className="token-banner-title font-mono">{language === "zh" ? "第一阶段" : "PHASE 1"}</span>
               <div className="token-banner-ca-box" onClick={handleCopyAddress}>
                 <span className="ca-label font-mono">CA:</span>
@@ -314,35 +314,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
                 </button>
               </div>
               <span className="token-banner-desc">
-                {language === "zh" ? "🏆 $PSAI 交易大赛第一阶段已正式开启！立即加入分享 $500 奖池（USDT 与 $PSAI）。" : "🏆 $PSAI Trading Campaign Phase 1 is LIVE! Join now to share a $500 Prize Pool in USDT & $PSAI."}
+                {language === "zh" ? "🏆 $PSAI 交易大赛第一阶段已结束！获奖者请前往用户中心领取奖励。" : "🏆 $PSAI Trading Campaign Phase 1 has ended! Winners please head to the User Hub to claim your rewards."}
               </span>
             </div>
             <div className="token-banner-right">
               <button
                 onClick={() => {
-                  setActiveTab("swap");
+                  setActiveTab("rewards" as any);
                   setTimeout(() => {
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }, 100);
                 }}
                 className="btn btn-primary btn-banner-swap font-mono"
               >
-                {language === "zh" ? "立即交易" : "Trade Now"}
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("swap");
-                  setTimeout(() => {
-                    const el = document.querySelector(".volume-leaderboard");
-                    if (el) {
-                      el.scrollIntoView({ behavior: "smooth" });
-                    }
-                  }, 100);
-                }}
-                className="btn btn-ghost btn-banner-swap font-mono"
-                style={{ background: "rgba(255,255,255,0.05)" }}
-              >
-                {language === "zh" ? "查看排行榜" : "View Leaderboard"}
+                {language === "zh" ? "前往用户中心" : "Go to User Hub"}
               </button>
             </div>
           </div>
