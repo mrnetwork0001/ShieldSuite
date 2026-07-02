@@ -1,0 +1,32 @@
+{
+  "0x8740c49746cecfe542a54b2a9dab6b24e0bcefbd": {
+    "usdt": "125.0",
+    "psai": "290697.67",
+    "rank": 1,
+    "claimed": false
+  },
+  "0x3c44bf9f3fb4624b5427402f76d465eec4c06fc9": {
+    "usdt": "55.0",
+    "psai": "127906.97",
+    "rank": 2,
+    "claimed": false
+  },
+  "0xdc55e143d4fe4410e3bacbeceb5b940a5206c9b9": {
+    "usdt": "35.0",
+    "psai": "81395.34",
+    "rank": 3,
+    "claimed": false
+  },
+  "0xbe3bc24e08e7f1335f06c36c0d7ae52a374adb3b": {
+    "usdt": "22.5",
+    "psai": "52325.58",
+    "rank": 4,
+    "claimed": false
+  },
+  "0xe5b6de2ee6488bd6c03e654f02ea3144b954e8fc": {
+    "usdt": "12.5",
+    "psai": "29069.76",
+    "rank": 5,
+    "claimed": false
+  }
+}
