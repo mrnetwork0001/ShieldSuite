@@ -51,7 +51,7 @@ export const en = {
 
   // Swap Card & DEX Aggregator
   swap_hero_title: "Every token scanned. Every trade protected.",
-  swap_hero_subtitle: "AI-powered security scanning meets DeFi. Trade PSAI on XLayer, climb the leaderboard, and win a share of the $500 prize pool!",
+  swap_hero_subtitle: "AI-powered security scanning meets DeFi. Swap tokens on XLayer with confidence.",
   swap_title: "ShieldSwap",
   swap_tab_swap: "Swap",
   swap_tab_liquidity: "Liquidity",
