@@ -296,12 +296,12 @@ const App: React.FC = () => {
               <h2 className="hero-title">
                 {language === "zh" ? (
                   <>
-                    热身交易大赛。{" "}
+                    无缝兑换。{" "}
                     <span className="text-blue">保卫每笔交易。</span>
                   </>
                 ) : (
                   <>
-                    Warm-Up Trading Campaign.{" "}
+                    Swap seamlessly.{" "}
                     <span className="text-blue">Every swap protected.</span>
                   </>
                 )}
@@ -319,9 +319,7 @@ const App: React.FC = () => {
                 onScanResult={handleScanResult}
                 onActivityLog={handleActivityLog}
               />
-              <VolumeLeaderboard
-                wallet={wallet}
-              />
+
               <RiskReport
                 result={scanResult}
                 isVisible={showReport}

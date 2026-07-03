@@ -1,27 +1,19 @@
 // ─── SwapCard Component ──────────────────────────────────────────────────────
-// Trading Campaign Phase 1 swap card.
-// NOTE: The interactive swap card inputs and security scan/audit modules are
-// commented out for the Warm-Up Trading Campaign, and can be uncommented after the campaign.
+// Uniswap-style swap card with token selectors, flip, auto-quote,
+// and ScanGuard security scanning before every swap.
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { CheckIcon, SettingsIcon, SwapIcon, WarningOctagonIcon, WarningIcon, BlockedIcon, UnlockIcon, ShieldIcon } from "./Icons";
 import { motion, AnimatePresence } from "framer-motion";
-import { ethers } from "ethers";
-import { WalletState } from "../lib/wallet";
-import { useLanguage } from "../context/LanguageContext";
-
-/*
-// Original Swap & Security Scan Imports (Commented out for campaign)
+import TokenSelector from "./TokenSelector";
 import { useScanGuard, ScanResult } from "../hooks/useScanGuard";
 import { useSwap, SwapQuote } from "../hooks/useSwap";
+import { WalletState } from "../lib/wallet";
 import { TOKEN_LIST, TokenInfo, findToken, XLAYER_TOKENS } from "../lib/xlayer";
-import TokenSelector, { TokenLogo } from "./TokenSelector";
-*/
 
 interface SwapCardProps {
   wallet: WalletState;
   onConnect: () => void;
-  onScanResult: (result: any | null) => void;
+  onScanResult: (result: ScanResult | null) => void;
   onActivityLog: (entry: ActivityEntry) => void;
 }
 
@@ -32,12 +24,11 @@ export interface ActivityEntry {
   message: string;
 }
 
-/*
-// Original Swap Stages (Commented out for campaign)
 type SwapStage = "input" | "scanning" | "scanned" | "quoting" | "ready" | "swapping" | "complete";
-const DEFAULT_FROM = { symbol: "USDC", address: "0x74b7f16337b8972027f6196a17a631ac6de26d22", decimals: 6, logoColor: "#2775CA", isNative: false };
-const DEFAULT_TO = { symbol: "USDT", address: "0x1e4a5963abfd975d8c9021ce480b42188849d41d", decimals: 6, logoColor: "#26A17B", isNative: false };
-*/
+
+// Default tokens
+const DEFAULT_FROM = TOKEN_LIST.find(t => t.symbol === "USDC")!;
+const DEFAULT_TO = TOKEN_LIST.find(t => t.symbol === "USDT")!;
 
 const SwapCard: React.FC<SwapCardProps> = ({
   wallet,
@@ -45,24 +36,8 @@ const SwapCard: React.FC<SwapCardProps> = ({
   onScanResult,
   onActivityLog,
 }) => {
-  const { language, t } = useLanguage();
-
-  // ─── Active Campaign States ──────────────────────────────────────────
-  const [userVolume, setUserVolume] = useState<number | null>(null);
-  const [userRank, setUserRank] = useState<number | string | null>(null);
-  const [hasShares, setHasShares] = useState<boolean | null>(null);
-  const [loadingStats, setLoadingStats] = useState(false);
-  const [txHashInput, setTxHashInput] = useState("");
-  const [syncingTx, setSyncingTx] = useState(false);
-  const [syncStatusMsg, setSyncStatusMsg] = useState("");
-  const [syncStatusType, setSyncStatusType] = useState<"success" | "error" | "">("");
-
-  const API_BASE = import.meta.env.VITE_SCANGUARD_URL || "http://localhost:3402";
-
-  /*
-  // Original Swap States & Hooks (Commented out for campaign)
-  const [fromToken, setFromToken] = useState<any>(DEFAULT_FROM);
-  const [toToken, setToToken] = useState<any>(DEFAULT_TO);
+  const [fromToken, setFromToken] = useState<TokenInfo>(DEFAULT_FROM);
+  const [toToken, setToToken] = useState<TokenInfo>(DEFAULT_TO);
   const [amount, setAmount] = useState("");
   const [stage, setStage] = useState<SwapStage>("input");
   const [slippage, setSlippage] = useState(0.5);
@@ -70,12 +45,10 @@ const SwapCard: React.FC<SwapCardProps> = ({
   const [selectorOpen, setSelectorOpen] = useState<"from" | "to" | null>(null);
   const [fromBalance, setFromBalance] = useState<string | null>(null);
   const [toBalance, setToBalance] = useState<string | null>(null);
-  const [balanceRefreshKey, setBalanceRefreshKey] = useState(0);
 
   const { scan, result: scanResult, isScanning, error: scanError } = useScanGuard();
   const { getQuote, executeSwap, quote, swapResult, isQuoting, isSwapping, error: swapError, reset: resetSwap } = useSwap();
   const quoteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  */
 
   const addLog = useCallback(
     (type: ActivityEntry["type"], message: string) => {
@@ -89,173 +62,154 @@ const SwapCard: React.FC<SwapCardProps> = ({
     [onActivityLog]
   );
 
-  /*
-  // Original Auto-scan & Balances Effects (Commented out for campaign)
+  // ─── Auto-scan when "from" token changes ─────────────────────────────
   useEffect(() => {
     if (!fromToken.address || fromToken.isNative) return;
+    if (!/^0x[a-fA-F0-9]{40}$/.test(fromToken.address)) return;
+
     setStage("scanning");
     onScanResult(null);
     resetSwap();
-    addLog("scan", `Scanning ${fromToken.symbol}...`);
+
+    addLog("scan", `Scanning ${fromToken.symbol} (${fromToken.address.slice(0, 10)}...)...`);
+
     scan(fromToken.address).then((result) => {
       if (result) {
         setStage("scanned");
         onScanResult(result);
-        addLog(result.riskLevel === "SAFE" || result.riskLevel === "LOW" ? "info" : "warning", `${fromToken.symbol} risk: ${result.riskScore}/100`);
+        addLog(
+          result.riskLevel === "SAFE" || result.riskLevel === "LOW" ? "info" : "warning",
+          `${result.tokenSymbol || fromToken.symbol}: Risk ${result.riskScore}/100 (${result.riskLevel})`
+        );
       } else {
         setStage("input");
       }
     });
   }, [fromToken.address]);
 
+  // ─── Fetch Balances ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!wallet.connected || !wallet.address || !wallet.provider) return;
-    const fetchBalance = async () => {
+    if (!wallet.connected || !wallet.address || !wallet.provider) {
+      setFromBalance(null);
+      setToBalance(null);
+      return;
+    }
+
+    const fetchBalances = async () => {
       try {
-        const bal = await wallet.provider!.getBalance(wallet.address!);
-        setFromBalance(parseFloat(ethers.formatEther(bal)).toFixed(4));
+        const { ethers } = await import("ethers");
+        const fetchBal = async (token: TokenInfo) => {
+          if (token.isNative) {
+            const bal = await wallet.provider!.getBalance(wallet.address!);
+            return parseFloat(ethers.formatEther(bal)).toFixed(4);
+          } else {
+            const contract = new ethers.Contract(token.address, ["function balanceOf(address) view returns (uint256)"], wallet.provider);
+            const bal = await contract.balanceOf(wallet.address);
+            return parseFloat(ethers.formatUnits(bal, token.decimals)).toFixed(4);
+          }
+        };
+
+        const [fromBal, toBal] = await Promise.all([
+          fetchBal(fromToken),
+          fetchBal(toToken)
+        ]);
+
+        setFromBalance(fromBal);
+        setToBalance(toBal);
       } catch (err) {
         console.error("Balance fetch failed", err);
       }
     };
-    fetchBalance();
-  }, [wallet.connected, wallet.address, wallet.provider, balanceRefreshKey]);
-
-  useEffect(() => {
-    if (!amount || parseFloat(amount) <= 0) return;
-    getQuote({
-      fromToken: fromToken.address,
-      toToken: toToken.address,
-      amount,
-      fromDecimals: fromToken.decimals,
-      toDecimals: toToken.decimals,
-      slippage,
-    });
-  }, [amount, fromToken.address, toToken.address, slippage]);
-
-  const [needsApproval, setNeedsApproval] = useState(false);
-  const [isApproving, setIsApproving] = useState(false);
-  const [approveTarget, setApproveTarget] = useState<string | null>(null);
-
-  const handleApprove = async () => {};
-  const handleFlip = () => {};
-  const handleTokenSelect = (token: any) => {};
-  const handleSwap = async () => {};
-  */
-
-  // ─── Active Campaign Functions ───────────────────────────────────────
-  const fetchUserStats = async () => {
-    try {
-      setLoadingStats(true);
-      const res = await fetch(`${API_BASE}/api/worldcup/leaderboard`);
-      const json = await res.json();
-      
-      let userVolumeVal = 0;
-      let hasSharesVal = false;
-      
-      // 1. Search in the ranked data array first (sorted by volume)
-      if (json.success && Array.isArray(json.data)) {
-        const idx = json.data.findIndex((item: any) => item.address.toLowerCase() === wallet.address!.toLowerCase());
-        if (idx !== -1) {
-          userVolumeVal = json.data[idx].volume;
-          hasSharesVal = json.data[idx].hasShares;
-          setUserRank(idx + 1);
-        } else {
-          setUserRank("Unranked");
-        }
-      }
-
-      // 2. Also check allUsers if we didn't find volume in ranked data
-      if (userVolumeVal === 0 && json.success && Array.isArray(json.allUsers)) {
-        const userObj = json.allUsers.find((item: any) => item.address.toLowerCase() === wallet.address!.toLowerCase());
-        if (userObj) {
-          userVolumeVal = userObj.volume;
-          hasSharesVal = userObj.hasShares;
-        }
-      }
-      
-      setUserVolume(userVolumeVal);
-      setHasShares(hasSharesVal);
-    } catch (err) {
-      console.error("Failed to fetch user volume stats:", err);
-    } finally {
-      setLoadingStats(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!wallet.connected || !wallet.address) {
-      setUserVolume(null);
-      setUserRank(null);
-      setHasShares(null);
-      return;
-    }
-
-    fetchUserStats();
-    const interval = setInterval(fetchUserStats, 15000);
+    
+    fetchBalances();
+    // Optional: Refresh balance every 15s or on block
+    const interval = setInterval(fetchBalances, 15000);
     return () => clearInterval(interval);
-  }, [wallet.connected, wallet.address, API_BASE]);
+  }, [wallet.connected, wallet.address, wallet.provider, fromToken, toToken]);
 
-  const handleSyncTx = async () => {
-    if (!txHashInput.trim() || !wallet.address) return;
+  // ─── Auto-quote when amount or tokens change ─────────────────────────
+  useEffect(() => {
+    if (quoteTimer.current) clearTimeout(quoteTimer.current);
 
-    try {
-      setSyncingTx(true);
-      setSyncStatusMsg("");
-      setSyncStatusType("");
+    const isSafe = scanResult && (scanResult.riskLevel === "SAFE" || scanResult.riskLevel === "LOW" || scanResult.riskLevel === "MEDIUM");
+    if (!amount || parseFloat(amount) <= 0 || !isSafe) return;
 
-      addLog("info", `[Sync] Submitting transaction ${txHashInput.slice(0, 10)}... for on-chain verification.`);
-
-      const res = await fetch(`${API_BASE}/api/worldcup/sync-tx`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          txHash: txHashInput.trim(),
-          address: wallet.address
-        })
+    quoteTimer.current = setTimeout(() => {
+      getQuote({
+        fromToken: fromToken.address,
+        toToken: toToken.address,
+        amount,
+        fromDecimals: fromToken.decimals,
+        slippage,
       });
+    }, 500); // 500ms debounce
 
-      const json = await res.json();
+    return () => { if (quoteTimer.current) clearTimeout(quoteTimer.current); };
+  }, [amount, fromToken.address, toToken.address, scanResult, slippage]);
 
-      if (json.success) {
-        setSyncStatusType("success");
-        setSyncStatusMsg(language === "zh" 
-          ? `成功同步！增加交易量：$${json.data.addedVolume.toFixed(2)}` 
-          : `Sync successful! Added $${json.data.addedVolume.toFixed(2)} volume.`);
-        
-        setTxHashInput("");
-        await fetchUserStats();
+  // ─── Flip tokens ──────────────────────────────────────────────────────
+  const handleFlip = useCallback(() => {
+    setFromToken(toToken);
+    setToToken(fromToken);
+    setAmount("");
+    resetSwap();
+    setStage("input");
+    onScanResult(null);
+  }, [fromToken, toToken, resetSwap, onScanResult]);
 
-        addLog("swap", `[Sync] Success! Verified +$${json.data.addedVolume.toFixed(2)} volume.`);
-      } else {
-        setSyncStatusType("error");
-        setSyncStatusMsg(json.error || "Sync failed.");
-        
-        addLog("warning", `[Sync] Failed: ${json.error || "Unknown error"}`);
+  // ─── Token selection ──────────────────────────────────────────────────
+  const handleTokenSelect = useCallback((token: TokenInfo) => {
+    if (selectorOpen === "from") {
+      if (token.address === toToken.address) {
+        // Swap them
+        setToToken(fromToken);
       }
-    } catch (err: any) {
-      console.error("Tx sync error:", err);
-      setSyncStatusType("error");
-      setSyncStatusMsg(err.message || "Failed to connect to scanner API.");
-      
-      addLog("warning", `[Sync] Network error: ${err.message}`);
-    } finally {
-      setSyncingTx(false);
+      setFromToken(token);
+      setAmount("");
+      resetSwap();
+      setStage("input");
+    } else {
+      if (token.address === fromToken.address) {
+        setFromToken(toToken);
+      }
+      setToToken(token);
     }
-  };
+    setSelectorOpen(null);
+  }, [selectorOpen, fromToken, toToken, resetSwap]);
 
-  const getEstimatedPrize = (rank: number | string) => {
-    if (typeof rank === "string" || rank === null) return "—";
-    if (rank === 1) return "$125.00 USDT + $125.00 in $PSAI ($250)";
-    if (rank === 2) return "$55.00 USDT + $55.00 in $PSAI ($110)";
-    if (rank === 3) return "$35.00 USDT + $35.00 in $PSAI ($70)";
-    if (rank === 4) return "$22.50 USDT + $22.50 in $PSAI ($45)";
-    if (rank === 5) return "$12.50 USDT + $12.50 in $PSAI ($25)";
-    return "—";
-  };
+  // ─── Execute swap ─────────────────────────────────────────────────────
+  const handleSwap = useCallback(async () => {
+    if (!wallet.signer || !quote) return;
 
-  const OKX_WEB_URL = "https://web3.okx.com/dex-swap?chain=x-layer,x-layer&token=0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee,0xaef068ea820aafa00a2854bfd6cfab6d891ede5d";
-  const OKX_MOBILE_URL = "https://web3.okx.com/download?deeplink=okx%3A%2F%2Fwallet%2Fdapp%2Furl%3FdappUrl%3Dhttps%253A%252F%252Fweb3.okx.com%252Fdex-swap%253Fchain%253Dx-layer%252Cx-layer%2526token%253D0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee%252C0xaef068ea820aafa00a2854bfd6cfab6d891ede5d";
+    setStage("swapping");
+    addLog("swap", `Swapping ${amount} ${fromToken.symbol} → ${toToken.symbol}...`);
+
+    const result = await executeSwap(
+      {
+        fromToken: fromToken.address,
+        toToken: toToken.address,
+        amount,
+        fromDecimals: fromToken.decimals,
+        slippage,
+        recipient: wallet.address!,
+      },
+      wallet.signer
+    );
+
+    if (result) {
+      setStage("complete");
+      addLog("swap", `✅ Swap confirmed! TX: ${result.txHash.slice(0, 14)}...`);
+    } else {
+      setStage("ready");
+      addLog("warning", `Swap failed: ${swapError || "Unknown error"}`);
+    }
+  }, [wallet, quote, amount, fromToken, toToken, slippage, executeSwap, addLog, swapError]);
+
+  // ─── Derived state ────────────────────────────────────────────────────
+  const isSafe = scanResult && (scanResult.riskLevel === "SAFE" || scanResult.riskLevel === "LOW");
+  const isMedium = scanResult && scanResult.riskLevel === "MEDIUM";
+  const isDangerous = scanResult && (scanResult.riskLevel === "HIGH" || scanResult.riskLevel === "CRITICAL");
+  const canSwap = (isSafe || isMedium) && quote && parseFloat(amount) > 0;
 
   return (
     <>
@@ -265,201 +219,262 @@ const SwapCard: React.FC<SwapCardProps> = ({
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
       >
-        {/* Campaign Header */}
-        <div className="swap-card-header" style={{ marginBottom: 0 }}>
-          <h2 className="swap-card-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ animation: "pulse 2s infinite" }}>🟢</span>
-            {language === "zh" ? "$PSAI 交易竞赛 (第一阶段)" : "$PSAI Trading Contest (Phase 1)"}
-          </h2>
-        </div>
-
-        {/* Campaign Info */}
-        <div style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: "1.5", marginTop: "8px" }}>
-          {language === "zh" ? (
-            "为确保最高的交易效率和零技术摩擦，本阶段的交易直接在 OKX 的官方 DEX 或手机钱包上执行。我们将通过链上数据同步追踪您的交易量，自动统计在下方的积分排行榜中！"
-          ) : (
-            "To guarantee maximum routing efficiency and zero swap friction, all trades in this phase are executed directly on the official OKX DEX web or mobile wallet interface. We automatically track your volume on-chain to rank you on the leaderboard!"
-          )}
-        </div>
-
-        {/* Trade CTAs */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "8px" }}>
-          <a
-            href={OKX_WEB_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-primary swap-btn font-mono"
-            style={{ textDecoration: "none", textAlign: "center", display: "block" }}
-          >
-            📊 {language === "zh" ? "在 OKX 网页端 DEX 交易" : "Trade on OKX DEX (Web) ↗"}
-          </a>
-          <a
-            href={OKX_MOBILE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-ghost swap-btn font-mono"
-            style={{ textDecoration: "none", textAlign: "center", display: "block", background: "rgba(255,255,255,0.05)" }}
-          >
-            📱 {language === "zh" ? "在 OKX 手机 app 交易" : "Trade on OKX Mobile Wallet ↗"}
-          </a>
-        </div>
-
-        {/* 
-        // ─── COMMENTED OUT ORIGINAL SWAP INTERFACE ───
-        // Uncomment these blocks after the campaign to restore interactive swaps and security auditing.
-
-        <div className="swap-card-header" style={{ marginTop: "16px" }}>
-          <h2 className="swap-card-title">{t("swap_tab_swap")} (Paused)</h2>
+        {/* Card Header */}
+        <div className="swap-card-header">
+          <h2 className="swap-card-title">Swap</h2>
           <div className="swap-settings" style={{ position: "relative" }}>
-            <button className="slippage-btn" disabled>
-              <SettingsIcon size={12} /> {slippage}% {language === "zh" ? "滑点" : "slippage"}
+            <button
+              className="slippage-btn"
+              onClick={() => setShowSlippage(!showSlippage)}
+            >
+              ⚙️ {slippage}% slippage
             </button>
+            <AnimatePresence>
+              {showSlippage && (
+                <motion.div
+                  className="slippage-popup glass-card"
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                >
+                  {[0.1, 0.5, 1.0, 3.0].map(s => (
+                    <button
+                      key={s}
+                      className={`slippage-option ${slippage === s ? "active" : ""}`}
+                      onClick={() => { setSlippage(s); setShowSlippage(false); }}
+                    >
+                      {s}%
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
-        <div className="swap-token-box glass-card" style={{ opacity: 0.5 }}>
-          <div className="swap-token-label">{t("swap_from")}</div>
+        {/* ─── From (Sell) ─────────────────────────────────────────── */}
+        <div className="swap-token-box glass-card">
+          <div className="swap-token-label" style={{ display: "flex", justifyContent: "space-between" }}>
+            <span>You sell</span>
+            {fromBalance && <span>Balance: {fromBalance}</span>}
+          </div>
           <div className="swap-token-row">
-            <input className="swap-amount-input" type="text" placeholder="0.0" disabled />
-            <button className="token-pill" disabled>
+            <input
+              className="swap-amount-input"
+              type="text"
+              placeholder="0.0"
+              value={amount}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (/^\d*\.?\d*$/.test(val)) setAmount(val);
+              }}
+              disabled={isScanning || isSwapping}
+            />
+            <button
+              className="token-pill"
+              onClick={() => setSelectorOpen("from")}
+              style={{ "--pill-color": fromToken.logoColor } as React.CSSProperties}
+            >
+              <span className="token-pill-icon" style={{ background: fromToken.logoColor }}>
+                {fromToken.logoUrl ? <img src={fromToken.logoUrl} alt={fromToken.symbol} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /> : fromToken.symbol.charAt(0)}
+              </span>
               {fromToken.symbol}
+              <span className="token-pill-arrow">▾</span>
             </button>
           </div>
-        </div>
-
-        <div className="swap-arrow-wrapper" style={{ opacity: 0.5 }}>
-          <button className="swap-arrow" disabled>⇅</button>
-        </div>
-
-        <div className="swap-token-box glass-card" style={{ opacity: 0.5 }}>
-          <div className="swap-token-label">{t("swap_to")}</div>
-          <div className="swap-token-row">
-            <span className="swap-amount-output">0.0</span>
-            <button className="token-pill" disabled>
-              {toToken.symbol}
-            </button>
-          </div>
-        </div>
-        */}
-
-        {/* Personal Stats Section */}
-        <div className="swap-token-box glass-card" style={{ padding: "16px", marginTop: "12px", gap: "8px" }}>
-          <div className="swap-token-label" style={{ fontWeight: "700", color: "#fff", display: "flex", justifyContent: "space-between" }}>
-            <span>👤 {language === "zh" ? "您的竞猜特工统计" : "YOUR CAMPAIGN STATS"}</span>
-            {loadingStats && <span style={{ fontSize: "0.7rem", color: "var(--text-tertiary)" }}>Refreshing...</span>}
-          </div>
-          
-          {!wallet.connected ? (
-            <div style={{ textAlign: "center", padding: "12px 0", color: "var(--text-tertiary)", fontSize: "0.8rem" }}>
-              {language === "zh" ? "请先连接钱包以查看您的交易额和排名" : "Connect your wallet to track your volume & rank"}
+          {scanResult && (
+            <div className="swap-token-scan-badge">
+              <span className={`scan-dot ${isSafe ? "safe" : isDangerous ? "danger" : "warn"}`} />
+              {scanResult.riskLevel} ({scanResult.riskScore}/100)
             </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "8px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
-                <span style={{ color: "var(--text-secondary)" }}>{language === "zh" ? "您的地址:" : "Your Wallet:"}</span>
-                <span className="font-mono" style={{ color: "#fff" }}>
-                  {wallet.address ? `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}` : ""}
-                </span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
-                <span style={{ color: "var(--text-secondary)" }}>{language === "zh" ? "当前排名:" : "Current Rank:"}</span>
-                <span className="font-mono" style={{ color: userRank === "Unranked" ? "var(--text-tertiary)" : "var(--accent-safe)", fontWeight: "bold" }}>
-                  {userRank === null ? "..." : (userRank === "Unranked" ? (language === "zh" ? "未上榜" : "Unranked") : `#${userRank}`)}
-                </span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
-                <span style={{ color: "var(--text-secondary)" }}>{language === "zh" ? "交易量 (USDT):" : "Trading Volume:"}</span>
-                <span className="font-mono" style={{ color: "var(--accent-purple)", fontWeight: "bold" }}>
-                  {userVolume === null ? "..." : `$${userVolume.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                </span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
-                <span style={{ color: "var(--text-secondary)" }}>{language === "zh" ? "拥有球员份额:" : "Has Player Shares:"}</span>
-                <span className="font-mono" style={{ color: hasShares ? "#00ff88" : "#ffaa00", fontWeight: "bold" }}>
-                  {hasShares === null ? "..." : (hasShares ? (language === "zh" ? "是 ✓" : "Yes ✓") : (language === "zh" ? "否 (可选)" : "No (Optional)"))}
-                </span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "8px" }}>
-                <span style={{ color: "var(--text-secondary)" }}>{language === "zh" ? "预计奖励 (50/50):" : "Estimated Reward (50/50):"}</span>
-                <span className="font-mono" style={{ color: "#FFD700", fontWeight: "bold", fontSize: "0.78rem" }}>
-                  {userRank === null ? "..." : getEstimatedPrize(userRank)}
-                </span>
-              </div>
-              
-              {/* Manual Tx Sync Input Form */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "12px", marginTop: "4px" }}>
-                <span style={{ fontSize: "0.74rem", color: "var(--text-secondary)" }}>
-                  {language === "zh" ? "🔄 手动同步交易 (输入交易哈希):" : "🔄 Manual Swap Sync (Paste Tx Hash):"}
-                </span>
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <input
-                    type="text"
-                    placeholder="0x..."
-                    value={txHashInput}
-                    onChange={(e) => setTxHashInput(e.target.value)}
-                    disabled={syncingTx}
-                    style={{
-                      flex: 1,
-                      background: "rgba(0,0,0,0.3)",
-                      border: "1px solid var(--border-default)",
-                      borderRadius: "6px",
-                      padding: "6px 10px",
-                      fontSize: "0.78rem",
-                      fontFamily: "var(--font-mono)",
-                      color: "#fff"
-                    }}
-                  />
-                  <button
-                    onClick={handleSyncTx}
-                    disabled={syncingTx || !txHashInput.trim()}
-                    style={{
-                      background: syncingTx || !txHashInput.trim() ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg, #4B7BF5 0%, #a855f7 100%)",
-                      border: "none",
-                      borderRadius: "6px",
-                      color: syncingTx || !txHashInput.trim() ? "var(--text-tertiary)" : "#fff",
-                      padding: "6px 12px",
-                      fontSize: "0.74rem",
-                      fontWeight: "bold",
-                      cursor: syncingTx || !txHashInput.trim() ? "not-allowed" : "pointer",
-                      transition: "opacity 0.2s"
-                    }}
-                  >
-                    {syncingTx ? (language === "zh" ? "同步中..." : "Syncing...") : (language === "zh" ? "同步" : "Sync")}
-                  </button>
-                </div>
-                {syncStatusMsg && (
-                  <span style={{ 
-                    fontSize: "0.7rem", 
-                    color: syncStatusType === "success" ? "var(--accent-safe)" : "var(--accent-warning)", 
-                    marginTop: "2px" 
-                  }}>
-                    {syncStatusMsg}
-                  </span>
-                )}
-              </div>
+          )}
+          {isScanning && (
+            <div className="swap-token-scan-badge">
+              <span className="scan-spinner-sm" /> Scanning...
             </div>
           )}
         </div>
 
-        {/* Steps Box */}
-        <div style={{ padding: "12px", border: "1px solid rgba(168,85,247,0.15)", background: "rgba(168,85,247,0.02)", borderRadius: "8px", fontSize: "0.74rem", color: "var(--text-tertiary)", marginTop: "8px" }}>
-          <div style={{ fontWeight: "bold", color: "var(--text-secondary)", marginBottom: "4px" }}>💡 {language === "zh" ? "如何参与竞赛：" : "How to enter:"}</div>
-          <ol style={{ paddingLeft: "14px", margin: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-            <li>{language === "zh" ? "点击上方按钮在 OKX 网页端或手机上兑换 $PSAI 代币。" : "Click one of the OKX links above to trade $PSAI."}</li>
-            <li>{language === "zh" ? "链上智能合约扫描模块会在 1-2 分钟内自动追踪您的地址交易量。" : "Our indexing module will scan the blockchain and update your stats."}</li>
-            <li>{language === "zh" ? "世界杯开始后，持有的 $PSAI 将直接解锁 1.5 - 5.0 倍无损失质押收益倍数！" : "Staking USDT in July with $PSAI unlocks up to 5x yield boosts!"}</li>
-          </ol>
+        {/* ─── Flip Arrow ─────────────────────────────────────────── */}
+        <div className="swap-arrow-wrapper">
+          <button className="swap-arrow" onClick={handleFlip} title="Flip tokens">
+            ⇅
+          </button>
         </div>
 
-        {/* Footer */}
-        <div className="swap-powered-by" style={{ marginTop: "12px" }}>
-          <span>🛡️ {language === "zh" ? "竞赛由" : "Campaign verified by"}</span>
-          <span style={{ fontWeight: 600, color: "#4B7BF5", fontFamily: 'var(--font-mono)' }}>X Layer</span>
+        {/* ─── To (Buy) ───────────────────────────────────────────── */}
+        <div className="swap-token-box glass-card">
+          <div className="swap-token-label" style={{ display: "flex", justifyContent: "space-between" }}>
+            <span>You receive</span>
+            {toBalance && <span>Balance: {toBalance}</span>}
+          </div>
+          <div className="swap-token-row">
+            <span className="swap-amount-output">
+              {isQuoting ? (
+                <span className="quote-loading">Quoting...</span>
+              ) : quote ? (
+                quote.amountOut
+              ) : amount && parseFloat(amount) > 0 && isSafe ? (
+                "..."
+              ) : (
+                "0.0"
+              )}
+            </span>
+            <button
+              className="token-pill"
+              onClick={() => setSelectorOpen("to")}
+              style={{ "--pill-color": toToken.logoColor } as React.CSSProperties}
+            >
+              <span className="token-pill-icon" style={{ background: toToken.logoColor }}>
+                {toToken.logoUrl ? <img src={toToken.logoUrl} alt={toToken.symbol} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} /> : toToken.symbol.charAt(0)}
+              </span>
+              {toToken.symbol}
+              <span className="token-pill-arrow">▾</span>
+            </button>
+          </div>
+        </div>
+
+        {/* ─── Quote Details ──────────────────────────────────────── */}
+        <AnimatePresence>
+          {quote && (
+            <motion.div
+              className="quote-details"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+            >
+              <div className="quote-row">
+                <span>Rate</span>
+                <span className="font-mono">1 {fromToken.symbol} ≈ {quote.exchangeRate} {toToken.symbol}</span>
+              </div>
+              <div className="quote-row">
+                <span>Price Impact</span>
+                <span className={`font-mono ${parseFloat(quote.priceImpact) > 1 ? "text-warning" : "text-safe"}`}>
+                  {quote.priceImpact}%
+                </span>
+              </div>
+              <div className="quote-row">
+                <span>Source</span>
+                <span className="font-mono">{quote.source === "okx-dex" ? "OKX DEX Aggregator" : "Estimated"}</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ─── Warnings ───────────────────────────────────────────── */}
+        <AnimatePresence>
+          {isDangerous && (
+            <motion.div
+              className="swap-danger-warning"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+            >
+              <span className="danger-icon">🚨</span>
+              <div>
+                <strong>High Risk Token Detected</strong>
+                <p>This token has {scanResult!.flags.length} security threat(s). Swapping is blocked for your protection.</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ─── Success ────────────────────────────────────────────── */}
+        <AnimatePresence>
+          {swapResult && stage === "complete" && (
+            <motion.div
+              className="swap-success"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+            >
+              <span style={{ fontSize: "1.5rem" }}>✅</span>
+              <div>
+                <strong>Swap Confirmed!</strong>
+                <a className="font-mono risk-link" href={swapResult.explorerUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.8rem", display: "block", marginTop: "4px" }}>
+                  View on Explorer →
+                </a>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ─── Error ──────────────────────────────────────────────── */}
+        <AnimatePresence>
+          {(scanError || swapError) && (
+            <motion.div className="swap-error" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
+              ⚠️ {scanError || swapError}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ─── Action Button ──────────────────────────────────────── */}
+        <div className="swap-action">
+          {!wallet.connected ? (
+            <button className="btn btn-primary swap-btn" onClick={onConnect}>
+              Connect Wallet
+            </button>
+          ) : isScanning ? (
+            <button className="btn btn-primary swap-btn scanning-pulse" disabled>
+              <span className="scan-spinner" /> Scanning Token...
+            </button>
+          ) : isDangerous ? (
+            <button className="btn btn-danger swap-btn" disabled>
+              🚫 Swap Blocked — High Risk
+            </button>
+          ) : isSwapping ? (
+            <button className="btn btn-primary swap-btn" disabled>
+              <span className="scan-spinner" /> Swapping...
+            </button>
+          ) : stage === "complete" ? (
+            <button
+              className="btn btn-primary swap-btn"
+              onClick={() => {
+                setAmount("");
+                resetSwap();
+                setStage("input");
+                onScanResult(null);
+              }}
+            >
+              New Swap
+            </button>
+          ) : canSwap ? (
+            <button className="btn btn-safe swap-btn" onClick={handleSwap}>
+              🔄 Swap {fromToken.symbol} → {toToken.symbol}
+            </button>
+          ) : isMedium ? (
+            <button
+              className="btn btn-primary swap-btn"
+              onClick={handleSwap}
+              disabled={!quote || !parseFloat(amount)}
+              style={{ background: "linear-gradient(135deg, #FFB020, #FF8C00)" }}
+            >
+              ⚠️ Swap with Caution
+            </button>
+          ) : (
+            <button className="btn btn-primary swap-btn" disabled={!amount || !parseFloat(amount)}>
+              {amount && parseFloat(amount) > 0 ? "Getting Quote..." : "Enter Amount"}
+            </button>
+          )}
+        </div>
+
+        {/* Powered by */}
+        <div className="swap-powered-by">
+          <span>🛡️ Protected by</span>
+          <span className="text-blue" style={{ fontWeight: 600 }}>ScanGuard</span>
+          <span className="badge badge-purple" style={{ marginLeft: "4px" }}>MCP</span>
           <span style={{ margin: "0 4px", color: "var(--text-tertiary)" }}>·</span>
-          <span style={{ color: "var(--text-tertiary)" }}>{language === "zh" ? "数据提供" : "Aggregated on"}</span>
-          <span style={{ fontWeight: 600, color: "#33ff00" }}>OKX DEX</span>
+          <span style={{ color: "var(--text-tertiary)" }}>Powered by</span>
+          <span style={{ fontWeight: 600, color: "#4B7BF5" }}>OKX DEX</span>
         </div>
       </motion.div>
+
+      {/* Token Selector Modal */}
+      <TokenSelector
+        isOpen={selectorOpen !== null}
+        onClose={() => setSelectorOpen(null)}
+        onSelect={handleTokenSelect}
+        excludeAddress={selectorOpen === "from" ? toToken.address : fromToken.address}
+      />
 
       <style>{`
         .swap-card {
@@ -483,6 +498,42 @@ const SwapCard: React.FC<SwapCardProps> = ({
           font-weight: 700;
         }
 
+        .slippage-btn {
+          font-size: 0.78rem;
+          color: var(--text-tertiary);
+          padding: 4px 10px;
+          background: rgba(255,255,255,0.03);
+          border-radius: var(--radius-full);
+          border: 1px solid var(--border-default);
+          cursor: pointer;
+          font-family: var(--font-mono);
+        }
+        .slippage-btn:hover { border-color: var(--accent-blue); }
+
+        .slippage-popup {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          margin-top: 6px;
+          padding: 6px;
+          display: flex;
+          gap: 4px;
+          z-index: 10;
+        }
+        .slippage-option {
+          padding: 6px 12px;
+          border-radius: var(--radius-sm);
+          border: 1px solid var(--border-default);
+          background: transparent;
+          color: var(--text-secondary);
+          cursor: pointer;
+          font-size: 0.75rem;
+          font-family: var(--font-mono);
+          font-weight: 600;
+        }
+        .slippage-option:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+        .slippage-option.active { border-color: var(--accent-blue); color: var(--accent-blue); background: var(--accent-blue-dim); }
+
         .swap-token-box {
           padding: 16px;
           display: flex;
@@ -494,6 +545,170 @@ const SwapCard: React.FC<SwapCardProps> = ({
           font-size: 0.82rem;
           color: var(--text-secondary);
           font-weight: 500;
+        }
+
+        .swap-token-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .swap-amount-input {
+          flex: 1;
+          font-size: 1.8rem;
+          font-weight: 700;
+          font-family: var(--font-mono);
+          color: var(--text-primary);
+          background: transparent;
+          border: none;
+          outline: none;
+          width: 0;
+          min-width: 0;
+        }
+        .swap-amount-input::placeholder { color: var(--text-tertiary); }
+        .swap-amount-input:disabled { opacity: 0.5; }
+
+        .swap-amount-output {
+          flex: 1;
+          font-size: 1.8rem;
+          font-weight: 700;
+          font-family: var(--font-mono);
+          color: var(--text-primary);
+        }
+        .quote-loading {
+          font-size: 1rem;
+          color: var(--text-tertiary);
+          animation: pulse-text 1s ease-in-out infinite;
+        }
+        @keyframes pulse-text { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        .token-pill {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px 6px 6px;
+          border-radius: var(--radius-full);
+          border: 1px solid var(--border-default);
+          background: rgba(255,255,255,0.03);
+          color: var(--text-primary);
+          cursor: pointer;
+          font-size: 0.95rem;
+          font-weight: 700;
+          font-family: var(--font-mono);
+          transition: all 0.15s;
+          white-space: nowrap;
+        }
+        .token-pill:hover { border-color: var(--pill-color, var(--accent-blue)); background: rgba(255,255,255,0.06); }
+
+        .token-pill-icon {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.75rem;
+          font-weight: 800;
+          color: white;
+        }
+
+        .token-pill-arrow {
+          font-size: 0.7rem;
+          color: var(--text-tertiary);
+          margin-left: 2px;
+        }
+
+        .swap-token-scan-badge {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.72rem;
+          color: var(--text-secondary);
+          font-family: var(--font-mono);
+        }
+        .scan-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .scan-dot.safe { background: var(--accent-safe); box-shadow: 0 0 4px var(--accent-safe); }
+        .scan-dot.danger { background: var(--accent-danger); box-shadow: 0 0 4px var(--accent-danger); }
+        .scan-dot.warn { background: var(--accent-warning); box-shadow: 0 0 4px var(--accent-warning); }
+        .scan-spinner-sm { display: inline-block; width: 10px; height: 10px; border: 1.5px solid rgba(255,255,255,0.2); border-top-color: var(--accent-blue); border-radius: 50%; animation: rotate-slow 0.8s linear infinite; }
+
+        .swap-arrow-wrapper {
+          display: flex;
+          justify-content: center;
+          margin: -8px 0;
+          position: relative;
+          z-index: 2;
+        }
+
+        .swap-arrow {
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--bg-elevated);
+          border: 2px solid var(--border-default);
+          border-radius: var(--radius-md);
+          color: var(--text-secondary);
+          font-size: 1.1rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .swap-arrow:hover {
+          border-color: var(--accent-blue);
+          color: var(--accent-blue);
+          transform: rotate(180deg);
+        }
+
+        .quote-details {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          padding: 12px 16px;
+          background: rgba(0,0,0,0.15);
+          border-radius: var(--radius-md);
+          overflow: hidden;
+        }
+        .quote-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.78rem;
+          color: var(--text-secondary);
+        }
+
+        .swap-danger-warning {
+          display: flex;
+          gap: 12px;
+          padding: 14px;
+          background: rgba(255, 59, 92, 0.06);
+          border: 1px solid rgba(255, 59, 92, 0.15);
+          border-radius: var(--radius-md);
+          overflow: hidden;
+        }
+        .swap-danger-warning strong { color: var(--accent-danger); font-size: 0.9rem; }
+        .swap-danger-warning p { font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px; line-height: 1.4; }
+        .danger-icon { font-size: 1.5rem; flex-shrink: 0; }
+
+        .swap-success {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px;
+          background: var(--accent-safe-dim);
+          border: 1px solid rgba(0, 255, 136, 0.15);
+          border-radius: var(--radius-md);
+          overflow: hidden;
+        }
+        .swap-success strong { color: var(--accent-safe); font-size: 0.9rem; }
+
+        .swap-error {
+          padding: 12px;
+          background: var(--accent-danger-dim);
+          border: 1px solid rgba(255, 59, 92, 0.2);
+          border-radius: var(--radius-md);
+          font-size: 0.82rem;
+          color: var(--accent-danger);
+          overflow: hidden;
         }
 
         .swap-btn {
@@ -513,19 +728,22 @@ const SwapCard: React.FC<SwapCardProps> = ({
           padding-top: 8px;
         }
 
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
+        .scan-spinner {
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: rotate-slow 0.8s linear infinite;
         }
+
+        .risk-link { color: var(--accent-blue); text-decoration: none; }
+        .risk-link:hover { text-decoration: underline; }
 
         @media (max-width: 500px) {
           .swap-card { padding: 16px; }
-          .swap-powered-by {
-            flex-wrap: nowrap;
-            white-space: nowrap;
-            font-size: 0.62rem;
-            gap: 4px;
-          }
+          .swap-amount-input, .swap-amount-output { font-size: 1.4rem; }
         }
       `}</style>
     </>

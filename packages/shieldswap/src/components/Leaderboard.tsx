@@ -117,9 +117,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         if (wallet.address) userAddresses.add(wallet.address.toLowerCase());
         
         // Scan blocks to discover recent stakers/deposits.
-        // Limit query block range lookback to 9999 blocks to fetch more history.
+        // Limit query block range lookback to fetch history without timing out.
         const currentBlock = await provider.getBlockNumber();
-        const lookback = 9999;
+        const lookback = 500;
         const startBlock = Math.max(0, currentBlock - lookback);
         
         const depositFilter = vault.filters.Deposited();
@@ -143,29 +143,29 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         
         const managers = [];
         for (const addr of Array.from(userAddresses)) {
+          // Actual volume tracked from ScanGuard backend
+          const volumeTraded = backendVolumes[addr.toLowerCase()] || 0;
+          
+          let multiplier = 1.0;
+          if (volumeTraded >= 50000) {
+            multiplier = 5.0;
+          } else if (volumeTraded >= 10000) {
+            multiplier = 3.0;
+          } else if (volumeTraded >= 2500) {
+            multiplier = 2.0;
+          } else if (volumeTraded >= 500) {
+            multiplier = 1.5;
+          }
+
+          // Apply elite multiplier to testnet user for demo
+          if (!isMainnet && addr.toLowerCase() === "0xcd0a2370f2dc12c1802707b7d9ab3fec891e3c02") {
+            multiplier = 5.0;
+          }
+
           try {
             const userInfo = await vault.users(addr);
             const credits = await vault.getCredits(addr);
             
-            // Actual volume tracked from ScanGuard backend
-            const volumeTraded = backendVolumes[addr.toLowerCase()] || 0;
-            
-            let multiplier = 1.0;
-            if (volumeTraded >= 50000) {
-              multiplier = 5.0;
-            } else if (volumeTraded >= 10000) {
-              multiplier = 3.0;
-            } else if (volumeTraded >= 2500) {
-              multiplier = 2.0;
-            } else if (volumeTraded >= 500) {
-              multiplier = 1.5;
-            }
-
-            // Apply elite multiplier to testnet user for demo
-            if (!isMainnet && addr.toLowerCase() === "0xcd0a2370f2dc12c1802707b7d9ab3fec891e3c02") {
-              multiplier = 5.0;
-            }
-
             managers.push({
               address: addr,
               staked: userInfo.balance,
@@ -175,7 +175,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
             });
           } catch (err: any) {
             console.error(`Leaderboard fetch error for ${addr}:`, err.message);
-            managers.push({ address: addr, staked: 0n, credits: 0n, volumeTraded: 0, multiplier: 1.0 });
+            managers.push({ address: addr, staked: 0n, credits: 0n, volumeTraded, multiplier });
           }
         }
 
@@ -265,7 +265,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
     };
 
     fetchLeaderboard();
-    const interval = setInterval(fetchLeaderboard, 10000);
+    const interval = setInterval(fetchLeaderboard, 30000);
     return () => clearInterval(interval);
   }, [wallet.provider, wallet.address, wallet.chainId, DEPLOYED_ADDRESSES.NoLossVault]);
 

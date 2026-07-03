@@ -42,6 +42,14 @@ const NATIVE_OKB: TokenInfo = {
 export const TOKEN_LIST: TokenInfo[] = [
   NATIVE_OKB,
   {
+    address: "0xaef068ea820aafa00a2854bfd6cfab6d891ede5d",
+    symbol: "PSAI",
+    name: "Pitchside AI",
+    decimals: 18,
+    logoColor: "#FF8C00",
+    logoUrl: "/logo.png",
+  },
+  {
     address: "0xe538905cf8410324e03a5a23c1c177a474d59b2b",
     symbol: "WOKB",
     name: "Wrapped OKB",
@@ -90,6 +98,7 @@ export const TOKEN_LIST: TokenInfo[] = [
 export const XLAYER_TOKENS = {
   OKB: NATIVE_OKB.address,
   WOKB: "0xe538905cf8410324e03a5a23c1c177a474d59b2b",
+  PSAI: "0xaef068ea820aafa00a2854bfd6cfab6d891ede5d",
   USDT: "0x779ded0c9e1022225f8e0630b35a9b54be713736",
   USDC: "0x74b7f16337b8972027f6196a17a631ac6de26d22",
   ETH: "0x5a77f1443d16ee5761d310e38b4beb27e6e2f5ab",
