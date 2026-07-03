@@ -108,12 +108,12 @@ export const VolumeLeaderboard: React.FC<VolumeLeaderboardProps> = ({ wallet }) 
     return <span className="font-mono text-tertiary">#{rank}</span>;
   };
 
-  // Safe slice of top 10 traders for clean rendering
-  const topTraders = leaderboard.slice(0, 10);
+  // Safe slice of top 100 traders for clean rendering
+  const topTraders = leaderboard.slice(0, 100);
   
   const userRankIndex = leaderboard.findIndex(t => wallet.connected && wallet.address && t.address.toLowerCase() === wallet.address.toLowerCase());
-  const isUserInTop10 = userRankIndex >= 0 && userRankIndex < 10;
-  const userTrader = (!isUserInTop10 && userRankIndex >= 0) ? leaderboard[userRankIndex] : null;
+  const isUserInTop100 = userRankIndex >= 0 && userRankIndex < 100;
+  const userTrader = (!isUserInTop100 && userRankIndex >= 0) ? leaderboard[userRankIndex] : null;
 
   return (
     <div className="volume-leaderboard glass-card animate-fade-in">

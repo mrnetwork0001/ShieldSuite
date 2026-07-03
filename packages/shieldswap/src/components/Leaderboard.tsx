@@ -141,8 +141,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         let totalVaultStaked = await vault.totalStaked().catch(() => 0n);
         const usdtDecimals = isMainnet ? 6 : 18;
         
-        const managers = [];
-        for (const addr of Array.from(userAddresses)) {
+        const managers = await Promise.all(Array.from(userAddresses).map(async (addr) => {
           // Actual volume tracked from ScanGuard backend
           const volumeTraded = backendVolumes[addr.toLowerCase()] || 0;
           
@@ -166,18 +165,18 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
             const userInfo = await vault.users(addr);
             const credits = await vault.getCredits(addr);
             
-            managers.push({
+            return {
               address: addr,
               staked: userInfo.balance,
               credits: credits,
               volumeTraded,
               multiplier
-            });
+            };
           } catch (err: any) {
             console.error(`Leaderboard fetch error for ${addr}:`, err.message);
-            managers.push({ address: addr, staked: 0n, credits: 0n, volumeTraded, multiplier });
+            return { address: addr, staked: 0n, credits: 0n, volumeTraded, multiplier };
           }
-        }
+        }));
 
         // Filter out inactive stakers (must have staked balance or accumulated credits or volume)
         const activeManagers = managers.filter((m) => m.staked > 0n || m.credits > 0n || m.volumeTraded > 0);
@@ -191,16 +190,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
           console.error("Failed to save stakers to localStorage", e);
         }
 
-        // Check for missing staked balance (users who deposited before tracking was added)
-        const trackedStaked = activeManagers.reduce((sum, m) => sum + (m.staked || 0n), 0n);
-        let anonymousStaked = 0n;
-        
-        if (totalVaultStaked > trackedStaked) {
-          anonymousStaked = totalVaultStaked - trackedStaked;
-        } else if (totalVaultStaked === 0n) {
-          totalVaultStaked = trackedStaked;
-        }
-        
         // 3. Sort by volume descending for Trading Competition
         const sorted = activeManagers.sort((a, b) => {
           if (b.volumeTraded > a.volumeTraded) return 1;
@@ -208,23 +197,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
           return 0;
         });
 
-        if (anonymousStaked > 0n) {
-          sorted.push({
-            address: "anonymous",
-            staked: anonymousStaked,
-            credits: 0n,
-            volumeTraded: 0,
-            multiplier: 1.0
-          } as any);
-        }
-        
         // 4. Map to display formats
         const mapped = sorted.map((item, index) => {
           let name = language === "zh" ? `特工经理 #${index + 1}` : `Scout Manager #${index + 1}`;
           
-          if (item.address === "anonymous") {
-            name = language === "zh" ? "未跟踪的储户" : "Untracked Depositors";
-          } else if (item.address.toLowerCase() === DEPLOYED_ADDRESSES.deployer.toLowerCase()) {
+          if (item.address.toLowerCase() === DEPLOYED_ADDRESSES.deployer.toLowerCase()) {
             name = language === "zh" ? "部署者管理员" : "Deployer Admin";
           } else if (wallet.address && item.address.toLowerCase() === wallet.address.toLowerCase()) {
             name = language === "zh" ? "您" : "You";
@@ -237,26 +214,24 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
           }
             
           return {
-            rank: item.address === "anonymous" ? "-" : index + 1,
+            rank: index + 1,
             address: item.address,
             name: name,
-            credits: item.address === "anonymous" ? "—" : parseFloat(ethers.formatEther(item.credits)).toLocaleString(undefined, {
+            credits: parseFloat(ethers.formatEther(item.credits)).toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             }),
             portfolio: parseFloat(ethers.formatUnits(item.staked, usdtDecimals)).toFixed(2) + " USDT",
             share: sharePercent,
-            volumeFormatted: item.address === "anonymous" ? "—" : "$" + item.volumeTraded.toLocaleString(undefined, { maximumFractionDigits: 0 }),
+            volumeFormatted: "$" + item.volumeTraded.toLocaleString(undefined, { maximumFractionDigits: 0 }),
             multiplier: item.multiplier
           };
         });
         
-        // Limit to top 5 managers for premium design aesthetic, but always show untracked depositors
-        const top5 = mapped.filter(m => m.address !== "anonymous").slice(0, 5);
-        const anonymousManager = mapped.find(m => m.address === "anonymous");
-        if (anonymousManager) top5.push(anonymousManager);
+        // Show up to 100 top managers
+        const top100 = mapped.slice(0, 100);
         
-        setLeaderboard(top5);
+        setLeaderboard(top100);
       } catch (err) {
         console.error("Failed to compile dynamic leaderboard:", err);
       } finally {
