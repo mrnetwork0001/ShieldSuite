@@ -140,6 +140,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
         toToken: toToken.address,
         amount,
         fromDecimals: fromToken.decimals,
+        toDecimals: toToken.decimals,
         slippage,
       });
     }, 500); // 500ms debounce
@@ -190,6 +191,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
         toToken: toToken.address,
         amount,
         fromDecimals: fromToken.decimals,
+        toDecimals: toToken.decimals,
         slippage,
         recipient: wallet.address!,
       },
