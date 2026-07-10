@@ -315,7 +315,7 @@ export const DocsPage: React.FC<DocsPageProps> = ({ setActiveTab }) => {
           grid-template-columns: 280px 1fr;
           gap: 40px;
           width: 100%;
-          max-width: 1200px;
+          max-width: 1400px;
           margin: 0 auto;
           padding: 0 16px;
           color: var(--text-primary);

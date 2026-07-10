@@ -548,8 +548,14 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
 
           {/* Staking Actions */}
           {(() => {
-            const exceedsBalance = !!(depositAmount && parseFloat(depositAmount) > parseFloat(usdtBalance));
-            const exceedsStaked = !!(withdrawAmount && parseFloat(withdrawAmount) > parseFloat(stakedBalance));
+            const parsedDeposit = depositAmount ? parseFloat(depositAmount) : 0;
+            const parsedStaked = parseFloat(stakedBalance);
+            const exceedsBalance = !!(depositAmount && parsedDeposit > parseFloat(usdtBalance));
+            const exceedsLimit = !!(depositAmount && parsedDeposit > 10);
+            const totalWouldExceedLimit = !!(depositAmount && (parsedDeposit + parsedStaked) > 10);
+            const isInvalidDeposit = exceedsBalance || exceedsLimit || totalWouldExceedLimit;
+            
+            const exceedsStaked = !!(withdrawAmount && parseFloat(withdrawAmount) > parsedStaked);
 
             return (
               <div className="staking-actions">
@@ -564,11 +570,11 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
                       disabled={loading}
                     />
                     {!isApproved ? (
-                      <button className="btn btn-approve btn-panel" onClick={handleApprove} disabled={loading || exceedsBalance}>
+                      <button className="btn btn-approve btn-panel" onClick={handleApprove} disabled={loading || isInvalidDeposit}>
                         {language === "zh" ? "授权" : "APPROVE"}
                       </button>
                     ) : (
-                      <button className="btn btn-primary btn-panel" onClick={handleDeposit} disabled={loading || !depositAmount || exceedsBalance}>
+                      <button className="btn btn-primary btn-panel" onClick={handleDeposit} disabled={loading || !depositAmount || isInvalidDeposit}>
                         {language === "zh" ? "质押" : "STAKE"}
                       </button>
                     )}
@@ -577,6 +583,12 @@ export const VaultPanel: React.FC<VaultPanelProps> = ({ wallet, onActivityLog })
                     <div style={{ color: "#ef4444", fontSize: "0.75rem", marginTop: "4px", padding: "0 4px", fontWeight: "500", display: "flex", gap: "4px" }}>
                       <span>⚠️</span>
                       <span>{language === "zh" ? "余额不足！输入金额超过您的钱包余额。" : "Insufficient balance! Amount exceeds your wallet balance."}</span>
+                    </div>
+                  )}
+                  {(exceedsLimit || totalWouldExceedLimit) && !exceedsBalance && (
+                    <div style={{ color: "#ef4444", fontSize: "0.75rem", marginTop: "4px", padding: "0 4px", fontWeight: "500", display: "flex", gap: "4px" }}>
+                      <span>⚠️</span>
+                      <span>{language === "zh" ? "第二阶段限制：最多只能质押 10 USDT。" : "Phase 2 Limit: You can stake a maximum of 10 USDT."}</span>
                     </div>
                   )}
                 </div>

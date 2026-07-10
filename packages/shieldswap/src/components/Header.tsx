@@ -15,8 +15,8 @@ interface HeaderProps {
   wallet: WalletState;
   onConnect: () => void;
   onDisconnect: () => void;
-  activeTab: "home" | "docs" | "swap" | "pitchside" | "rewards";
-  setActiveTab: (tab: "home" | "docs" | "swap" | "pitchside" | "rewards") => void;
+  activeTab: "home" | "docs" | "swap" | "pitchside" | "rewards" | "agent_hub";
+  setActiveTab: (tab: "home" | "docs" | "swap" | "pitchside" | "rewards" | "agent_hub") => void;
   audioMuted: boolean;
   setAudioMuted: (muted: boolean) => void;
 }
@@ -132,6 +132,12 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                 onClick={() => setActiveTab("rewards")}
               >
                 🏆 User Hub
+              </button>
+              <button
+                className={`tab-btn ${activeTab === "agent_hub" ? "active" : ""}`}
+                onClick={() => setActiveTab("agent_hub")}
+              >
+                🤖 Agent Hub
               </button>
             </>
           )}
@@ -408,6 +414,11 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
                             onClick={() => { setActiveTab('rewards'); setMobileMenuOpen(false); }}
                             style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
                           >🏆 User Hub</button>
+                          <button 
+                            className={`nav-link-item ${activeTab === 'agent_hub' ? 'active' : ''}`}
+                            onClick={() => { setActiveTab('agent_hub'); setMobileMenuOpen(false); }}
+                            style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                          >🤖 Agent Hub</button>
                         </>
                       )}
                        {activeTab === "pitchside" && (
@@ -461,7 +472,7 @@ const Header: React.FC<HeaderProps> = ({ wallet, onConnect, onDisconnect, active
         }
 
         .header-inner {
-          max-width: 1400px;
+          max-width: 1600px;
           margin: 0 auto;
           padding: 12px 24px;
           display: flex;

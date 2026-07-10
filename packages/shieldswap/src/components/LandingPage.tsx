@@ -118,7 +118,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
 
       try {
         // 2. Fetch TVL and Speculator PSAI Holdings from X Layer Mainnet
-        const rpcUrl = "https://rpc.xlayer.tech";
+        const rpcUrl = import.meta.env.VITE_XLAYER_RPC_URL || "https://rpc.xlayer.tech";
         const provider = new ethers.JsonRpcProvider(rpcUrl, undefined, { staticNetwork: true });
         const vaultAddress = DEPLOYED_ADDRESSES.xlayerMainnet.NoLossVault;
         
@@ -719,7 +719,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         .landing-container {
           position: relative;
           width: 100%;
-          max-width: 1200px;
+          max-width: 1400px;
           margin: 0 auto;
           display: flex;
           flex-direction: column;

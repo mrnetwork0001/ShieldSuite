@@ -20,6 +20,7 @@ import { MatchesCenter } from "./components/MatchesCenter";
 import { OKXSpeculation } from "./components/OKXSpeculation";
 import { VolumeLeaderboard } from "./components/VolumeLeaderboard";
 import { UserHub } from "./components/UserHub";
+import { OKXAIHub } from "./components/OKXAIHub";
 import { GreenDotIcon, SearchIcon, SwapIcon, WarningIcon, InfoIcon } from "./components/Icons";
 import { useLanguage } from "./context/LanguageContext";
 
@@ -39,7 +40,7 @@ const App: React.FC = () => {
   const [wallet, setWallet] = useState<WalletState>(INITIAL_WALLET);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [showReport, setShowReport] = useState(false);
-  const [activeTab, setActiveTab] = useState<"home" | "docs" | "swap" | "pitchside" | "rewards">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "docs" | "swap" | "pitchside" | "rewards" | "agent_hub">("home");
   const [pitchsideSubTab, setPitchsideSubTab] = useState<"speculation" | "matches" | "leaderboard" | "okx_speculation">("speculation");
   const [instructionsExpanded, setInstructionsExpanded] = useState(false);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([
@@ -282,6 +283,8 @@ const App: React.FC = () => {
           <LandingPage setActiveTab={setActiveTab} />
         ) : activeTab === "rewards" ? (
           <UserHub wallet={wallet} onConnect={handleConnect} />
+        ) : activeTab === "agent_hub" ? (
+          <OKXAIHub wallet={wallet} onConnect={handleConnect} />
         ) : activeTab === "docs" ? (
           <DocsPage setActiveTab={setActiveTab} />
         ) : activeTab === "swap" ? (
@@ -343,7 +346,8 @@ const App: React.FC = () => {
                   className="btn btn-primary"
                   onClick={() => {
                     // Create read-only provider for mainnet exploration
-                    const readOnlyProvider = new ethers.JsonRpcProvider("https://rpc.xlayer.tech");
+                    const rpcUrl = import.meta.env.VITE_XLAYER_RPC_URL || "https://rpc.xlayer.tech";
+                    const readOnlyProvider = new ethers.JsonRpcProvider(rpcUrl);
                     setWallet(prev => ({
                       ...prev,
                       chainId: 196,
@@ -695,7 +699,7 @@ const App: React.FC = () => {
         }
 
         .footer-content {
-          max-width: 1200px;
+          max-width: 1400px;
           margin: 0 auto;
           display: flex;
           justify-content: space-between;
@@ -827,7 +831,7 @@ const App: React.FC = () => {
         /* Pitchside AI Styles */
         .pitchside-portal {
           width: 100%;
-          max-width: 1200px;
+          max-width: 1400px;
           margin-top: 24px;
           padding: 0 16px;
         }

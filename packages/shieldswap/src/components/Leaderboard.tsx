@@ -13,9 +13,9 @@ const VAULT_ABI = [
   "event AgentDelegated(address indexed user, address indexed agent)"
 ];
 
-// Campaign: June 11 (WC start) → June 26 (Group Stage ends) = ~2 weeks
-const CAMPAIGN_START = new Date("2026-06-11T20:00:00Z");
-const CAMPAIGN_END = new Date("2026-06-26T23:59:59Z");
+// Campaign: July 6 → July 13
+const CAMPAIGN_START = new Date("2026-07-06T00:00:00Z");
+const CAMPAIGN_END = new Date("2026-07-13T00:00:00Z");
 
 interface LeaderboardProps {
   wallet: WalletState;
@@ -78,7 +78,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
     const fetchLeaderboard = async () => {
       try {
         setLoading(true);
-        const provider = new ethers.JsonRpcProvider("https://rpc.xlayer.tech", undefined, { batchMaxCount: 1 });
+        const rpcUrl = import.meta.env.VITE_XLAYER_RPC_URL || "https://rpc.xlayer.tech";
+        const provider = new ethers.JsonRpcProvider(rpcUrl, undefined, { batchMaxCount: 1 });
         const vault = new ethers.Contract(DEPLOYED_ADDRESSES.NoLossVault, VAULT_ABI, provider);
         
         // 1. Load cached stakers from localStorage
@@ -249,7 +250,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
       <div className="panel-header" style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
         <span className="panel-icon" style={{ display: "flex", alignItems: "center" }}><TrophyIcon size={20} style={{ marginRight: 0 }} /></span>
         <h3 className="panel-title" style={{ fontSize: "1.15rem", fontWeight: "700", color: "#fff", margin: 0 }}>
-          {language === "zh" ? "全球交易额排行榜 (第一阶段)" : "Global Trading Volume Leaderboard (Phase 1)"} ({isMainnet ? (language === "zh" ? "主网" : "Mainnet") : (language === "zh" ? "测试网沙盒" : "Testnet Sandbox")})
+          {language === "zh" ? "Pitchside AI 积分排行榜 (第二阶段)" : "Pitchside AI Credit Leaderboard (Phase 2)"} ({isMainnet ? (language === "zh" ? "主网" : "Mainnet") : (language === "zh" ? "测试网沙盒" : "Testnet Sandbox")})
         </h3>
       </div>
 
@@ -280,7 +281,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
             color: campaignTime.phase === 'live' ? '#00ff88' : '#FFD700',
             border: `1px solid ${campaignTime.phase === 'live' ? 'rgba(0,255,136,0.3)' : 'rgba(255,215,0,0.25)'}`,
           }}>
-            {isMainnet ? (language === "zh" ? "交易竞赛 · 第一阶段" : "TRADING CAMPAIGN · PHASE 1") : (language === "zh" ? "季前交易测试" : "PRE-SEASON TRADING TEST")}
+            {isMainnet ? (language === "zh" ? "积分收益竞赛 · 第二阶段" : "CREDIT YIELD CAMPAIGN · PHASE 2") : (language === "zh" ? "季前交易测试" : "PRE-SEASON TRADING TEST")}
           </span>
         </div>
 
@@ -313,7 +314,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ wallet }) => {
         <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
           {isMainnet ? (
             <>
-              <strong style={{ color: '#FFD700', display: "inline-flex", alignItems: "center", gap: "4px" }}><TrophyIcon size={14} style={{ marginRight: 0 }} /> {language === "zh" ? "奖励分配 (50/50 USDT/PSAI):" : "Prize Distribution (50/50 USDT/PSAI):"}</strong> {language === "zh" ? "前5名交易量最高的经理将瓜分 $500 奖金池。 1st: $250 | 2nd: $110 | 3rd: $70 | 4th: $45 | 5th: $25。活动结束后，立即无缝开启世界杯赛场 AI 无损失 Staking 大赛！" : "$500 prize pool split among the top 5 volume traders. 1st: $250 | 2nd: $110 | 3rd: $70 | 4th: $45 | 5th: $25. Transitioning straight to the July Staking Main Game upon completion!"}
+              <strong style={{ color: '#FFD700', display: "inline-flex", alignItems: "center", gap: "4px" }}><TrophyIcon size={14} style={{ marginRight: 0 }} /> {language === "zh" ? "活动规则与奖励 (第二阶段):" : "Campaign Rules & Prizes (Phase 2):"}</strong> {language === "zh" ? "公平竞争！最多质押 10 USDT 并交易至少 2 份球员指数。想更快赚取积分？交易 $PSAI 解锁收益倍数：1.5x (≥$500 交易额) | 2.0x (≥$2.5k) | 3.0x (≥$10k) | 👑 5.0x (≥$50k)。7天冲刺结束后，积分前5名将瓜分 $500 奖金池！" : "Level the playing field! Stake max 10 USDT and trade at least 2 Player Shares to qualify. Trade $PSAI for massive yield boosts: 1.5x (≥$500 Vol) | 2.0x (≥$2.5k) | 3.0x (≥$10k) | 👑 5.0x (≥$50k). After the 7-day sprint, the top 5 credit earners split a $500 Prize Pool!"}
             </>
           ) : (
             <>

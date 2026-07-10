@@ -50,7 +50,7 @@ const app = express();
 app.use(cors({
   origin: process.env.CORS_ORIGIN || "*",
   methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-402-Payment", "X-Request-Id"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-402-Payment", "X-402-Nonce", "X-Request-Id"],
 }));
 app.use(express.json());
 
@@ -91,8 +91,8 @@ app.get("/api/health", (_req, res) => {
 });
 
 /** Scan statistics */
-app.get("/api/stats", (_req, res) => {
-  const paymentStats = getPaymentStats();
+app.get("/api/stats", async (_req, res) => {
+  const paymentStats = await getPaymentStats();
   res.json({
     success: true,
     data: {

@@ -13,8 +13,8 @@ export const VolumeLeaderboard: React.FC<VolumeLeaderboardProps> = ({ wallet }) 
 
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [campaignStart, setCampaignStart] = useState<number>(1782385200000);
-  const [campaignEnd, setCampaignEnd] = useState<number>(1782990000000);
+  const [campaignStart, setCampaignStart] = useState<number>(1783382400000); // 2026-07-06T00:00:00Z
+  const [campaignEnd, setCampaignEnd] = useState<number>(1783987200000); // 2026-07-13T00:00:00Z
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
@@ -34,8 +34,9 @@ export const VolumeLeaderboard: React.FC<VolumeLeaderboardProps> = ({ wallet }) 
         // Sort by volume descending
         const sorted = json.data.sort((a: any, b: any) => b.volume - a.volume);
         setLeaderboard(sorted);
-        if (json.campaignStart) setCampaignStart(json.campaignStart);
-        if (json.campaignEnd) setCampaignEnd(json.campaignEnd);
+        // Ignore backend dates for Phase 2, strictly use local hardcoded dates
+        // if (json.campaignStart) setCampaignStart(json.campaignStart);
+        // if (json.campaignEnd) setCampaignEnd(json.campaignEnd);
       }
     } catch (err) {
       console.error("Failed to fetch volume leaderboard:", err);

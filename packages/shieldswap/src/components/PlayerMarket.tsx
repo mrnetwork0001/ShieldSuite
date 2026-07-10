@@ -144,7 +144,8 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
   useEffect(() => {
     const fetchPlayerData = async () => {
       try {
-        const provider = new ethers.JsonRpcProvider("https://rpc.xlayer.tech", undefined, { batchMaxCount: 1 });
+        const rpcUrl = import.meta.env.VITE_XLAYER_RPC_URL || "https://rpc.xlayer.tech";
+        const provider = new ethers.JsonRpcProvider(rpcUrl, undefined, { batchMaxCount: 1 });
         const shares = new ethers.Contract(DEPLOYED_ADDRESSES.PlayerShares, SHARES_ABI, provider);
         const dex = new ethers.Contract(DEPLOYED_ADDRESSES.PlayerDex, DEX_ABI, provider);
 
@@ -155,6 +156,12 @@ export const PlayerMarket: React.FC<PlayerMarketProps> = ({ wallet, onActivityLo
           console.error("PlayerMarket getPlayers error:", e.message);
           return [];
         });
+        
+        if (!playersStats || playersStats.length === 0) {
+          // RPC failure: Abort state update to prevent UI from degrading to "Not Tradeable"
+          return;
+        }
+
         const pricesRaw = await dex.getSharePrices(onChainIds).catch((e: any) => {
           console.error("PlayerMarket getSharePrices error:", e.message);
           return [];

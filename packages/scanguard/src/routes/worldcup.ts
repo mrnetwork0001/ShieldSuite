@@ -1808,4 +1808,100 @@ setTimeout(() => {
     .catch((err) => logger.error(`[PsaiMultiplierSync] Initial sync failed: ${err.message}`));
 }, 5000);
 
+// ─── OKX.AI A2A Simulated Escrow Task Registry ───────────────────────────────
+
+interface OKXAITask {
+  id: string;
+  status: "escrowed" | "processing" | "delivered" | "completed";
+  amount: number;
+  description: string;
+  logs: string[];
+  createdAt: number;
+}
+
+const okxaiTasks = new Map<string, OKXAITask>();
+
+// POST /api/worldcup/okxai/a2a-task - Create a simulated task with locked escrow
+worldCupRouter.post("/okxai/a2a-task", (req: Request, res: Response) => {
+  const { amount, description } = req.body;
+  const taskId = `task-okxai-${Date.now()}`;
+  
+  const newTask: OKXAITask = {
+    id: taskId,
+    status: "escrowed",
+    amount: Number(amount) || 1.0,
+    description: description || "Find best value player in next match and acquire shares",
+    logs: [
+      `[${new Date().toLocaleTimeString()}] 🔒 Escrow Lock: Client locked ${amount || 1.0} USDT on X Layer escrow contract.`,
+      `[${new Date().toLocaleTimeString()}] 📬 Task Created: Dispatched task offer to Pitchside Scout Agent TEE.`
+    ],
+    createdAt: Date.now()
+  };
+  
+  okxaiTasks.set(taskId, newTask);
+  logger.info(`[OKX.AI A2A] Created task ${taskId} with escrowed amount ${newTask.amount}`);
+
+  // Simulate TEE Agent processing the task asynchronously
+  setTimeout(() => {
+    const task = okxaiTasks.get(taskId);
+    if (task && task.status === "escrowed") {
+      task.status = "processing";
+      task.logs.push(`[${new Date().toLocaleTimeString()}] 🤖 TEE Enclave: Accepting task. Decrypting client request parameters...`);
+      task.logs.push(`[${new Date().toLocaleTimeString()}] 🔍 ScanGuard: Querying security scanner API for PlayerDex address...`);
+      task.logs.push(`[${new Date().toLocaleTimeString()}] ⚽ MatchesCenter: Fetching live Sportmonks feeds for player performance sentiment...`);
+    }
+  }, 1500);
+
+  setTimeout(() => {
+    const task = okxaiTasks.get(taskId);
+    if (task && task.status === "processing") {
+      task.status = "delivered";
+      task.logs.push(`[${new Date().toLocaleTimeString()}] 📈 PlayerDex: Executed BUY of 1.0 Share of Bukayo Saka (ID: 33) based on 87% positive sentiment.`);
+      task.logs.push(`[${new Date().toLocaleTimeString()}] ⛓️ TX Confirmed: Broadcasted trade on X Layer Mainnet. Tx: 0x9f5d...c9b2`);
+      task.logs.push(`[${new Date().toLocaleTimeString()}] 📦 Delivery: Uploaded transaction proof and player share delegation receipt to escrow.`);
+      logger.info(`[OKX.AI A2A] Task ${taskId} is now DELIVERED`);
+    }
+  }, 4500);
+
+  res.json({ success: true, data: newTask });
+});
+
+// GET /api/worldcup/okxai/a2a-task/:id - Get current status of a task
+worldCupRouter.get("/okxai/a2a-task/:id", (req: Request, res: Response) => {
+  const { id } = req.params;
+  const task = okxaiTasks.get(id as string);
+  
+  if (!task) {
+    res.status(404).json({ success: false, error: "Task not found" });
+    return;
+  }
+  
+  res.json({ success: true, data: task });
+});
+
+// POST /api/worldcup/okxai/a2a-task/:id/release - User releases the escrowed funds
+worldCupRouter.post("/okxai/a2a-task/:id/release", (req: Request, res: Response) => {
+  const { id } = req.params;
+  const task = okxaiTasks.get(id as string);
+  
+  if (!task) {
+    res.status(404).json({ success: false, error: "Task not found" });
+    return;
+  }
+  
+  if (task.status !== "delivered") {
+    res.status(400).json({ success: false, error: `Cannot release funds for task in state: ${task.status}` });
+    return;
+  }
+  
+  task.status = "completed";
+  task.logs.push(`[${new Date().toLocaleTimeString()}] 🔓 Escrow Release: Client signed off on task delivery. Escrow funds released to agent wallet.`);
+  task.logs.push(`[${new Date().toLocaleTimeString()}] 💰 Settlement: Credited +${task.amount} USDT to Agent Identity.`);
+  task.logs.push(`[${new Date().toLocaleTimeString()}] ⭐ Rating: Client rated the provider 5/5 stars (Rating recorded on-chain).`);
+  
+  logger.info(`[OKX.AI A2A] Task ${id} has been COMPLETED and escrow released`);
+  res.json({ success: true, data: task });
+});
+
+
 

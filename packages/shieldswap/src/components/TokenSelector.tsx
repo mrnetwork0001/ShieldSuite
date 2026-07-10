@@ -73,7 +73,8 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
     if (!isContractSearch) return;
     setIsResolving(true);
     try {
-      const provider = new ethers.JsonRpcProvider("https://rpc.xlayer.tech");
+      const rpcUrl = import.meta.env.VITE_XLAYER_RPC_URL || "https://rpc.xlayer.tech";
+      const provider = new ethers.JsonRpcProvider(rpcUrl);
       const token = await resolveCustomToken(search.trim(), provider);
       if (token) {
         setCustomTokens((prev) => {

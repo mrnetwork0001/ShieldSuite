@@ -124,7 +124,7 @@ export const UserHub: React.FC<UserHubProps> = ({ wallet, onConnect }) => {
   }, [wallet.connected, wallet.address]);
 
   return (
-    <div className="airdrop-container animate-fade-in" style={{ padding: '60px 20px', minHeight: '80vh', maxWidth: '1000px', margin: '0 auto' }}>
+    <div className="airdrop-container animate-fade-in" style={{ padding: '60px 20px', minHeight: '80vh', maxWidth: '1400px', margin: '0 auto' }}>
       
       <motion.div
         className="hero-text"

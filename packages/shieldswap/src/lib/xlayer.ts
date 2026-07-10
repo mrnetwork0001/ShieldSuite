@@ -4,7 +4,7 @@ export const XLAYER_CHAIN = {
   chainId: 196,
   chainIdHex: "0xc4",
   chainName: "XLayer Mainnet",
-  rpcUrls: ["https://rpc.xlayer.tech"],
+  rpcUrls: [import.meta.env.VITE_XLAYER_RPC_URL || "https://rpc.xlayer.tech"],
   blockExplorerUrls: ["https://www.okx.com/explorer/xlayer"],
   nativeCurrency: {
     name: "OKB",
