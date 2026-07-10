@@ -94,17 +94,90 @@ async function postLog(message: string, type: "info" | "sentiment" | "security" 
   }
 }
 
+async function sendUsdtViaCli(params: {
+  recipient: string;
+  readableAmount: string;
+  chain?: string;
+}): Promise<{ txHash: string } | null> {
+  try {
+    const chain = params.chain || "196";
+    const usdtAddress = "0x1e4a5963ab79e612984b2e88b8d96053bfd975d8"; // USDT on X Layer
+    const cmd = `onchainos wallet send --chain ${chain} --readable-amount ${params.readableAmount} --recipient ${params.recipient} --contract-token ${usdtAddress} --force`;
+    console.log(`[AgentWallet] Executing x402 payment: ${cmd}`);
+
+    const apiKey = process.env.OKX_API_KEY || "";
+    const secretKey = process.env.OKX_SECRET_KEY || "";
+    const passphrase = process.env.OKX_PASSPHRASE || "";
+
+    const output = execSync(cmd, {
+      timeout: 30000,
+      env: {
+        ...process.env,
+        OKX_API_KEY: apiKey,
+        OKX_SECRET_KEY: secretKey,
+        OKX_PASSPHRASE: passphrase,
+      },
+    }).toString();
+
+    console.log(`[AgentWallet] Transfer CLI output: ${output.slice(0, 200)}`);
+
+    const txMatch = output.match(/(0x[a-fA-F0-9]{64})/i);
+    if (txMatch) {
+      return { txHash: txMatch[1] };
+    }
+    return null;
+  } catch (error: any) {
+    console.error(`[AgentWallet] CLI USDT transfer failed: ${error.message}`);
+    return null;
+  }
+}
+
 async function scanTokenSecurity(tokenAddress: string): Promise<boolean> {
   try {
     await postLog(`Verifying token security via ScanGuard API: ${tokenAddress}`, "security");
     
-    const res = await fetch(SCAN_URL, {
+    let res = await fetch(SCAN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tokenAddress })
     });
     
-    const data = await res.json() as any;
+    let data = await res.json() as any;
+
+    // Handle x402 payment challenge if required by ScanGuard
+    if (res.status === 402 && data.payment) {
+      const price = data.payment.price.amount;
+      const recipient = data.payment.payTo.address;
+      const nonce = data.payment.nonce;
+
+      await postLog(`ScanGuard requires x402 payment: ${price} USDT to ${recipient}. Paying on-chain...`, "security");
+
+      const payResult = await sendUsdtViaCli({
+        recipient,
+        readableAmount: price,
+        chain: "196"
+      });
+
+      if (!payResult) {
+        await postLog(`❌ Failed to execute on-chain USDT transfer for x402 payment challenge.`, "error");
+        return false;
+      }
+
+      await postLog(`Successfully signed and broadcast x402 payment. Tx: ${payResult.txHash}. Replaying request...`, "security");
+
+      // Replay request with payment headers
+      res = await fetch(SCAN_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-402-Payment": payResult.txHash,
+          "X-402-Nonce": nonce
+        },
+        body: JSON.stringify({ tokenAddress })
+      });
+      data = await res.json();
+    }
+    
     if (data.success && data.data) {
       const isSafe = data.data.riskScore < 50;
       if (isSafe) {
