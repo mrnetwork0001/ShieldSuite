@@ -71,7 +71,7 @@ export function x402Middleware(config: Partial<X402Config> = {}) {
   const cfg = { ...defaultConfig, ...config };
 
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const paymentHeader = req.headers["x-402-payment"] as string | undefined;
+    const paymentHeader = (req.headers["x-402-payment"] || req.headers["x-payment"] || req.headers["payment-signature"]) as string | undefined;
     const requestId = req.headers["x-request-id"] as string || crypto.randomUUID();
     logger.info(`[x402] Middleware invocation. cfg.demoMode: ${cfg.demoMode}, process.env.X402_DEMO_MODE: ${process.env.X402_DEMO_MODE}`);
 
@@ -113,12 +113,40 @@ export function x402Middleware(config: Partial<X402Config> = {}) {
         logger.error(`[x402] Failed to save generated nonce: ${err.message}`);
       }
 
+      // Calculate amount in minimal units (USDT has 6 decimals)
+      const expectedAmountRaw = ethers.parseUnits(cfg.priceUsd.toString(), 6).toString();
+      const usdtAddress = getDeployedUsdtAddress();
+      
+      // Standard OKX x402 v2 challenge payload
+      const x402Payload = {
+        accepts: [
+          {
+            scheme: "exact",
+            network: XLAYER_CONFIG.chainId.toString(),
+            asset: usdtAddress,
+            amount: expectedAmountRaw,
+            payTo: cfg.paymentAddress,
+          }
+        ]
+      };
+      
+      // Base64 encode the payload
+      const paymentRequiredHeader = Buffer.from(JSON.stringify(x402Payload)).toString('base64');
+      
+      // Attach OKX v2 header
+      res.setHeader("PAYMENT-REQUIRED", paymentRequiredHeader);
+      // Attach OKX WWW-Authenticate header
+      res.setHeader("WWW-Authenticate", `Payment intent="charge", method="evm"`);
+
       res.status(402).json({
         success: false,
         error: {
           code: "PAYMENT_REQUIRED",
           message: "Payment required to access this endpoint.",
         },
+        // v1 backward compatibility body fields
+        x402Version: "1.0",
+        accepts: x402Payload.accepts,
         payment: {
           protocol: "x402",
           version: "1.0",
@@ -135,7 +163,7 @@ export function x402Middleware(config: Partial<X402Config> = {}) {
           nonce,
           instructions: [
             `Send ${cfg.priceUsd} USDT to ${cfg.paymentAddress} on X Layer`,
-            `Include the transaction hash in the X-402-Payment header`,
+            `Include the transaction hash in the X-402-Payment or X-PAYMENT header`,
             `Include the session nonce in the X-402-Nonce header`,
             `Format: X-402-Payment: <txHash>, X-402-Nonce: <nonce>`,
             `Or use "demo" for free scans in development mode`,
