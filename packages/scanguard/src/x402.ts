@@ -103,16 +103,6 @@ export function x402Middleware(config: Partial<X402Config> = {}) {
 
     // ── No payment header in production ──────────────────────────────────
     if (!paymentHeader) {
-      const nonce = crypto.randomUUID();
-      try {
-        const db = await loadDatabase();
-        db.activeNonces = db.activeNonces || {};
-        db.activeNonces[nonce] = { nonce, createdAt: Date.now() };
-        await saveDatabase(db);
-      } catch (err: any) {
-        logger.error(`[x402] Failed to save generated nonce: ${err.message}`);
-      }
-
       // Calculate amount in minimal units (USDT has 6 decimals)
       const expectedAmountRaw = ethers.parseUnits(cfg.priceUsd.toString(), 6).toString();
       const usdtAddress = getDeployedUsdtAddress();
@@ -160,12 +150,10 @@ export function x402Middleware(config: Partial<X402Config> = {}) {
             chainId: XLAYER_CONFIG.chainId,
           },
           acceptedCurrencies: cfg.acceptedCurrencies,
-          nonce,
           instructions: [
             `Send ${cfg.priceUsd} USDT to ${cfg.paymentAddress} on X Layer`,
             `Include the transaction hash in the X-402-Payment or X-PAYMENT header`,
-            `Include the session nonce in the X-402-Nonce header`,
-            `Format: X-402-Payment: <txHash>, X-402-Nonce: <nonce>`,
+            `Format: X-402-Payment: <txHash>`,
             `Or use "demo" for free scans in development mode`,
           ],
         },
@@ -182,12 +170,12 @@ export function x402Middleware(config: Partial<X402Config> = {}) {
     try {
       const db = await loadDatabase();
       db.verifiedPayments = db.verifiedPayments || {};
-      db.activeNonces = db.activeNonces || {};
 
       // Check if we've already verified this payment hash to prevent duplicate replays
       if (db.verifiedPayments[paymentHeader]) {
         const receipt = db.verifiedPayments[paymentHeader] as PaymentReceipt & { tokenAddress?: string };
-        if (receipt.tokenAddress && receipt.tokenAddress.toLowerCase() === req.body.tokenAddress?.toLowerCase()) {
+        const reqTokenAddress = req.body?.tokenAddress;
+        if (!reqTokenAddress || !receipt.tokenAddress || receipt.tokenAddress.toLowerCase() === reqTokenAddress.toLowerCase()) {
           (req as any).paymentReceipt = receipt;
           next();
           return;
@@ -202,49 +190,6 @@ export function x402Middleware(config: Partial<X402Config> = {}) {
           });
           return;
         }
-      }
-
-      // Verify session nonce
-      const nonceHeader = req.headers["x-402-nonce"] as string | undefined;
-      if (!nonceHeader) {
-        res.status(402).json({
-          success: false,
-          error: {
-            code: "NONCE_REQUIRED",
-            message: "X-402-Nonce header is required for verification.",
-          },
-          meta: { requestId, timestamp: Date.now(), paymentRequired: true },
-        });
-        return;
-      }
-
-      const nonceRecord = db.activeNonces[nonceHeader];
-      if (!nonceRecord) {
-        res.status(402).json({
-          success: false,
-          error: {
-            code: "INVALID_NONCE",
-            message: "The provided session nonce is invalid or has already been used.",
-          },
-          meta: { requestId, timestamp: Date.now(), paymentRequired: true },
-        });
-        return;
-      }
-
-      // Verify nonce has not expired (15 minute TTL)
-      const NONCE_TTL_MS = 15 * 60 * 1000;
-      if (Date.now() - nonceRecord.createdAt > NONCE_TTL_MS) {
-        delete db.activeNonces[nonceHeader];
-        await saveDatabase(db);
-        res.status(402).json({
-          success: false,
-          error: {
-            code: "EXPIRED_NONCE",
-            message: "The session nonce has expired. Please request a new 402 challenge.",
-          },
-          meta: { requestId, timestamp: Date.now(), paymentRequired: true },
-        });
-        return;
       }
 
       // Verify the transaction on-chain
@@ -344,9 +289,8 @@ export function x402Middleware(config: Partial<X402Config> = {}) {
         tokenAddress: req.body.tokenAddress,
       };
 
-      // Save verified payment to database state and delete nonce
+      // Save verified payment to database state
       db.verifiedPayments[paymentHeader] = receiptData;
-      delete db.activeNonces[nonceHeader];
       await saveDatabase(db);
 
       (req as any).paymentReceipt = receiptData;

@@ -132,7 +132,16 @@ app.get("/api/feed", (req, res) => {
  * POST /api/scan — Scan a token for security risks
  * Protected by x402 payment middleware in production
  */
-app.post("/api/scan", x402Middleware(), async (req, res) => {
+app.use("/api/scan", x402Middleware());
+
+app.get("/api/scan", (req, res) => {
+  res.json({
+    success: true,
+    message: "Endpoint ready. Send a POST request with { tokenAddress } to scan.",
+  });
+});
+
+app.post("/api/scan", async (req, res) => {
   const requestId = req.headers["x-request-id"] as string;
 
   try {
