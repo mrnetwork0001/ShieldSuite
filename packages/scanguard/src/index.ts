@@ -10,7 +10,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { scanToken } from "./scanner.js";
-import { x402Middleware, getPaymentStats } from "./x402.js";
+import { createScanPaymentMiddleware, getPaymentStats } from "./x402.js";
 import { mcpRouter } from "./mcp.js";
 import { ApiResponse, ScanResult, XLAYER_CONFIG } from "./types.js";
 import { logger } from "./logger.js";
@@ -50,7 +50,13 @@ const app = express();
 app.use(cors({
   origin: process.env.CORS_ORIGIN || "*",
   methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-402-Payment", "X-402-Nonce", "X-Request-Id"],
+  allowedHeaders: [
+    "Content-Type", "Authorization", "X-Request-Id",
+    // x402 payment headers sent by paying agents
+    "X-PAYMENT", "PAYMENT-SIGNATURE", "X-402-Payment", "X-402-Nonce",
+  ],
+  // Let agents/browsers read the x402 challenge + settlement receipt
+  exposedHeaders: ["PAYMENT-REQUIRED", "PAYMENT-RESPONSE", "WWW-Authenticate"],
 }));
 app.use(express.json());
 
@@ -132,7 +138,8 @@ app.get("/api/feed", (req, res) => {
  * POST /api/scan — Scan a token for security risks
  * Protected by x402 payment middleware in production
  */
-app.use("/api/scan", x402Middleware());
+// x402 payment gate — matches "POST /api/scan" only; all other routes pass through.
+app.use(createScanPaymentMiddleware());
 
 app.get("/api/scan", (req, res) => {
   res.json({
