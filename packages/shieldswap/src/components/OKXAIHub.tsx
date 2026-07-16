@@ -315,7 +315,7 @@ scanTokenWithPayment("0xaef068ea820aafa00a2854bfd6cfab6d891ede5d");`;
               </div>
 
               <a
-                href="https://okx.ai/marketplace/agents/scanguard"
+                href="https://okx.ai/agents/4959"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary"
@@ -356,7 +356,7 @@ scanTokenWithPayment("0xaef068ea820aafa00a2854bfd6cfab6d891ede5d");`;
               </div>
 
               <a
-                href="https://okx.ai/marketplace/agents/pitchside-scout"
+                href="https://okx.ai/agents/4959"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary"
