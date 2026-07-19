@@ -93,7 +93,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [liveMatches, setLiveMatches] = useState<any[]>([]);
   const [currentFixtureIndex, setCurrentFixtureIndex] = useState(0);
-  const [copied, setCopied] = useState(false);
 
   // ── Protocol Statistics Hooks ─────────────────────────────────────
   const [tvl, setTvl] = useState<string>("0.00");
@@ -168,13 +167,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
     const interval = setInterval(fetchProtocolStats, 15000); // refresh every 15s
     return () => clearInterval(interval);
   }, []);
-
-  const handleCopyAddress = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText("0xaef068ea820aafa00a2854bfd6cfab6d891ede5d");
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   // ── Auto-slide Timer ────────────────────────────────────────────────
   useEffect(() => {
@@ -306,13 +298,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             <div className="token-banner-left">
               <span className="token-banner-badge font-mono" style={{ background: "rgba(52, 211, 153, 0.2)", color: "#34d399" }}>{language === "zh" ? "已上线" : "LIVE"}</span>
               <span className="token-banner-title font-mono">OKX.AI</span>
-              <div className="token-banner-ca-box" onClick={handleCopyAddress}>
-                <span className="ca-label font-mono">CA:</span>
-                <span className="ca-address font-mono">0xaef0...ede5d</span>
-                <button className="btn-copy-ca font-mono">
-                  {copied ? (language === "zh" ? "已复制" : "Copied") : (language === "zh" ? "复制" : "Copy")}
-                </button>
-              </div>
               <span className="token-banner-desc">
                 {language === "zh" ? "🛡️ ShieldSuite 已上线 OKX.AI 智能体市场 —— 智能体 #4959 全天候在线，提供代币安全扫描与策略委托。" : "🛡️ ShieldSuite is live on the OKX.AI marketplace — agent #4959 is online 24/7 for token security scans and strategy delegation."}
               </span>
