@@ -304,8 +304,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         <div className="token-banner-inner">
           <div className="token-banner-content">
             <div className="token-banner-left">
-              <span className="token-banner-badge font-mono" style={{ background: "rgba(255, 50, 50, 0.2)", color: "#ff5555" }}>{language === "zh" ? "已结束" : "ENDED"}</span>
-              <span className="token-banner-title font-mono">{language === "zh" ? "第一阶段" : "PHASE 1"}</span>
+              <span className="token-banner-badge font-mono" style={{ background: "rgba(52, 211, 153, 0.2)", color: "#34d399" }}>{language === "zh" ? "已上线" : "LIVE"}</span>
+              <span className="token-banner-title font-mono">OKX.AI</span>
               <div className="token-banner-ca-box" onClick={handleCopyAddress}>
                 <span className="ca-label font-mono">CA:</span>
                 <span className="ca-address font-mono">0xaef0...ede5d</span>
@@ -314,20 +314,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
                 </button>
               </div>
               <span className="token-banner-desc">
-                {language === "zh" ? "🏆 $PSAI 交易大赛第一阶段已结束！获奖者请前往用户中心领取奖励。" : "🏆 $PSAI Trading Campaign Phase 1 has ended! Winners please head to the User Hub to claim your rewards."}
+                {language === "zh" ? "🛡️ ShieldSuite 已上线 OKX.AI 智能体市场 —— 智能体 #4959 全天候在线，提供代币安全扫描与策略委托。" : "🛡️ ShieldSuite is live on the OKX.AI marketplace — agent #4959 is online 24/7 for token security scans and strategy delegation."}
               </span>
             </div>
             <div className="token-banner-right">
               <button
-                onClick={() => {
-                  setActiveTab("rewards" as any);
-                  setTimeout(() => {
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }, 100);
-                }}
+                onClick={() => window.open("https://okx.ai/agents/4959", "_blank", "noopener,noreferrer")}
                 className="btn btn-primary btn-banner-swap font-mono"
               >
-                {language === "zh" ? "前往用户中心" : "Go to User Hub"}
+                {language === "zh" ? "在 OKX.AI 上查看" : "View on OKX.AI"}
               </button>
             </div>
           </div>
