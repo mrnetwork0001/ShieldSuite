@@ -498,7 +498,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
       id: `manual-match-sync-${Date.now()}`,
       timestamp: Date.now(),
       type: "info",
-      message: language === "zh" ? "已手动同步实时世界杯赛事数据。" : "Manually synchronized live World Cup match feeds."
+      message: language === "zh" ? "已手动同步实时赛事数据。" : "Manually synchronized live match feeds."
     });
   };
 
@@ -657,9 +657,9 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
       {/* Page Header */}
       <div className="matches-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: '800', margin: 0, color: '#fff' }}>⚽ {language === "zh" ? "世界杯赛事中心" : "World Cup Matches Hub"}</h2>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: '800', margin: 0, color: '#fff' }}>⚽ {language === "zh" ? "赛事中心" : "Matches Hub"}</h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            {language === "zh" ? "实时 Sportmonks 比赛数据流（每 30 秒自动同步）" : "Real-time Sportmonks Live Data Feed (Auto-syncs every 30 seconds)"}
+            {language === "zh" ? "世界杯 2026 已收官 - 欧洲联赛即将上线，首发英超。" : "World Cup 2026 has concluded - European leagues are coming next, starting with the English Premier League."}
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -856,7 +856,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
             </h3>
             {scheduledMatches.length === 0 ? (
               <div className="glass-card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.85rem', border: '1px dashed var(--border-default)' }}>
-                {language === "zh" ? "暂无即将开始的赛程。" : "No upcoming scheduled fixtures."}
+                {language === "zh" ? "欧洲联赛集成即将上线 - 首发英格兰超级联赛。" : "European leagues integration coming soon - starting with the English Premier League."}
               </div>
             ) : (
               <>
@@ -916,7 +916,7 @@ export const MatchesCenter: React.FC<MatchesCenterProps> = ({ wallet, onActivity
           <section className="matches-section">
             <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ display: 'inline-block', color: 'var(--text-secondary)' }}><CheckIcon size={16} /></span>
-              {language === "zh" ? "已结束的比赛" : "COMPLETED MATCHES"} ({finishedMatches.length})
+              {language === "zh" ? "世界杯 2026 · 已收官" : "WORLD CUP 2026 · COMPLETED"} ({finishedMatches.length})
             </h3>
             {finishedMatches.length === 0 ? (
               <div className="glass-card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.85rem', border: '1px dashed var(--border-default)' }}>
