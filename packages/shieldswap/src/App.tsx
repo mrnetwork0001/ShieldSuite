@@ -767,7 +767,7 @@ const App: React.FC = () => {
         }
 
         .app-container.pitchside-active {
-          background-image: linear-gradient(rgba(10, 14, 23, 0.85), rgba(10, 14, 23, 0.94)), url("/worldcup-bg.jpg");
+          background-image: linear-gradient(rgba(10, 14, 23, 0.85), rgba(10, 14, 23, 0.94)), url("/premier-league-bg.jpg");
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
