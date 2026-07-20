@@ -299,7 +299,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
               <span className="token-banner-badge font-mono" style={{ background: "rgba(52, 211, 153, 0.2)", color: "#34d399" }}>{language === "zh" ? "已上线" : "LIVE"}</span>
               <span className="token-banner-title font-mono">OKX.AI</span>
               <span className="token-banner-desc">
-                {language === "zh" ? "🛡️ ShieldSuite 已上线 OKX.AI 智能体市场 —— 智能体 #4959 全天候在线，提供代币安全扫描与策略委托。" : "🛡️ ShieldSuite is live on the OKX.AI marketplace — agent #4959 is online 24/7 for token security scans and strategy delegation."}
+                {language === "zh" ? "🛡️ ShieldSuite 已上线 OKX.AI 智能体市场 —— 智能体 #4959 全天候在线，提供代币安全扫描与策略委托。" : "🛡️ ShieldSuite is live on the OKX.AI marketplace - agent #4959 is online 24/7 for token security scans and strategy delegation."}
               </span>
             </div>
             <div className="token-banner-right">
@@ -324,7 +324,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <span className="soccer-ball-emoji">⚽</span> {language === "zh" ? "世界杯 2026 之路" : "ROAD TO WORLD CUP 2026"}
+            <span className="soccer-ball-emoji">⚽</span> {language === "zh" ? "欧洲联赛 · 即将上线" : "EUROPEAN LEAGUES · COMING SOON"}
           </motion.div>
 
           <motion.h1
@@ -399,69 +399,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         <div className="hero-right">
           <div className="fixtures-card glass-card">
             <div className="fixtures-card-glow" />
-            {fixtures.length > 0 && activeFixture ? (
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentFixtureIndex}
-                  initial={{ opacity: 0, x: 15 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -15 }}
-                  transition={{ duration: 0.3 }}
-                  className="fixture-slide-content"
-                >
-                  <div className="fixtures-header">
-                    <span className="fixture-tag font-mono" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><CalendarIcon size={12} style={{ marginRight: 0 }} /> {language === "zh" ? "即将开始的比赛" : "UPCOMING FIXTURE"}</span>
-                    <span className="group-badge font-mono">{activeFixture.group}</span>
-                  </div>
-
-                  <div className="matchup-container">
-                    <div className="team-display">
-                      <img src={getFlagUrl(activeFixture.homeTeam)} alt={activeFixture.homeTeam} className="team-flag-img" />
-                      <span className="team-name">{activeFixture.homeTeam}</span>
-                    </div>
-                    <div className="vs-badge font-mono">VS</div>
-                    <div className="team-display">
-                      <img src={getFlagUrl(activeFixture.awayTeam)} alt={activeFixture.awayTeam} className="team-flag-img" />
-                      <span className="team-name">{activeFixture.awayTeam}</span>
-                    </div>
-                  </div>
-
-                  <div className="fixture-details">
-                    <div className="detail-row">
-                      <span className="detail-label">{language === "zh" ? "场馆:" : "Stadium:"}</span>
-                      <span className="detail-value">{activeFixture.stadium}</span>
-                    </div>
-                    <div className="detail-row">
-                      <span className="detail-label">{language === "zh" ? "日期:" : "Date:"}</span>
-                      <span className="detail-value">{activeFixture.date}</span>
-                    </div>
-                    <div className="detail-row">
-                      <span className="detail-label">{language === "zh" ? "时间:" : "Time:"}</span>
-                      <span className="detail-value">{activeFixture.time}</span>
-                    </div>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            ) : (
-              <div className="fixture-skeleton font-mono">
-                <div className="skeleton-line title" />
-                <div className="skeleton-matchup">
-                  <div className="skeleton-team" />
-                  <div className="skeleton-vs">VS</div>
-                  <div className="skeleton-team" />
-                </div>
-                <div className="skeleton-details">
-                  <div className="skeleton-line detail" />
-                  <div className="skeleton-line detail" />
-                </div>
+            <div className="fixture-slide-content" style={{ textAlign: "center", padding: "12px 4px" }}>
+              <div className="fixtures-header" style={{ justifyContent: "center" }}>
+                <span className="fixture-tag font-mono" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><CalendarIcon size={12} style={{ marginRight: 0 }} /> {language === "zh" ? "即将上线" : "COMING SOON"}</span>
               </div>
-            )}
+
+              <div style={{ fontSize: "2.6rem", margin: "14px 0 6px" }}>⚽</div>
+              <h3 className="glow-text text-purple" style={{ fontSize: "1.5rem", fontWeight: 800, margin: "6px 0" }}>
+                {language === "zh" ? "欧洲联赛集成" : "European Leagues"}
+              </h3>
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", lineHeight: 1.5, margin: "0 auto", maxWidth: "260px" }}>
+                {language === "zh" ? "实时联赛竞猜即将上线 —— 首发英格兰超级联赛。" : "Live league speculation is coming - starting with the English Premier League."}
+              </p>
+            </div>
 
             <button 
               className="speculate-card-btn font-mono"
               onClick={() => setActiveTab("pitchside")}
             >
-              <TrophyIcon /> {language === "zh" ? "对比赛进行竞猜" : "Speculate on Match"}
+              <TrophyIcon /> {language === "zh" ? "了解赛场 AI" : "Explore Pitchside AI"}
             </button>
           </div>
         </div>
@@ -471,7 +427,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
       <section className="live-ticker-section glass-card">
         <div className="live-ticker-header">
           <span className="live-pulse" />
-          <span className="live-ticker-title font-mono">{language === "zh" ? "世界杯实时赛事" : "LIVE WORLD CUP MATCHES"}</span>
+          <span className="live-ticker-title font-mono">{language === "zh" ? "实时赛事" : "LIVE MATCHES"}</span>
         </div>
         <div className="live-ticker-scroll-container">
           {liveMatches.length > 0 ? (
