@@ -296,18 +296,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ setActiveTab }) => {
         <div className="token-banner-inner">
           <div className="token-banner-content">
             <div className="token-banner-left">
-              <span className="token-banner-badge font-mono" style={{ background: "rgba(52, 211, 153, 0.2)", color: "#34d399" }}>{language === "zh" ? "已上线" : "LIVE"}</span>
-              <span className="token-banner-title font-mono">OKX.AI</span>
+              <span className="token-banner-badge font-mono" style={{ background: "rgba(52, 211, 153, 0.2)", color: "#34d399" }}>{language === "zh" ? "新品" : "NEW"}</span>
+              <span className="token-banner-title font-mono">VOXRO</span>
               <span className="token-banner-desc">
-                {language === "zh" ? "🛡️ ShieldSuite 已上线 OKX.AI 智能体市场 —— 智能体 #4959 全天候在线，提供代币安全扫描与策略委托。" : "🛡️ ShieldSuite is live on the OKX.AI marketplace - agent #4959 is online 24/7 for token security scans and strategy delegation."}
+                {language === "zh" ? "🛡️ ShieldSuite 新品 Voxro 已上线：X Layer 上的付费优先收件箱。对方付费联系你，你回复即可赚取 95%，不回复则全额退款。" : "🛡️ New from ShieldSuite: Voxro, a paid priority inbox on X Layer. People pay to reach you, you earn 95% when you reply, and silence refunds them in full."}
               </span>
             </div>
             <div className="token-banner-right">
               <button
-                onClick={() => window.open("https://okx.ai/agents/4959", "_blank", "noopener,noreferrer")}
+                onClick={() => window.open("https://voxro.shieldsuite.xyz", "_blank", "noopener,noreferrer")}
                 className="btn btn-primary btn-banner-swap font-mono"
               >
-                {language === "zh" ? "在 OKX.AI 上查看" : "View on OKX.AI"}
+                {language === "zh" ? "打开 Voxro" : "Open Voxro"}
               </button>
             </div>
           </div>
